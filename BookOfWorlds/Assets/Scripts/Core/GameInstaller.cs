@@ -9,6 +9,7 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private PlayerController player;
     [SerializeField] private PlayerInput playerInput;
     [SerializeField] private PlayerInputHandler playerInputHandler;
+    [SerializeField] private PlayerInventory playerInventory;
 
     [Header("Camera References")]
     [SerializeField] private Camera mainCamera;
@@ -16,22 +17,32 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private CameraFollow cameraFollow;
     [SerializeField] private CameraZoom cameraZoom;
 
+    [Header("UI References")]              
+    [SerializeField] private UIManager uiManager;  
+
+    [Header("Resources & Data")]
+    [SerializeField] private ResourceDataSO[] allResources;
+    [SerializeField] private BuildingDataSO[] allBuildings;
+
     public override void InstallBindings()
     {
         Debug.Log("=== GameInstaller: InstallBindings START ===");
 
-        // 1. бмедпъел PLAYER INPUT
+        // ===== 1. PLAYER & INPUT =====
         Container.Bind<PlayerInput>()
             .FromInstance(playerInput)
             .AsSingle();
 
-        // 2. бмедпъел PLAYER INPUT HANDLER
         Container.Bind<PlayerInputHandler>()
             .FromInstance(playerInputHandler)
             .AsSingle()
             .NonLazy();
 
-        // 3. бмедпъел йюлепс
+        Container.Bind<PlayerController>()
+            .FromInstance(player)
+            .AsSingle();
+
+        // ===== 2. CAMERA =====
         Container.Bind<Camera>()
             .FromInstance(mainCamera)
             .AsSingle();
@@ -40,12 +51,6 @@ public class GameInstaller : MonoInstaller
             .FromInstance(virtualCamera)
             .AsSingle();
 
-        // 4. бмедпъел хцпнйю
-        Container.Bind<PlayerController>()
-            .FromInstance(player)
-            .AsSingle();
-
-        // 5. бмедпъел йнлонмемрш йюлепш
         Container.Bind<CameraFollow>()
             .FromInstance(cameraFollow)
             .AsSingle()
@@ -53,6 +58,37 @@ public class GameInstaller : MonoInstaller
 
         Container.Bind<CameraZoom>()
             .FromInstance(cameraZoom)
+            .AsSingle()
+            .NonLazy();
+
+
+        // =====  UI (мнбне) =====
+        Container.Bind<UIManager>()
+            .FromInstance(uiManager)
+            .AsSingle();
+
+        // ===== 3. INVENTORY (мнбне) =====
+        Container.Bind<IPlayerInventory>()
+            .To<PlayerInventory>()
+            .FromInstance(playerInventory)
+            .AsSingle();
+
+        // ===== 4. RESOURCES DATA (мнбне) =====
+        Container.Bind<ResourceDataSO[]>()
+            .FromInstance(allResources)
+            .AsSingle();
+
+        // ===== 5. BUILDINGS DATA (мнбне) =====
+        Container.Bind<BuildingDataSO[]>()
+            .FromInstance(allBuildings)
+            .AsSingle();
+
+        // ===== 6. SERVICES =====
+        Container.Bind<SellService>()
+            .AsSingle()
+            .NonLazy();
+
+        Container.Bind<BuildingService>()
             .AsSingle()
             .NonLazy();
 

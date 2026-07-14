@@ -5,85 +5,104 @@ public class PlayerCollector : MonoBehaviour
 {
     [Header("Collect Settings")]
     [SerializeField] private float collectDuration = 1.5f;
-    [SerializeField] private float collectRange = 2f;
-    [SerializeField] private LayerMask collectableLayer;
+    [SerializeField] private float interactRange = 2f;
 
     private PlayerStateManager stateManager;
-    private GameObject currentTarget;
+    private ResourceSource currentTarget;
     private bool isCollecting = false;
 
-    // События для оповещения других систем
-    public event System.Action<GameObject> OnCollectStart;
-    public event System.Action<GameObject> OnCollectComplete;
-    public event System.Action OnCollectCancel;
+    public event System.Action<ResourceSource> OnCollectStart;
+    public event System.Action<ResourceSource> OnCollectComplete;
 
     private void Awake()
     {
         stateManager = GetComponent<PlayerStateManager>();
     }
 
-    public void TryCollect()
+    public void TryInteract()
     {
-        // Если уже собираем - прерываем
+        // Если уже собираем — игнорируем
         if (isCollecting)
         {
-            CancelCollect();
+            Debug.Log(" Уже собираем ресурс...");
             return;
         }
 
-        // Проверяем, есть ли что собирать рядом
-        GameObject target = FindCollectable();
+        // 1. Проверяем, есть ли ресурс рядом
+        ResourceSource target = FindCollectable();
         if (target != null)
         {
             StartCollect(target);
+            return;
         }
-        else
+
+        // 2. Если ресурса нет — проверяем зону продажи
+        SellZone sellZone = FindSellZone();
+        if (sellZone != null)
         {
-            Debug.Log("Nothing to collect nearby!");
+            sellZone.Sell();
+            return;
         }
+
+        // 3. Ничего не нашли
+        Debug.Log(" Рядом нет ресурсов или зоны продажи");
     }
 
-    private GameObject FindCollectable()
+    private ResourceSource FindCollectable()
     {
         Collider[] hitColliders = Physics.OverlapSphere(
             transform.position,
-            collectRange,
-            collectableLayer
+            interactRange
         );
 
         foreach (var hit in hitColliders)
         {
-            if (hit.CompareTag("Collectable"))
+            ResourceSource resource = hit.GetComponent<ResourceSource>();
+            if (resource != null && resource.IsAvailable)
             {
-                return hit.gameObject;
+                return resource;
             }
         }
 
         return null;
     }
 
-    private void StartCollect(GameObject target)
+    private SellZone FindSellZone()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(
+            transform.position,
+            interactRange
+        );
+
+        foreach (var hit in hitColliders)
+        {
+            SellZone sellZone = hit.GetComponent<SellZone>();
+            if (sellZone != null)
+            {
+                return sellZone;
+            }
+        }
+
+        return null;
+    }
+
+    private void StartCollect(ResourceSource target)
     {
         isCollecting = true;
         currentTarget = target;
 
-        // Меняем состояние
         stateManager.ChangeState(PlayerState.Collect);
+        RotateToTarget(target.transform);
 
-        // Поворачиваемся к объекту
-        RotateToTarget(target);
-
-        // Оповещаем
         OnCollectStart?.Invoke(target);
-        Debug.Log($"Started collecting: {target.name}");
+        Debug.Log($" Начинаем сбор: {target.ResourceName}");
 
-        // Запускаем асинхронный сбор
         CollectAsync(target).Forget();
     }
 
-    private void RotateToTarget(GameObject target)
+    private void RotateToTarget(Transform target)
     {
-        Vector3 direction = (target.transform.position - transform.position).normalized;
+        Vector3 direction = (target.position - transform.position).normalized;
         direction.y = 0;
 
         if (direction.magnitude > 0.1f)
@@ -93,7 +112,7 @@ public class PlayerCollector : MonoBehaviour
         }
     }
 
-    private async UniTaskVoid CollectAsync(GameObject target)
+    private async UniTaskVoid CollectAsync(ResourceSource target)
     {
         float timer = 0f;
 
@@ -101,39 +120,32 @@ public class PlayerCollector : MonoBehaviour
         {
             timer += Time.deltaTime;
 
-            // Проверяем, не исчез ли объект
-            if (target == null || !target.activeSelf)
+            if (target == null || !target.IsAvailable)
             {
-                CancelCollect();
+                Debug.Log(" Ресурс пропал во время сбора");
+                FinishCollect();
                 return;
             }
 
             await UniTask.Yield(this.GetCancellationTokenOnDestroy());
         }
 
-        // Сбор завершен
         CompleteCollect(target);
     }
 
-    private void CompleteCollect(GameObject target)
+    private void CompleteCollect(ResourceSource target)
     {
-        if (target != null && target.activeSelf)
+        if (target != null && target.IsAvailable)
         {
-            // Деактивируем объект
-            target.SetActive(false);
-
-            // Оповещаем
+            target.Interact();
             OnCollectComplete?.Invoke(target);
-            Debug.Log($"Collected: {target.name}");
+            Debug.Log($" Собран {target.ResourceName}");
+        }
+        else
+        {
+            Debug.Log(" Ресурс недоступен для сбора");
         }
 
-        FinishCollect();
-    }
-
-    private void CancelCollect()
-    {
-        OnCollectCancel?.Invoke();
-        Debug.Log("Collect canceled");
         FinishCollect();
     }
 
@@ -142,7 +154,6 @@ public class PlayerCollector : MonoBehaviour
         isCollecting = false;
         currentTarget = null;
 
-        // Возвращаемся к движению
         var movement = GetComponent<PlayerMovement>();
         if (movement != null && movement.IsMoving)
         {
@@ -156,10 +167,9 @@ public class PlayerCollector : MonoBehaviour
 
     public bool IsCollecting() => isCollecting;
 
-    // Визуализация
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, collectRange);
+        Gizmos.DrawWireSphere(transform.position, interactRange);
     }
 }

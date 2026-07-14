@@ -10,8 +10,8 @@ public class PlayerController : MonoBehaviour
     private PlayerStateManager stateManager;
 
     // Публичные события для внешних систем
-    public event System.Action<GameObject> OnCollectStart;
-    public event System.Action<GameObject> OnCollectComplete;
+    public event System.Action<ResourceSource> OnCollectStart;   //  Изменено
+    public event System.Action<ResourceSource> OnCollectComplete; //  Изменено
     public event System.Action<PlayerState> OnStateChanged;
 
     private void Awake()
@@ -20,7 +20,6 @@ public class PlayerController : MonoBehaviour
         collector = GetComponent<PlayerCollector>();
         stateManager = GetComponent<PlayerStateManager>();
 
-        // Подписываемся на события внутренних компонентов
         if (collector != null)
         {
             collector.OnCollectStart += HandleCollectStart;
@@ -35,7 +34,6 @@ public class PlayerController : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Отписываемся
         if (collector != null)
         {
             collector.OnCollectStart -= HandleCollectStart;
@@ -48,13 +46,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // Обработчики-обертки для проброса событий наружу
-    private void HandleCollectStart(GameObject target)
+    //  Исправлено: теперь принимает ResourceSource
+    private void HandleCollectStart(ResourceSource target)
     {
         OnCollectStart?.Invoke(target);
     }
 
-    private void HandleCollectComplete(GameObject target)
+    //  Исправлено: теперь принимает ResourceSource
+    private void HandleCollectComplete(ResourceSource target)
     {
         OnCollectComplete?.Invoke(target);
     }
@@ -89,7 +88,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleCollectInput()
     {
-        collector?.TryCollect();
+        collector?.TryInteract();
     }
 
     private void FixedUpdate()
