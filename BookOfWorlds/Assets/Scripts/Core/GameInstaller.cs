@@ -92,6 +92,10 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
+        Container.Bind<PauseService>()
+            .AsSingle()
+            .NonLazy();
+
         Debug.Log("=== GameInstaller: InstallBindings END ===");
     }
 }

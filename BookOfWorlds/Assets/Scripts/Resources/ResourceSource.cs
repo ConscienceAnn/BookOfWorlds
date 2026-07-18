@@ -10,23 +10,20 @@ public class ResourceSource : MonoBehaviour
     [Inject] private IPlayerInventory inventory;
 
     private bool isAvailable = true;
-    private float respawnTimer = 0f;
+    private ResourceRespawner respawner;
 
     public string ResourceName => data.resourceName;
     public bool IsAvailable => isAvailable;
 
-    private void Update()
+    private void Awake()
     {
-        if (!isAvailable)
-        {
-            respawnTimer -= Time.deltaTime;
-            if (respawnTimer <= 0)
-            {
-                isAvailable = true;
-                gameObject.SetActive(true);
-                Debug.Log($" Ресурс {data.resourceName} восстановился!");
-            }
-        }
+        // Создаём респавнер с колбэком на восстановление
+        respawner = new ResourceRespawner(data.respawnTime, OnRespawnComplete);
+    }
+
+    private void OnDestroy()
+    {
+        respawner?.Cancel();
     }
 
     public void Interact()
@@ -37,22 +34,29 @@ public class ResourceSource : MonoBehaviour
             return;
         }
 
-        // Проверяем, есть ли место в инвентаре
         if (!inventory.CanAdd(data.resourceName, amountPerCollect))
         {
-            Debug.Log($" Нет места для {data.resourceName}! Инвентарь полон.");
+            Debug.Log($" Нет места для {data.resourceName}!");
             return;
         }
 
-        // Добавляем ресурс в инвентарь
         inventory.TryAdd(data.resourceName, amountPerCollect);
 
-        // Ресурс исчезает
+        // Ресурс собран
         isAvailable = false;
-        respawnTimer = data.respawnTime;
         gameObject.SetActive(false);
 
+        // Запускаем респавн
+        respawner.StartRespawn();
+
         Debug.Log($" Собран {data.resourceName} (+{amountPerCollect})");
+    }
+
+    private void OnRespawnComplete()
+    {
+        isAvailable = true;
+        gameObject.SetActive(true);
+        Debug.Log($" Ресурс {data.resourceName} восстановился!");
     }
 
     private void OnDrawGizmos()

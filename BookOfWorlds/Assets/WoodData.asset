@@ -15,6 +15,6 @@ MonoBehaviour:
   resourceName: Wood
   icon: {fileID: 0}
   basePrice: 1
-  respawnTime: 3
+  respawnTime: 1
   prefab: {fileID: 0}
   gizmoColor: {r: 0, g: 1, b: 0, a: 1}

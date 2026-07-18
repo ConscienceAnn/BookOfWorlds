@@ -21,14 +21,13 @@ public class PlayerCollector : MonoBehaviour
 
     public void TryInteract()
     {
-        // Если уже собираем — игнорируем
         if (isCollecting)
         {
             Debug.Log(" Уже собираем ресурс...");
             return;
         }
 
-        // 1. Проверяем, есть ли ресурс рядом
+        // 1. Ресурс
         ResourceSource target = FindCollectable();
         if (target != null)
         {
@@ -36,7 +35,7 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        // 2. Если ресурса нет — проверяем зону продажи
+        // 2. Зона продажи
         SellZone sellZone = FindSellZone();
         if (sellZone != null)
         {
@@ -44,45 +43,57 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        // 3. Ничего не нашли
-        Debug.Log(" Рядом нет ресурсов или зоны продажи");
+        // 3. Здание (НОВОЕ!)
+        BuildingController building = FindBuilding();
+        if (building != null)
+        {
+            Debug.Log($" Найдено здание! Вызываем Interact()");
+            building.Interact();
+            return;
+        }
+
+        Debug.Log(" Рядом нет ресурсов, зоны продажи или зданий для восстановления");
     }
 
     private ResourceSource FindCollectable()
     {
-        Collider[] hitColliders = Physics.OverlapSphere(
-            transform.position,
-            interactRange
-        );
-
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
         foreach (var hit in hitColliders)
         {
             ResourceSource resource = hit.GetComponent<ResourceSource>();
             if (resource != null && resource.IsAvailable)
-            {
                 return resource;
-            }
         }
-
         return null;
     }
 
     private SellZone FindSellZone()
     {
-        Collider[] hitColliders = Physics.OverlapSphere(
-            transform.position,
-            interactRange
-        );
-
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
         foreach (var hit in hitColliders)
         {
             SellZone sellZone = hit.GetComponent<SellZone>();
             if (sellZone != null)
-            {
                 return sellZone;
+        }
+        return null;
+    }
+
+    // НОВЫЙ МЕТОД
+    private BuildingController FindBuilding()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
+        foreach (var hit in hitColliders)
+        {
+            // Ищем BuildingTrigger
+            BuildingTrigger trigger = hit.GetComponent<BuildingTrigger>();
+            if (trigger != null)
+            {
+                BuildingController building = trigger.GetBuildingController();
+                if (building != null && !building.IsRestored())
+                    return building;
             }
         }
-
         return null;
     }
 
@@ -122,7 +133,7 @@ public class PlayerCollector : MonoBehaviour
 
             if (target == null || !target.IsAvailable)
             {
-                Debug.Log(" Ресурс пропал во время сбора");
+                Debug.Log("Ресурс пропал во время сбора");
                 FinishCollect();
                 return;
             }
@@ -139,7 +150,7 @@ public class PlayerCollector : MonoBehaviour
         {
             target.Interact();
             OnCollectComplete?.Invoke(target);
-            Debug.Log($" Собран {target.ResourceName}");
+            Debug.Log($"Собран {target.ResourceName}");
         }
         else
         {
