@@ -24,6 +24,9 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private ResourceDataSO[] allResources;
     [SerializeField] private BuildingDataSO[] allBuildings;
 
+    [Header("UI References")]
+    [SerializeField] private PlayerUI playerUI;
+
     public override void InstallBindings()
     {
         Debug.Log("=== GameInstaller: InstallBindings START ===");
@@ -95,6 +98,10 @@ public class GameInstaller : MonoInstaller
         Container.Bind<PauseService>()
             .AsSingle()
             .NonLazy();
+
+        Container.Bind<PlayerUI>()
+            .FromInstance(playerUI)
+            .AsSingle();
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");
     }

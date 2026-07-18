@@ -13,8 +13,7 @@ public class BuildingController : MonoBehaviour
     [SerializeField] private GameObject restoredVisual;
     [SerializeField] private GameObject blockedCollider;
 
-    [Header("Prompt")]
-    [SerializeField] private BuildingPrompt prompt;
+    [Inject] private PlayerUI playerUI;
 
     [Inject] private BuildingService buildingService;
     [Inject] private IPlayerInventory inventory;
@@ -29,6 +28,13 @@ public class BuildingController : MonoBehaviour
         foreach (var cost in buildingData.costs)
         {
             investedResources[cost.resourceName] = 0;
+        }
+
+        if (playerUI == null)
+        {
+           
+                Debug.LogWarning($" PlayerUI не найден на сцене! Подсказки работать не будут.");
+            
         }
     }
 
@@ -64,17 +70,21 @@ public class BuildingController : MonoBehaviour
         if (isRestored) return;
         isPlayerNear = true;
 
-        if (prompt != null)
+        if (playerUI != null)
         {
-            prompt.Show();
-            prompt.UpdateCostText();
+            playerUI.ShowBuildingPrompt(this);
+            Debug.Log($" Показана подсказка для {buildingData.buildingName}");
         }
     }
 
     public void OnPlayerExit()
     {
         isPlayerNear = false;
-        if (prompt != null) prompt.Hide();
+
+        if (playerUI != null)
+        {
+            playerUI.HideBuildingPrompt();
+        }
     }
 
     public async UniTaskVoid TryRestore()
@@ -111,7 +121,7 @@ public class BuildingController : MonoBehaviour
 
         if (!anyResourceAdded)
         {
-            Debug.Log($" У вас нет ресурсов для передачи мосту!");
+            Debug.Log($" У вас нет ресурсов для передачи!");
             return;
         }
 
@@ -132,24 +142,24 @@ public class BuildingController : MonoBehaviour
             UpdateVisual(true);
             Debug.Log($" {buildingData.buildingName} восстановлен!");
 
-            // ===== ТОЛЬКО ЭТО ДОБАВЛЕНО =====
-            // Скрываем подсказку
-            if (prompt != null)
+            if (playerUI != null)
             {
-                prompt.Hide();
+                playerUI.HideBuildingPrompt();
             }
 
-            // Отключаем триггер
             var trigger = GetComponentInChildren<BuildingTrigger>();
             if (trigger != null)
             {
                 trigger.gameObject.SetActive(false);
             }
-            // =================================
         }
         else
         {
-            prompt?.UpdateCostText();
+            if (playerUI != null)
+            {
+                playerUI.UpdateCostText();
+            }
+
             Debug.Log($" Прогресс: {GetProgressString()}");
         }
     }
