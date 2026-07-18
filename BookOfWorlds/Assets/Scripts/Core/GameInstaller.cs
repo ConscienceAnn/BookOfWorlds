@@ -18,14 +18,15 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private CameraZoom cameraZoom;
 
     [Header("UI References")]              
-    [SerializeField] private UIManager uiManager;  
+    [SerializeField] private UIManager uiManager;
+    [SerializeField] private LevelProgress levelProgress;
+    [SerializeField] private PlayerUI playerUI;
 
     [Header("Resources & Data")]
     [SerializeField] private ResourceDataSO[] allResources;
     [SerializeField] private BuildingDataSO[] allBuildings;
 
-    [Header("UI References")]
-    [SerializeField] private PlayerUI playerUI;
+    
 
     public override void InstallBindings()
     {
@@ -102,6 +103,10 @@ public class GameInstaller : MonoInstaller
         Container.Bind<PlayerUI>()
             .FromInstance(playerUI)
             .AsSingle();
+
+        Container.Bind<LevelProgress>()          
+           .FromInstance(levelProgress)
+           .AsSingle();
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");
     }

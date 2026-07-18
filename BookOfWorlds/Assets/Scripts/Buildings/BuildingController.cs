@@ -18,6 +18,8 @@ public class BuildingController : MonoBehaviour
     [Inject] private BuildingService buildingService;
     [Inject] private IPlayerInventory inventory;
 
+    [Inject] private LevelProgress levelProgress;
+
     private bool isRestored = false;
     private bool isPlayerNear = false;
     private Dictionary<string, int> investedResources = new Dictionary<string, int>();
@@ -141,6 +143,11 @@ public class BuildingController : MonoBehaviour
             await UniTask.Delay(500);
             UpdateVisual(true);
             Debug.Log($" {buildingData.buildingName} восстановлен!");
+
+            if (levelProgress != null)
+            {
+                levelProgress.OnBuildingRestored();
+            }
 
             if (playerUI != null)
             {
