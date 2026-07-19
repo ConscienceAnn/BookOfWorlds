@@ -1,5 +1,7 @@
 using UnityEngine;
 using Zenject;
+using Cysharp.Threading.Tasks;
+using System.Threading;
 
 public class ResourceSource : MonoBehaviour
 {
@@ -7,23 +9,44 @@ public class ResourceSource : MonoBehaviour
     [SerializeField] private ResourceDataSO data;
     [SerializeField] private int amountPerCollect = 1;
 
+    [Header("Visual")]
+    [SerializeField] private VisualState visualState; //  НОВОЕ
+
     [Inject] private IPlayerInventory inventory;
+    [Inject] private PauseService pauseService;
 
     private bool isAvailable = true;
-    private ResourceRespawner respawner;
+    private CancellationTokenSource cts;
 
     public string ResourceName => data.resourceName;
     public bool IsAvailable => isAvailable;
 
     private void Awake()
     {
-        // Создаём респавнер с колбэком на восстановление
-        respawner = new ResourceRespawner(data.respawnTime, OnRespawnComplete);
+        // Если VisualState не назначен — пытаемся найти
+        if (visualState == null)
+        {
+            visualState = GetComponent<VisualState>();
+            if (visualState == null)
+            {
+                visualState = GetComponentInChildren<VisualState>();
+            }
+        }
+    }
+
+    private void Start()
+    {
+        // Изначально цветной
+        if (visualState != null)
+        {
+            visualState.SetColored();
+        }
     }
 
     private void OnDestroy()
     {
-        respawner?.Cancel();
+        cts?.Cancel();
+        cts?.Dispose();
     }
 
     public void Interact()
@@ -42,20 +65,51 @@ public class ResourceSource : MonoBehaviour
 
         inventory.TryAdd(data.resourceName, amountPerCollect);
 
-        // Ресурс собран
         isAvailable = false;
-        gameObject.SetActive(false);
 
-        // Запускаем респавн
-        respawner.StartRespawn();
+        //  Становимся серым
+        if (visualState != null)
+        {
+            visualState.SetGray();
+        }
+
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+
+        RespawnAsync(cts.Token).Forget();
 
         Debug.Log($" Собран {data.resourceName} (+{amountPerCollect})");
     }
 
-    private void OnRespawnComplete()
+    private async UniTaskVoid RespawnAsync(CancellationToken token)
     {
+        float elapsed = 0f;
+        float duration = data.respawnTime;
+
+        while (elapsed < duration)
+        {
+            if (token.IsCancellationRequested)
+                return;
+
+            if (pauseService != null && pauseService.IsPaused)
+            {
+                await UniTask.Yield(token);
+                continue;
+            }
+
+            elapsed += Time.unscaledDeltaTime;
+            await UniTask.Yield(token);
+        }
+
         isAvailable = true;
-        gameObject.SetActive(true);
+
+        // Становимся цветным
+        if (visualState != null)
+        {
+            visualState.SetColored();
+        }
+
         Debug.Log($" Ресурс {data.resourceName} восстановился!");
     }
 

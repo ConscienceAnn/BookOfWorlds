@@ -43,12 +43,20 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        // 3. Здание (НОВОЕ!)
+        // 3. Здание
         BuildingController building = FindBuilding();
         if (building != null)
         {
             Debug.Log($" Найдено здание! Вызываем Interact()");
             building.Interact();
+            return;
+        }
+
+        // 4. Животное 
+        AnimalController animal = FindAnimal();
+        if (animal != null)
+        {
+            animal.Interact();
             return;
         }
 
@@ -93,6 +101,19 @@ public class PlayerCollector : MonoBehaviour
                 if (building != null && !building.IsRestored())
                     return building;
             }
+        }
+        return null;
+    }
+
+
+    private AnimalController FindAnimal()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
+        foreach (var hit in hitColliders)
+        {
+            AnimalController animal = hit.GetComponent<AnimalController>();
+            if (animal != null && animal.IsAvailable)
+                return animal;
         }
         return null;
     }
