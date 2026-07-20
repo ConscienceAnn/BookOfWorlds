@@ -16,12 +16,12 @@ public class PlayerStateManager : MonoBehaviour
     public event System.Action<PlayerState> OnStateChanged;
 
     private PlayerMovement movement;
-    private PlayerAnimation playerAnimation; // Изменили имя с "animation" на "playerAnimation"
+    private PlayerAnimation playerAnimation; 
 
     private void Awake()
     {
         movement = GetComponent<PlayerMovement>();
-        playerAnimation = GetComponent<PlayerAnimation>(); // Обновили здесь
+        playerAnimation = GetComponent<PlayerAnimation>(); 
     }
 
     public void ChangeState(PlayerState newState)
@@ -39,7 +39,7 @@ public class PlayerStateManager : MonoBehaviour
 
     private void UpdateAnimation()
     {
-        if (playerAnimation == null) return; // Обновили здесь
+        if (playerAnimation == null) return; 
 
         switch (CurrentState)
         {

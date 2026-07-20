@@ -23,6 +23,20 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
         return slot?.currentAmount ?? 0;
     }
 
+
+    public void SetAmount(string resourceName, int amount)
+    {
+        var slot = GetSlot(resourceName);
+        if (slot != null)
+        {
+            int oldAmount = slot.currentAmount;
+            slot.currentAmount = Mathf.Clamp(amount, 0, slot.maxCapacity);
+
+            
+            OnInventoryChanged?.Invoke();
+            Debug.Log($"Инвентарь: {resourceName} = {slot.currentAmount}/{slot.maxCapacity} (было {oldAmount})");
+        }
+    }
     public int GetMax(string resourceName)
     {
         var slot = GetSlot(resourceName);

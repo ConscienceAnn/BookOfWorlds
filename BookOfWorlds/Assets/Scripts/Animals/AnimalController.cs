@@ -8,7 +8,7 @@ public class AnimalController : MonoBehaviour
 
     [Header("Visuals")]
     [SerializeField] private Animator animator;
-    [SerializeField] private VisualState visualState; //  НОВОЕ
+    [SerializeField] private VisualState visualState; 
 
     [Inject] private IPlayerInventory inventory;
 
@@ -35,7 +35,6 @@ public class AnimalController : MonoBehaviour
         if (animator == null)
             animator = GetComponent<Animator>();
 
-        // Изначально цветная
         if (visualState != null)
         {
             visualState.SetColored();
@@ -51,7 +50,6 @@ public class AnimalController : MonoBehaviour
             {
                 isAvailable = true;
 
-                //  Становимся цветной
                 if (visualState != null)
                 {
                     visualState.SetColored();
@@ -81,7 +79,6 @@ public class AnimalController : MonoBehaviour
         isAvailable = false;
         cooldownTimer = animalData.cooldownTime;
 
-        // Становимся серой
         if (visualState != null)
         {
             visualState.SetGray();

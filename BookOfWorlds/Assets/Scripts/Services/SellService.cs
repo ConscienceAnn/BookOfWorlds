@@ -5,7 +5,7 @@ public class SellService
     private readonly IPlayerInventory inventory;
     private readonly ResourceDataSO[] allResources;
 
-    //  Конструктор должен принимать оба параметра
+    
     public SellService(IPlayerInventory inventory, ResourceDataSO[] allResources)
     {
         this.inventory = inventory;
@@ -38,7 +38,7 @@ public class SellService
     {
         foreach (var data in allResources)
         {
-            // Сравниваем без учёта регистра
+           
             if (string.Equals(data.resourceName, resourceName, System.StringComparison.OrdinalIgnoreCase))
             {
                 Debug.Log($" Найдена цена для {resourceName}: {data.basePrice}");

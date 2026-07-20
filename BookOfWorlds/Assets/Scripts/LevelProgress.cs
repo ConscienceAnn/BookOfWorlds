@@ -14,24 +14,22 @@ public class LevelProgress : MonoBehaviour
 
     private BuildingController[] buildings;
     private int totalBuildings = 0;
+    private int lastProgress = -1;
 
     private void Start()
     {
         FindBuildings();
         UpdateProgress();
+
+        EventBus.OnBuildingRestored += OnBuildingRestored;
+        EventBus.OnBuildingProgressChanged += OnBuildingProgressChanged;
     }
 
     private void FindBuildings()
     {
         buildings = FindObjectsOfType<BuildingController>();
         totalBuildings = buildings.Length;
-        Debug.Log($" Найдено зданий: {totalBuildings}");
-    }
-
-    private void Update()
-    {
-        // Обновляем прогресс каждый кадр (можно реже)
-        UpdateProgress();
+        Debug.Log($"Найдено зданий: {totalBuildings}");
     }
 
     public void UpdateProgress()
@@ -39,30 +37,59 @@ public class LevelProgress : MonoBehaviour
         if (buildings == null || buildings.Length == 0)
         {
             FindBuildings();
-            return;
+            if (buildings == null || buildings.Length == 0)
+            {
+                return;
+            }
         }
 
         int restoredCount = 0;
         foreach (var building in buildings)
         {
-            if (building.IsRestored())
+            if (building != null && building.IsRestored())
                 restoredCount++;
         }
 
         float progress = totalBuildings > 0 ? (float)restoredCount / totalBuildings * 100f : 0f;
         int progressInt = Mathf.RoundToInt(progress);
 
-        if (progressSlider != null)
-            progressSlider.value = progressInt;
+        if (progressInt != lastProgress)
+        {
+            lastProgress = progressInt;
 
-        if (progressText != null)
-            progressText.text = $"{prefix}{progressInt}{suffix}";
+            if (progressSlider != null)
+                progressSlider.value = progressInt;
+
+            if (progressText != null)
+                progressText.text = $"{prefix}{progressInt}{suffix}";
+
+            Debug.Log($"Прогресс: {progressInt}% ({restoredCount}/{totalBuildings})");
+        }
     }
 
-    // Вызывается при восстановлении здания
-    public void OnBuildingRestored()
+    public void ForceUpdate()
+    {
+        lastProgress = -1;
+        UpdateProgress();
+        Debug.Log("LevelProgress принудительно обновлён");
+    }
+
+    private void OnDestroy()
+    {
+        EventBus.OnBuildingRestored -= OnBuildingRestored;
+        EventBus.OnBuildingProgressChanged -= OnBuildingProgressChanged;
+    }
+
+    private void OnBuildingRestored(BuildingController building)
+    {
+        lastProgress = -1;
+        UpdateProgress();
+        Debug.Log($"Прогресс обновлён: восстановлено {building.GetBuildingName()}");
+    }
+
+    private void OnBuildingProgressChanged(BuildingController building)
     {
         UpdateProgress();
-        Debug.Log($" Прогресс обновлён: {progressSlider?.value ?? 0}%");
+        Debug.Log($"Прогресс обновлён (частично): {building.GetBuildingName()}");
     }
 }

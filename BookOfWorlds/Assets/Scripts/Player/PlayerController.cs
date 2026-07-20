@@ -10,8 +10,8 @@ public class PlayerController : MonoBehaviour
     private PlayerStateManager stateManager;
 
     // Публичные события для внешних систем
-    public event System.Action<ResourceSource> OnCollectStart;   //  Изменено
-    public event System.Action<ResourceSource> OnCollectComplete; //  Изменено
+    public event System.Action<ResourceSource> OnCollectStart;   
+    public event System.Action<ResourceSource> OnCollectComplete; 
     public event System.Action<PlayerState> OnStateChanged;
 
     private void Awake()
@@ -46,13 +46,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    //  Исправлено: теперь принимает ResourceSource
+
     private void HandleCollectStart(ResourceSource target)
     {
         OnCollectStart?.Invoke(target);
     }
 
-    //  Исправлено: теперь принимает ResourceSource
     private void HandleCollectComplete(ResourceSource target)
     {
         OnCollectComplete?.Invoke(target);

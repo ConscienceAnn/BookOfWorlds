@@ -26,7 +26,9 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private ResourceDataSO[] allResources;
     [SerializeField] private BuildingDataSO[] allBuildings;
 
-    
+    [Header("Game Save")]
+    [SerializeField] private GameSaveController gameSaveController;
+
 
     public override void InstallBindings()
     {
@@ -107,6 +109,11 @@ public class GameInstaller : MonoInstaller
         Container.Bind<LevelProgress>()          
            .FromInstance(levelProgress)
            .AsSingle();
+
+        Container.Bind<GameSaveController>()
+           .FromInstance(gameSaveController)
+           .AsSingle()
+           .NonLazy();
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");
     }

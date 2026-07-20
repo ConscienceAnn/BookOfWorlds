@@ -3,17 +3,13 @@ using UnityEngine;
 public class BuildingTrigger : MonoBehaviour
 {
     private BuildingController buildingController;
+    private PlayerUI playerUI;
 
     private void Awake()
     {
         buildingController = GetComponentInParent<BuildingController>();
-        Debug.Log($" BuildingTrigger.Awake(): buildingController = {(buildingController != null ? "НАЙДЕН" : "НЕ НАЙДЕН")}");
-    }
-
-    //  Публичный метод для PlayerCollector
-    public BuildingController GetBuildingController()
-    {
-        return buildingController;
+        playerUI = FindObjectOfType<PlayerUI>();
+        Debug.Log($"BuildingTrigger.Awake(): buildingController = {(buildingController != null ? "НАЙДЕН" : "НЕ НАЙДЕН")}");
     }
 
     private void OnTriggerEnter(Collider other)
@@ -22,11 +18,16 @@ public class BuildingTrigger : MonoBehaviour
         {
             if (buildingController != null && buildingController.IsRestored())
             {
-                Debug.Log($" Здание уже восстановлено, триггер игнорируется");
+                Debug.Log($"Здание уже восстановлено, триггер игнорируется");
                 return;
             }
 
             buildingController?.OnPlayerEnter();
+
+            if (playerUI != null)
+            {
+                playerUI.ShowBuildingPrompt(buildingController);
+            }
         }
     }
 
@@ -40,6 +41,11 @@ public class BuildingTrigger : MonoBehaviour
             }
 
             buildingController?.OnPlayerExit();
+
+            if (playerUI != null)
+            {
+                playerUI.HideBuildingPrompt();
+            }
         }
     }
 

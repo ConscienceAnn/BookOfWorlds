@@ -10,5 +10,7 @@ public interface IPlayerInventory
     bool TrySpend(string resourceName, int amount);
     Dictionary<string, int> GetAllItems();
     void ClearAll();
+    void SetAmount(string resourceName, int amount);
+
     event Action OnInventoryChanged;
 }

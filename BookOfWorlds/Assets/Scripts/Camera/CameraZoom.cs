@@ -51,7 +51,7 @@ public class CameraZoom : MonoBehaviour
 
         if (transposer != null)
         {
-            // Сохраняем текущие значения
+            
             currentZoomDistance = Mathf.Abs(transposer.m_FollowOffset.z);
             targetZoomDistance = currentZoomDistance;
             defaultZoomDistance = currentZoomDistance;
@@ -85,13 +85,12 @@ public class CameraZoom : MonoBehaviour
 
         if (Mathf.Abs(scrollValue) > 0.01f)
         {
-            //  Изменяем дистанцию
+            
             targetZoomDistance -= scrollValue * zoomSpeed;
             targetZoomDistance = Mathf.Clamp(targetZoomDistance, minZoom, maxZoom);
 
-            // Изменяем высоту пропорционально дистанции
-            // Чем дальше камера, тем выше она поднимается
-            float zoomProgress = (targetZoomDistance - minZoom) / (maxZoom - minZoom); // 0..1
+            
+            float zoomProgress = (targetZoomDistance - minZoom) / (maxZoom - minZoom); 
             targetHeight = Mathf.Lerp(minHeight, maxHeight, zoomProgress);
 
             Debug.Log($"Zoom target: distance={targetZoomDistance}, height={targetHeight} (scroll: {scrollValue})");
@@ -142,7 +141,7 @@ public class CameraZoom : MonoBehaviour
             await UniTask.Yield(this.GetCancellationTokenOnDestroy());
         }
 
-        //  Финализируем
+       
         currentZoomDistance = targetZoomDistance;
         currentHeight = targetHeight;
 

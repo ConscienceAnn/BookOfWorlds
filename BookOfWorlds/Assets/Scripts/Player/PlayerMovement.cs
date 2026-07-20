@@ -26,12 +26,12 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         stateManager = GetComponent<PlayerStateManager>();
 
-        // ПОЛНАЯ ЗАМОРОЗКА ВРАЩЕНИЯ - камера теперь отвечает за это!
+        
         rb.constraints = RigidbodyConstraints.FreezeRotationX |
                         RigidbodyConstraints.FreezeRotationY |
                         RigidbodyConstraints.FreezeRotationZ;
 
-        // Настройка физики для холмистой местности
+      
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.maxAngularVelocity = 0.01f;
@@ -101,7 +101,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            // Стоим на месте - обнуляем горизонтальную скорость
+            
             Vector3 velocity = rb.velocity;
             velocity.x = 0;
             velocity.z = 0;
@@ -112,7 +112,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Rotate()
     {
-        // Вращаем персонажа только когда двигаемся
+      
         if (moveDirection.magnitude > minMoveThreshold && currentSpeed > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);

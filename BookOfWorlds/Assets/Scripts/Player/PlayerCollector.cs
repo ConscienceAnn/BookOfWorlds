@@ -23,11 +23,10 @@ public class PlayerCollector : MonoBehaviour
     {
         if (isCollecting)
         {
-            Debug.Log(" Уже собираем ресурс...");
+            Debug.Log("Уже собираем ресурс...");
             return;
         }
 
-        // 1. Ресурс
         ResourceSource target = FindCollectable();
         if (target != null)
         {
@@ -35,7 +34,6 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        // 2. Зона продажи
         SellZone sellZone = FindSellZone();
         if (sellZone != null)
         {
@@ -43,16 +41,14 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        // 3. Здание
         BuildingController building = FindBuilding();
         if (building != null)
         {
-            Debug.Log($" Найдено здание! Вызываем Interact()");
+            Debug.Log($"Найдено здание! Вызываем Interact()");
             building.Interact();
             return;
         }
 
-        // 4. Животное 
         AnimalController animal = FindAnimal();
         if (animal != null)
         {
@@ -60,7 +56,7 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        Debug.Log(" Рядом нет ресурсов, зоны продажи или зданий для восстановления");
+        Debug.Log("Рядом нет ресурсов, зоны продажи, зданий или животных");
     }
 
     private ResourceSource FindCollectable()
@@ -87,24 +83,21 @@ public class PlayerCollector : MonoBehaviour
         return null;
     }
 
-    // НОВЫЙ МЕТОД
     private BuildingController FindBuilding()
     {
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
         foreach (var hit in hitColliders)
         {
-            // Ищем BuildingTrigger
             BuildingTrigger trigger = hit.GetComponent<BuildingTrigger>();
             if (trigger != null)
             {
-                BuildingController building = trigger.GetBuildingController();
+                BuildingController building = trigger.GetComponentInParent<BuildingController>();
                 if (building != null && !building.IsRestored())
                     return building;
             }
         }
         return null;
     }
-
 
     private AnimalController FindAnimal()
     {
@@ -127,7 +120,7 @@ public class PlayerCollector : MonoBehaviour
         RotateToTarget(target.transform);
 
         OnCollectStart?.Invoke(target);
-        Debug.Log($" Начинаем сбор: {target.ResourceName}");
+        Debug.Log($"Начинаем сбор: {target.ResourceName}");
 
         CollectAsync(target).Forget();
     }
@@ -175,7 +168,7 @@ public class PlayerCollector : MonoBehaviour
         }
         else
         {
-            Debug.Log(" Ресурс недоступен для сбора");
+            Debug.Log("Ресурс недоступен для сбора");
         }
 
         FinishCollect();

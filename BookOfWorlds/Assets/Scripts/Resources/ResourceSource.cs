@@ -10,7 +10,7 @@ public class ResourceSource : MonoBehaviour
     [SerializeField] private int amountPerCollect = 1;
 
     [Header("Visual")]
-    [SerializeField] private VisualState visualState; //  НОВОЕ
+    [SerializeField] private VisualState visualState; 
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private PauseService pauseService;
@@ -23,7 +23,7 @@ public class ResourceSource : MonoBehaviour
 
     private void Awake()
     {
-        // Если VisualState не назначен — пытаемся найти
+       
         if (visualState == null)
         {
             visualState = GetComponent<VisualState>();

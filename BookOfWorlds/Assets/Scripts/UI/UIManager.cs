@@ -1,6 +1,5 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.InputSystem;
 
 public class UIManager : MonoBehaviour
 {
@@ -12,20 +11,21 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TMP_Text woolText;
 
     [Header("Inventory Reference")]
-    [SerializeField] private PlayerInventory inventory; 
+    [SerializeField] private PlayerInventory inventory;
 
     private int coins = 0;
 
     private void Start()
     {
-        // Подписываемся на изменения инвентаря
         if (inventory != null)
         {
             inventory.OnInventoryChanged += UpdateUI;
         }
 
+        EventBus.OnCoinsChanged += OnCoinsChanged;
+
         UpdateUI();
-        Debug.Log(" UIManager: Готов к работе!");
+        Debug.Log("UIManager: Готов к работе!");
     }
 
     private void OnDestroy()
@@ -34,13 +34,14 @@ public class UIManager : MonoBehaviour
         {
             inventory.OnInventoryChanged -= UpdateUI;
         }
+
+        EventBus.OnCoinsChanged -= OnCoinsChanged;
     }
 
     private void UpdateUI()
     {
         if (inventory != null)
         {
-            // БЕРЁМ ДАННЫЕ ИЗ ИНВЕНТАРЯ
             if (woodText != null)
                 woodText.text = $"{inventory.GetAmount("Wood")}/{inventory.GetMax("Wood")}";
 
@@ -58,15 +59,30 @@ public class UIManager : MonoBehaviour
             coinsText.text = coins.ToString();
     }
 
-    // Метод для добавления монет (вызывается из SellZone)
     public void AddCoins(int amount)
     {
         coins += amount;
         UpdateUI();
     }
 
-    // Метод для установки монет (при загрузке сохранения)
+    public int GetCoins()
+    {
+        return coins;
+    }
+
     public void SetCoins(int amount)
+    {
+        coins = amount;
+        UpdateUI();
+    }
+
+    public void ForceRefreshUI()
+    {
+        UpdateUI();
+        Debug.Log("UI принудительно обновлён");
+    }
+
+    private void OnCoinsChanged(int amount)
     {
         coins = amount;
         UpdateUI();
