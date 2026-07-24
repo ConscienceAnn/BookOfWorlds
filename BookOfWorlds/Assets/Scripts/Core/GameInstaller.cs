@@ -26,6 +26,9 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private ResourceDataSO[] allResources;
     [SerializeField] private BuildingDataSO[] allBuildings;
 
+    [Header("Resource System")]
+    [SerializeField] private ResourceFactory resourceFactory;
+
     [Header("Game Save")]
     [SerializeField] private GameSaveController gameSaveController;
 
@@ -114,6 +117,10 @@ public class GameInstaller : MonoInstaller
            .FromInstance(gameSaveController)
            .AsSingle()
            .NonLazy();
+
+        Container.Bind<ResourceFactory>()
+            .FromInstance(resourceFactory)
+            .AsSingle();
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");
     }

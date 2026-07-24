@@ -10,7 +10,7 @@ public class ResourceSource : MonoBehaviour
     [SerializeField] private int amountPerCollect = 1;
 
     [Header("Visual")]
-    [SerializeField] private VisualState visualState; 
+    [SerializeField] private VisualState visualState;
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private PauseService pauseService;
@@ -18,12 +18,11 @@ public class ResourceSource : MonoBehaviour
     private bool isAvailable = true;
     private CancellationTokenSource cts;
 
-    public string ResourceName => data.resourceName;
+    public string ResourceName => data?.resourceName ?? "Unknown";
     public bool IsAvailable => isAvailable;
 
     private void Awake()
     {
-       
         if (visualState == null)
         {
             visualState = GetComponent<VisualState>();
@@ -36,7 +35,6 @@ public class ResourceSource : MonoBehaviour
 
     private void Start()
     {
-        // Изначально цветной
         if (visualState != null)
         {
             visualState.SetColored();
@@ -49,17 +47,32 @@ public class ResourceSource : MonoBehaviour
         cts?.Dispose();
     }
 
+    public void SetData(ResourceDataSO newData)
+    {
+        Debug.Log($"ResourceSource.SetData: вызыван на {gameObject.name}, newData = {(newData != null ? newData.resourceName : "NULL")}");
+        data = newData;
+        Debug.Log($"ResourceSource.SetData: data теперь = {(data != null ? data.resourceName : "NULL")}");
+    }
+
     public void Interact()
     {
+         Debug.Log($"ResourceSource.Interact: вызван на {gameObject.name}, data = {(data != null ? data.resourceName : "NULL")}");
+    
+    if (data == null)
+    {
+        Debug.LogError($"ResourceSource: data is NULL on {gameObject.name}!");
+        return;
+    }
+
         if (!isAvailable)
         {
-            Debug.Log($" Ресурс {data.resourceName} ещё не восстановился!");
+            Debug.Log($"Ресурс {data.resourceName} ещё не восстановился!");
             return;
         }
 
         if (!inventory.CanAdd(data.resourceName, amountPerCollect))
         {
-            Debug.Log($" Нет места для {data.resourceName}!");
+            Debug.Log($"Нет места для {data.resourceName}!");
             return;
         }
 
@@ -67,20 +80,17 @@ public class ResourceSource : MonoBehaviour
 
         isAvailable = false;
 
-        //  Становимся серым
         if (visualState != null)
         {
             visualState.SetGray();
         }
 
-        cts?.Cancel();
-        cts?.Dispose();
-        cts = new CancellationTokenSource();
+        OnCollected?.Invoke(this);
 
-        RespawnAsync(cts.Token).Forget();
-
-        Debug.Log($" Собран {data.resourceName} (+{amountPerCollect})");
+        Debug.Log($"Собран {data.resourceName} (+{amountPerCollect})");
     }
+
+    public event System.Action<ResourceSource> OnCollected;
 
     private async UniTaskVoid RespawnAsync(CancellationToken token)
     {
@@ -104,18 +114,26 @@ public class ResourceSource : MonoBehaviour
 
         isAvailable = true;
 
-        // Становимся цветным
         if (visualState != null)
         {
             visualState.SetColored();
         }
 
-        Debug.Log($" Ресурс {data.resourceName} восстановился!");
+        Debug.Log($"Ресурс {data.resourceName} восстановился!");
     }
 
-    private void OnDrawGizmos()
+    public void ResetState()
     {
-        Gizmos.color = isAvailable ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(transform.position, 0.5f);
+        isAvailable = true;
+        if (visualState != null)
+        {
+            visualState.SetColored();
+        }
+        gameObject.SetActive(true);
+    }
+
+    public bool HasInventory()
+    {
+        return inventory != null;
     }
 }
