@@ -12,7 +12,7 @@ public class BuildingController : MonoBehaviour
     [Header("Visuals")]
     [SerializeField] private GameObject ruinedVisual;
     [SerializeField] private GameObject restoredVisual;
-    [SerializeField] private GameObject blockedCollider;
+    [SerializeField] private GameObject[] blockedColliders; 
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private LevelProgress levelProgress;
@@ -62,7 +62,15 @@ public class BuildingController : MonoBehaviour
 
         if (ruinedVisual != null) ruinedVisual.SetActive(!restored);
         if (restoredVisual != null) restoredVisual.SetActive(restored);
-        if (blockedCollider != null) blockedCollider.SetActive(!restored);
+
+        // ”правл€ем всеми блокирующими коллайдерами
+        foreach (var collider in blockedColliders)
+        {
+            if (collider != null)
+            {
+                collider.SetActive(!restored);
+            }
+        }
     }
 
     public void SyncStateFromSave(bool restored, Dictionary<string, int> savedInvested)

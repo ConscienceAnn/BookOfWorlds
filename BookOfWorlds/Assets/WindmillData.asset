@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
+  m_Name: WindmillData
+  m_EditorClassIdentifier: 
+  buildingName: Windmill
+  description: 
+  icon: {fileID: 0}
+  costs:
+  - resourceName: Wood
+    amount: 10
+  - resourceName: Stone
+    amount: 14
+  ruinedPrefab: {fileID: 939164398549098163, guid: aacb0d787435a0048ac27a4ccb927e0c, type: 3}
+  restoredPrefab: {fileID: 4467466102676519096, guid: 2f02160933596544d8c960b58decd006, type: 3}
+  restoreTime: 2

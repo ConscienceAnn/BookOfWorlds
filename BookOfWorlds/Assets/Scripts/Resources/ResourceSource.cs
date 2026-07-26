@@ -19,6 +19,8 @@ public class ResourceSource : MonoBehaviour
     private CancellationTokenSource cts;
 
     public string ResourceName => data?.resourceName ?? "Unknown";
+
+    public ResourceDataSO ResourceData => data;
     public bool IsAvailable => isAvailable;
 
     private void Awake()

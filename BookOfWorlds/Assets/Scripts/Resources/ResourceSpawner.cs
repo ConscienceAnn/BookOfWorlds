@@ -7,15 +7,16 @@ public class ResourceSpawner : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private ResourceFactory resourceFactory;
     [SerializeField] private List<Transform> spawnPoints;
-    [SerializeField] private float respawnTime = 5f;
     [SerializeField] private bool isStone = false;
 
     [Header("Rotation")]
     [SerializeField] private Vector3 fixedRotation = new Vector3(-90f, 0f, 0f);
     [SerializeField] private bool useFixedRotation = true;
+    [SerializeField] private bool randomYRotation = true;
 
     private List<ResourceSource> activeResources = new List<ResourceSource>();
-    private List<Transform> occupiedPoints = new List<Transform>(); 
+    private Dictionary<Transform, ResourceSource> occupiedPoints = new Dictionary<Transform, ResourceSource>();
+    private Transform pendingRespawnPoint = null;
 
     private void Start()
     {
@@ -86,7 +87,16 @@ public class ResourceSpawner : MonoBehaviour
 
         if (useFixedRotation)
         {
-            obj.transform.rotation = Quaternion.Euler(fixedRotation);
+            float randomY = randomYRotation ? Random.Range(0f, 360f) : 0f;
+            obj.transform.rotation = Quaternion.Euler(
+                fixedRotation.x,
+                randomY,
+                fixedRotation.z
+            );
+        }
+        else
+        {
+            obj.transform.rotation = rotation;
         }
 
         ResourceSource source = obj.GetComponent<ResourceSource>();
@@ -95,10 +105,10 @@ public class ResourceSpawner : MonoBehaviour
             source.OnCollected += OnResourceCollected;
             activeResources.Add(source);
 
-            //  «апоминаем, что точка зан€та
-            if (spawnPoint != null && !occupiedPoints.Contains(spawnPoint))
+            if (spawnPoint != null && !occupiedPoints.ContainsKey(spawnPoint))
             {
-                occupiedPoints.Add(spawnPoint);
+                occupiedPoints.Add(spawnPoint, source);
+                Debug.Log($"“очка {spawnPoint.name} зан€та");
             }
         }
     }
@@ -110,10 +120,17 @@ public class ResourceSpawner : MonoBehaviour
         source.OnCollected -= OnResourceCollected;
         activeResources.Remove(source);
 
-        //  ”дал€ем точку из зан€тых (если она там есть)
-        Transform occupiedPoint = occupiedPoints.FirstOrDefault(p =>
-            Vector3.Distance(p.position, source.transform.position) < 0.1f
-        );
+        // Ќаходим точку, которой принадлежал этот ресурс
+        Transform occupiedPoint = null;
+        foreach (var kvp in occupiedPoints)
+        {
+            if (kvp.Value == source)
+            {
+                occupiedPoint = kvp.Key;
+                break;
+            }
+        }
+
         if (occupiedPoint != null)
         {
             occupiedPoints.Remove(occupiedPoint);
@@ -129,32 +146,48 @@ public class ResourceSpawner : MonoBehaviour
             resourceFactory?.ReturnWood(source.gameObject);
         }
 
-        CancelInvoke(nameof(RespawnResource));
-        Invoke(nameof(RespawnResource), respawnTime);
+        // –еспавн в ту же точку через врем€ из данных ресурса
+        if (occupiedPoint != null)
+        {
+            pendingRespawnPoint = occupiedPoint;
+            float respawnDelay = source.ResourceData?.respawnTime ?? 5f; // из ResourceDataSO
+            CancelInvoke(nameof(RespawnResource));
+            Invoke(nameof(RespawnResource), respawnDelay);
+            Debug.Log($"«апланирован респавн через {respawnDelay} сек в точку {occupiedPoint.name}");
+        }
     }
 
     private void RespawnResource()
     {
-        if (spawnPoints == null || spawnPoints.Count == 0) return;
-
-        //  Ќаходим свободные точки
-        List<Transform> freePoints = spawnPoints
-            .Where(p => p != null && !occupiedPoints.Contains(p))
-            .ToList();
-
-        if (freePoints.Count == 0)
+        if (pendingRespawnPoint != null)
         {
-            Debug.LogWarning("ResourceSpawner: нет свободных точек дл€ респавна!");
-            return;
+            SpawnResource(
+                pendingRespawnPoint.position,
+                pendingRespawnPoint.rotation,
+                pendingRespawnPoint
+            );
+            Debug.Log($"–есурс респавнулс€ в точку {pendingRespawnPoint.name}");
+            pendingRespawnPoint = null;
         }
-
-        // ¬ыбираем случайную свободную точку
-        var point = freePoints[Random.Range(0, freePoints.Count)];
-
-        if (point != null)
+        else
         {
-            SpawnResource(point.position, point.rotation, point);
-            Debug.Log($"–есурс респавнулс€ в свободной точке {point.name}");
+            // ≈сли по какой-то причине точка не сохранена Ч ищем свободную
+            List<Transform> freePoints = spawnPoints
+                .Where(p => p != null && !occupiedPoints.ContainsKey(p))
+                .ToList();
+
+            if (freePoints.Count == 0)
+            {
+                Debug.LogWarning("ResourceSpawner: нет свободных точек дл€ респавна!");
+                return;
+            }
+
+            var point = freePoints[Random.Range(0, freePoints.Count)];
+            if (point != null)
+            {
+                SpawnResource(point.position, point.rotation, point);
+                Debug.Log($"–есурс респавнулс€ в свободную точку {point.name}");
+            }
         }
     }
 
