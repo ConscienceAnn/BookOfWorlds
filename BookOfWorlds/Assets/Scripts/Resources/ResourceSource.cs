@@ -14,15 +14,18 @@ public class ResourceSource : MonoBehaviour
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private PauseService pauseService;
+    [Inject] private PlayerUI playerUI;
 
     private bool isAvailable = true;
     private CancellationTokenSource cts;
 
     public string ResourceName => data?.resourceName ?? "Unknown";
 
+
     public ResourceDataSO ResourceData => data;
     public bool IsAvailable => isAvailable;
 
+    public int AmountPerCollect => amountPerCollect;
     private void Awake()
     {
         if (visualState == null)
@@ -56,26 +59,28 @@ public class ResourceSource : MonoBehaviour
         Debug.Log($"ResourceSource.SetData: data теперь = {(data != null ? data.resourceName : "NULL")}");
     }
 
-    public void Interact()
+    public bool Interact()
     {
          Debug.Log($"ResourceSource.Interact: вызван на {gameObject.name}, data = {(data != null ? data.resourceName : "NULL")}");
     
     if (data == null)
     {
         Debug.LogError($"ResourceSource: data is NULL on {gameObject.name}!");
-        return;
+        return false;
     }
 
         if (!isAvailable)
         {
             Debug.Log($"Ресурс {data.resourceName} ещё не восстановился!");
-            return;
+            playerUI?.ShowNotification($"Ресурс {data.resourceName} ещё не восстановился!");
+            return false;
         }
 
         if (!inventory.CanAdd(data.resourceName, amountPerCollect))
         {
             Debug.Log($"Нет места для {data.resourceName}!");
-            return;
+            playerUI?.ShowNotification($"Инвентарь для {data.resourceName} полон!");
+            return false;
         }
 
         inventory.TryAdd(data.resourceName, amountPerCollect);
@@ -90,6 +95,7 @@ public class ResourceSource : MonoBehaviour
         OnCollected?.Invoke(this);
 
         Debug.Log($"Собран {data.resourceName} (+{amountPerCollect})");
+        return true;
     }
 
     public event System.Action<ResourceSource> OnCollected;

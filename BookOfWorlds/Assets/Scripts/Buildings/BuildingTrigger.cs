@@ -49,9 +49,4 @@ public class BuildingTrigger : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(transform.position, transform.localScale);
-    }
 }

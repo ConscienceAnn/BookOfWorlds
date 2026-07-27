@@ -1,5 +1,6 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using Zenject;
 
 public class PlayerCollector : MonoBehaviour
 {
@@ -14,6 +15,9 @@ public class PlayerCollector : MonoBehaviour
     public event System.Action<ResourceSource> OnCollectStart;
     public event System.Action<ResourceSource> OnCollectComplete;
 
+    [Inject] private IPlayerInventory inventory; 
+    [Inject] private PlayerUI playerUI;
+
     private void Awake()
     {
         stateManager = GetComponent<PlayerStateManager>();
@@ -27,9 +31,18 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
+
+        // 1. Ресурс
         ResourceSource target = FindCollectable();
         if (target != null)
         {
+            //  Проверяем инвентарь ДО начала сбора
+            if (!inventory.CanAdd(target.ResourceName, target.AmountPerCollect))
+            {
+                playerUI?.ShowNotification($"Инвентарь для {target.ResourceName} полон!");
+                return;
+            }
+
             StartCollect(target);
             return;
         }
@@ -162,9 +175,17 @@ public class PlayerCollector : MonoBehaviour
     {
         if (target != null && target.IsAvailable)
         {
-            target.Interact();
-            OnCollectComplete?.Invoke(target);
-            Debug.Log($"Собран {target.ResourceName}");
+            bool success = target.Interact();
+
+            if (success)
+            {
+                OnCollectComplete?.Invoke(target);
+                Debug.Log($"Собран {target.ResourceName}");
+            }
+            else
+            {
+                Debug.Log($"Не удалось собрать {target.ResourceName} (инвентарь полон или другая ошибка)");
+            }
         }
         else
         {

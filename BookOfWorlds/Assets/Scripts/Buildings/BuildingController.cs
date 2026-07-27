@@ -100,9 +100,10 @@ public class BuildingController : MonoBehaviour
         }
         else
         {
+            
             if (playerUI != null)
             {
-                playerUI.UpdateCostTextForBuilding(this);
+                playerUI.UpdateBuildingCostImmediate();
             }
             EventBus.BuildingProgressChanged(this);
         }
@@ -202,9 +203,32 @@ public class BuildingController : MonoBehaviour
 
         Debug.Log($"  - allComplete: {allComplete}");
 
+        
+
         if (allComplete)
         {
+            // 1. Обновляем UI (слайдер должен показать 100%)
+            if (playerUI != null)
+            {
+                playerUI.UpdateBuildingCost();
+            }
+
+            // 2. Получаем длительность анимации через PlayerUI
+            float animationDuration = playerUI != null ? playerUI.GetBuildingPromptAnimationDuration() : 0.5f;
+
+            // 3. Ждём, пока анимация слайдера завершится
+            await UniTask.Delay((int)(animationDuration * 1000) + 200);
+
+            // 4. Показываем финальный прогресс (100%)
+            if (playerUI != null)
+            {
+                playerUI.UpdateBuildingCostImmediate();
+            }
+
+            // 5. Небольшая пауза, чтобы игрок увидел 100%
             await UniTask.Delay(500);
+
+            // 6. Восстанавливаем здание
             UpdateVisual(true);
 
             var trigger = GetComponentInChildren<BuildingTrigger>();
@@ -213,6 +237,7 @@ public class BuildingController : MonoBehaviour
                 trigger.gameObject.SetActive(false);
             }
 
+            // 7. Скрываем подсказку
             if (playerUI != null)
             {
                 playerUI.HideBuildingPrompt();
@@ -222,6 +247,11 @@ public class BuildingController : MonoBehaviour
         }
         else
         {
+            // Частичный прогресс — просто обновляем UI
+            if (playerUI != null)
+            {
+                playerUI.UpdateBuildingCost();
+            }
             EventBus.BuildingProgressChanged(this);
         }
 

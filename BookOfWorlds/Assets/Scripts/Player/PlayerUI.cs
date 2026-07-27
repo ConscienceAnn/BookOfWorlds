@@ -1,41 +1,37 @@
 using UnityEngine;
 using TMPro;
-using System.Collections.Generic;
 
 public class PlayerUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private Canvas promptCanvas;
-    [SerializeField] private TMP_Text titleText;
-    [SerializeField] private TMP_Text costText;
-
-    [Header("Settings")]
-    [SerializeField] private string title = "Нажмите E для восстановления";
     [SerializeField] private Vector2 screenOffset = new Vector2(0, 80);
 
-    private BuildingController currentBuilding;
+    [Header("Building Prompt")]
+    [SerializeField] private BuildingPromptUI buildingPromptUI;
+
+    [Header("Notification")]
+    [SerializeField] private NotificationUI notificationUI;
+
     private Camera mainCamera;
     private RectTransform canvasRect;
-    private BuildingTrigger currentTrigger;
 
     private void Start()
     {
         mainCamera = Camera.main;
         canvasRect = promptCanvas.GetComponent<RectTransform>();
 
-        if (titleText != null) titleText.text = title;
         if (promptCanvas != null)
             promptCanvas.gameObject.SetActive(false);
 
-        // Подписываемся на события через EventBus
-        EventBus.OnBuildingRestored += OnBuildingRestored;
         EventBus.OnBuildingProgressChanged += OnBuildingProgressChanged;
+        EventBus.OnBuildingRestored += OnBuildingRestored;
     }
 
     private void OnDestroy()
     {
-        EventBus.OnBuildingRestored -= OnBuildingRestored;
         EventBus.OnBuildingProgressChanged -= OnBuildingProgressChanged;
+        EventBus.OnBuildingRestored -= OnBuildingRestored;
     }
 
     private void Update()
@@ -60,98 +56,60 @@ public class PlayerUI : MonoBehaviour
 
     public void ShowBuildingPrompt(BuildingController building)
     {
-        if (building == null || building.IsRestored()) return;
-
-        currentBuilding = building;
         promptCanvas.gameObject.SetActive(true);
-        UpdateCostText();
-        Debug.Log($"Показана подсказка для {building.GetBuildingName()}");
+        buildingPromptUI?.Show(building);
     }
 
     public void HideBuildingPrompt()
     {
+        buildingPromptUI?.Hide();
         promptCanvas.gameObject.SetActive(false);
-        currentBuilding = null;
-        Debug.Log("Подсказка скрыта");
     }
 
-    public void UpdateCostText()
+    public void UpdateBuildingCost()
     {
-        if (currentBuilding == null || costText == null) return;
-
-        var costs = currentBuilding.GetCosts();
-        if (costs == null) return;
-
-        string costString = "";
-        foreach (var cost in costs)
-        {
-            int invested = currentBuilding.GetInvestedAmount(cost.resourceName);
-            int required = currentBuilding.GetRequiredAmount(cost.resourceName);
-            costString += $"{cost.resourceName}: {invested}/{required}\n";
-        }
-        costText.text = costString;
+        buildingPromptUI?.UpdateCostText();
     }
 
-    public void UpdateCostTextForBuilding(BuildingController building)
+    public void UpdateBuildingCostImmediate()
     {
-        if (building == null)
-        {
-            Debug.LogWarning("UpdateCostTextForBuilding: building is NULL!");
-            return;
-        }
-
-        if (costText == null)
-        {
-            Debug.LogWarning("UpdateCostTextForBuilding: costText is NULL!");
-            return;
-        }
-
-        var costs = building.GetCosts();
-        if (costs == null)
-        {
-            Debug.LogWarning($"UpdateCostTextForBuilding: costs is NULL for {building.GetBuildingName()}");
-            return;
-        }
-
-        Debug.Log($"UpdateCostTextForBuilding: {building.GetBuildingName()}");
-
-        string costString = "";
-        foreach (var cost in costs)
-        {
-            int invested = building.GetInvestedAmount(cost.resourceName);
-            int required = building.GetRequiredAmount(cost.resourceName);
-            costString += $"{cost.resourceName}: {invested}/{required}\n";
-            Debug.Log($"  - {cost.resourceName}: invested={invested}, required={required}");
-        }
-        costText.text = costString;
-
-        Debug.Log($"UpdateCostTextForBuilding: costText = '{costString.Replace("\n", " ")}'");
+        buildingPromptUI?.UpdateCostTextImmediate();
     }
 
-    private void OnBuildingRestored(BuildingController building)
+    public float GetBuildingPromptAnimationDuration()
     {
-        if (currentBuilding == building)
+        return buildingPromptUI != null ? buildingPromptUI.AnimationDuration : 0.5f;
+    }
+
+    public void ShowNotification(string message, float duration = 2f)
+    {
+        Debug.Log($"PlayerUI.ShowNotification: {message}");
+
+        // Активируем Canvas для уведомления
+        if (promptCanvas != null && !promptCanvas.gameObject.activeSelf)
         {
-            HideBuildingPrompt();
+            promptCanvas.gameObject.SetActive(true);
         }
-        Debug.Log($"Здание {building.GetBuildingName()} восстановлено!");
+
+        notificationUI?.Show(message, duration);
     }
 
     private void OnBuildingProgressChanged(BuildingController building)
     {
-        if (currentBuilding == building)
+        if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
         {
-            UpdateCostText();
+            buildingPromptUI.UpdateCostText();
+            Debug.Log($"UI здания обновлён для {building.GetBuildingName()}");
         }
     }
 
-    public void SetCurrentBuilding(BuildingController building)
+    private void OnBuildingRestored(BuildingController building)
     {
-        currentBuilding = building;
-    }
-
-    public BuildingController GetCurrentBuilding()
-    {
-        return currentBuilding;
+        if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
+        {
+            buildingPromptUI.Hide();
+            promptCanvas.gameObject.SetActive(false);
+            Debug.Log($"Здание {building.GetBuildingName()} восстановлено, UI скрыт");
+        }
     }
 }
