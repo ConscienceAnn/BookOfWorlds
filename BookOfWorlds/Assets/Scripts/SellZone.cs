@@ -13,15 +13,15 @@ public class SellZone : MonoBehaviour
     [Inject] private PlayerUI playerUI;
 
     private bool isPlayerNear = false;
-    private bool isSelling = false; //  Блокировка повторного вызова
+    private bool isSelling = false;
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
             isPlayerNear = true;
-            playerUI?.ShowNotification("Здесь можно продать ресурсы. Нажмите E для продажи", 3f);
-            Debug.Log(" Игрок вошёл в зону продажи");
+            playerUI?.ShowNotification("Здесь можно продать ресурсы. Нажмите E для продажи", sellPromptDuration);
+            Debug.Log("Игрок вошёл в зону продажи");
         }
     }
 
@@ -44,7 +44,7 @@ public class SellZone : MonoBehaviour
 
     public void Sell()
     {
-        if (isSelling) return; //  Блокировка повторного вызова
+        if (isSelling) return;
         if (inventory == null)
         {
             Debug.LogError("SellZone: inventory is NULL!");
@@ -76,7 +76,6 @@ public class SellZone : MonoBehaviour
             playerUI?.ShowNotification("Продажа не принесла монет.", 2.5f);
         }
 
-        //  Разблокируем через небольшую задержку, чтобы уведомление успело показаться
         Invoke(nameof(ResetSellState), 0.5f);
     }
 

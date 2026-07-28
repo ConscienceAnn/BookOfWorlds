@@ -8,12 +8,16 @@ public class AnimalController : MonoBehaviour
 
     [Header("Visuals")]
     [SerializeField] private Animator animator;
-    [SerializeField] private VisualState visualState; 
+    [SerializeField] private VisualState visualState;
+
+    [Header("Progress Bar")]
+    [SerializeField] private ProgressBarUI progressBar;
 
     [Inject] private IPlayerInventory inventory;
+    [Inject] private PlayerUI playerUI; 
 
     private bool isAvailable = true;
-    private float cooldownTimer = 0f;
+    private CowBehaviour behaviour;
 
     public bool IsAvailable => isAvailable;
     public string ResourceName => animalData.resourceData.resourceName;
@@ -28,6 +32,17 @@ public class AnimalController : MonoBehaviour
                 visualState = GetComponentInChildren<VisualState>();
             }
         }
+
+        behaviour = new CowBehaviour(progressBar, animalData.cooldownTime);
+        behaviour.OnCowRespawned += OnCowRespawned;
+    }
+
+    private void OnDestroy()
+    {
+        if (behaviour != null)
+        {
+            behaviour.OnCowRespawned -= OnCowRespawned;
+        }
     }
 
     private void Start()
@@ -41,35 +56,19 @@ public class AnimalController : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (!isAvailable)
-        {
-            cooldownTimer -= Time.deltaTime;
-            if (cooldownTimer <= 0)
-            {
-                isAvailable = true;
-
-                if (visualState != null)
-                {
-                    visualState.SetColored();
-                }
-
-                Debug.Log($" {animalData.animalName} готова дать {ResourceName}!");
-            }
-        }
-    }
-
     public void Interact()
     {
         if (!isAvailable)
         {
+            //  Добавляем уведомление
+            playerUI?.ShowNotification($" {animalData.animalName} ещё не готова дать {ResourceName}!", 2f);
             Debug.Log($" {animalData.animalName} ещё не готова!");
             return;
         }
 
         if (!inventory.CanAdd(ResourceName, animalData.resourceAmount))
         {
+            playerUI?.ShowNotification($" Нет места для {ResourceName}!", 2f);
             Debug.Log($" Нет места для {ResourceName}!");
             return;
         }
@@ -77,16 +76,29 @@ public class AnimalController : MonoBehaviour
         inventory.TryAdd(ResourceName, animalData.resourceAmount);
 
         isAvailable = false;
-        cooldownTimer = animalData.cooldownTime;
 
         if (visualState != null)
         {
             visualState.SetGray();
         }
 
+        behaviour.OnCollect(transform);
+
         PlayCollectAnimation();
 
-        Debug.Log($"Собрано {ResourceName} (+{animalData.resourceAmount}) от {animalData.animalName}");
+        Debug.Log($" Собрано {ResourceName} (+{animalData.resourceAmount}) от {animalData.animalName}");
+    }
+
+    private void OnCowRespawned()
+    {
+        isAvailable = true;
+
+        if (visualState != null)
+        {
+            visualState.SetColored();
+        }
+
+        Debug.Log($" {animalData.animalName} готова дать {ResourceName}!");
     }
 
     private void PlayCollectAnimation()
@@ -97,9 +109,13 @@ public class AnimalController : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
+    public string GetAnimalName()
     {
-        Gizmos.color = isAvailable ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(transform.position, 1f);
+        return animalData.animalName;
+    }
+
+    public string GetResourceName()
+    {
+        return animalData.resourceData.resourceName;
     }
 }

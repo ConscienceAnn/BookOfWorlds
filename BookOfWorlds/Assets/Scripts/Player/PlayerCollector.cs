@@ -27,16 +27,15 @@ public class PlayerCollector : MonoBehaviour
     {
         if (isCollecting)
         {
+            playerUI?.ShowNotification("Уже собираем ресурс...", 1.5f);
             Debug.Log("Уже собираем ресурс...");
             return;
         }
-
 
         // 1. Ресурс
         ResourceSource target = FindCollectable();
         if (target != null)
         {
-            //  Проверяем инвентарь ДО начала сбора
             if (!inventory.CanAdd(target.ResourceName, target.AmountPerCollect))
             {
                 playerUI?.ShowNotification($"Инвентарь для {target.ResourceName} полон!");
@@ -47,6 +46,7 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
+        // 2. Зона продажи
         SellZone sellZone = FindSellZone();
         if (sellZone != null)
         {
@@ -54,6 +54,7 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
+        // 3. Здание
         BuildingController building = FindBuilding();
         if (building != null)
         {
@@ -62,9 +63,15 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        AnimalController animal = FindAnimal();
+        // 4. Животное
+        AnimalController animal = FindAnimalAnyState(); //  новый метод
         if (animal != null)
         {
+            if (!animal.IsAvailable)
+            {
+                playerUI?.ShowNotification($" {animal.GetAnimalName()} ещё не готова дать {animal.GetResourceName()}!");
+                return;
+            }
             animal.Interact();
             return;
         }
@@ -112,16 +119,17 @@ public class PlayerCollector : MonoBehaviour
         return null;
     }
 
-    private AnimalController FindAnimal()
+    private AnimalController FindAnimalAnyState()
     {
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
         foreach (var hit in hitColliders)
         {
-            AnimalController animal = hit.GetComponent<AnimalController>();
-            if (animal != null && animal.IsAvailable)
-                return animal;
+            AnimalController animal = hit.GetComponentInParent<AnimalController>();
+            if (animal != null)
+                return animal; //  возвращаем ЛЮБОЕ животное, даже недоступное
         }
         return null;
+    
     }
 
     private void StartCollect(ResourceSource target)

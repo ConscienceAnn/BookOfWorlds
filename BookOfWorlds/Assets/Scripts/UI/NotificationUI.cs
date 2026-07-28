@@ -6,15 +6,24 @@ public class NotificationUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private TMP_Text notificationText;
+    [SerializeField] private Canvas parentCanvas;
 
     private Coroutine hideCoroutine;
+
+    private void Awake()
+    {
+        if (parentCanvas == null)
+            parentCanvas = GetComponentInParent<Canvas>();
+
+        if (parentCanvas == null)
+            Debug.LogError("NotificationUI: parentCanvas not found!");
+    }
 
     private void Start()
     {
         if (notificationText != null)
-        {
             notificationText.gameObject.SetActive(false);
-        }
+
         gameObject.SetActive(false);
     }
 
@@ -26,21 +35,27 @@ public class NotificationUI : MonoBehaviour
             return;
         }
 
-        Debug.Log($"NotificationUI.Show() вызван: {message}");
+        Debug.Log($"NotificationUI.Show() called: {message}");
 
-        //  Активируем родительский объект (если есть)
-        Transform parent = transform.parent;
-        if (parent != null && !parent.gameObject.activeSelf)
+        if (parentCanvas != null)
         {
-            parent.gameObject.SetActive(true);
-            Debug.Log($"  - родитель {parent.name} активирован");
+            if (!parentCanvas.gameObject.activeSelf)
+            {
+                parentCanvas.gameObject.SetActive(true);
+                Debug.Log("NotificationUI: Canvas was disabled, enabled!");
+            }
+            else
+            {
+                Debug.Log("NotificationUI: Canvas already enabled");
+            }
         }
 
-        //  Активируем текущий объект
         gameObject.SetActive(true);
 
-        notificationText.text = $" {message}";
+        notificationText.text = message;
         notificationText.gameObject.SetActive(true);
+
+        Canvas.ForceUpdateCanvases();
 
         Debug.Log($"  - gameObject.activeSelf: {gameObject.activeSelf}");
         Debug.Log($"  - notificationText.activeSelf: {notificationText.gameObject.activeSelf}");
