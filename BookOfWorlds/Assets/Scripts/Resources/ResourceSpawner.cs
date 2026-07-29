@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using Zenject;
 
 public class ResourceSpawner : MonoBehaviour
 {
@@ -13,6 +14,10 @@ public class ResourceSpawner : MonoBehaviour
     [SerializeField] private Vector3 fixedRotation = new Vector3(-90f, 0f, 0f);
     [SerializeField] private bool useFixedRotation = true;
     [SerializeField] private bool randomYRotation = true;
+
+    [Header("Behaviour")]
+    [SerializeField] private ParticleFactory particleFactory; 
+    [SerializeField] private ResourceFlyAnimation flyAnimation; 
 
     private List<ResourceSource> activeResources = new List<ResourceSource>();
     private Dictionary<Transform, ResourceSource> occupiedPoints = new Dictionary<Transform, ResourceSource>();
@@ -102,6 +107,20 @@ public class ResourceSpawner : MonoBehaviour
         ResourceSource source = obj.GetComponent<ResourceSource>();
         if (source != null)
         {
+            // СОЗДАЁМ ПОВЕДЕНИЕ В ЗАВИСИМОСТИ ОТ ТИПА РЕСУРСА
+            if (isStone)
+            {
+                var behaviour = new StoneBehaviour(particleFactory);
+                source.SetBehaviour(behaviour);
+                Debug.Log($"Создан StoneBehaviour для {obj.name}");
+            }
+            else
+            {
+                var behaviour = new TreeBehaviour(particleFactory);
+                source.SetBehaviour(behaviour);
+                Debug.Log($"Создан TreeBehaviour для {obj.name}");
+            }
+
             source.OnCollected += OnResourceCollected;
             activeResources.Add(source);
 
@@ -110,6 +129,10 @@ public class ResourceSpawner : MonoBehaviour
                 occupiedPoints.Add(spawnPoint, source);
                 Debug.Log($"Точка {spawnPoint.name} занята");
             }
+        }
+        else
+        {
+            Debug.LogWarning($"ResourceSpawner: ResourceSource не найден на {obj.name}");
         }
     }
 
@@ -150,7 +173,7 @@ public class ResourceSpawner : MonoBehaviour
         if (occupiedPoint != null)
         {
             pendingRespawnPoint = occupiedPoint;
-            float respawnDelay = source.ResourceData?.respawnTime ?? 5f; // из ResourceDataSO
+            float respawnDelay = source.ResourceData?.respawnTime ?? 5f;
             CancelInvoke(nameof(RespawnResource));
             Invoke(nameof(RespawnResource), respawnDelay);
             Debug.Log($"Запланирован респавн через {respawnDelay} сек в точку {occupiedPoint.name}");
@@ -161,6 +184,32 @@ public class ResourceSpawner : MonoBehaviour
     {
         if (pendingRespawnPoint != null)
         {
+            // Проверяем, свободна ли точка
+            if (IsPositionOccupied(pendingRespawnPoint.position))
+            {
+                // Ищем другую свободную точку
+                List<Transform> freePoints = spawnPoints
+                    .Where(p => p != null && !occupiedPoints.ContainsKey(p))
+                    .ToList();
+
+                if (freePoints.Count > 0)
+                {
+                    var point = freePoints[Random.Range(0, freePoints.Count)];
+                    if (point != null)
+                    {
+                        SpawnResource(point.position, point.rotation, point);
+                        Debug.Log($"Ресурс респавнулся в свободную точку {point.name}");
+                        pendingRespawnPoint = null;
+                        return;
+                    }
+                }
+
+                // Если свободных точек нет — ждём 0.5 сек и пробуем снова
+                Debug.LogWarning("Нет свободных точек, повторная попытка через 0.5 сек");
+                Invoke(nameof(RespawnResource), 0.5f);
+                return;
+            }
+
             SpawnResource(
                 pendingRespawnPoint.position,
                 pendingRespawnPoint.rotation,
@@ -190,7 +239,19 @@ public class ResourceSpawner : MonoBehaviour
             }
         }
     }
-
+    private bool IsPositionOccupied(Vector3 position)
+    {
+        // Проверяем наличие игрока в радиусе 2f
+        Collider[] colliders = Physics.OverlapSphere(position, 4f);
+        foreach (var collider in colliders)
+        {
+            if (collider.CompareTag("Player"))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     public int GetActiveResourceCount()
     {
         return activeResources.Count;

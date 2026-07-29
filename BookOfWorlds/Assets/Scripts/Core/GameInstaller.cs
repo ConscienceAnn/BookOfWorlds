@@ -32,6 +32,8 @@ public class GameInstaller : MonoInstaller
     [Header("Game Save")]
     [SerializeField] private GameSaveController gameSaveController;
 
+    [Header("Particle Factory")]
+    [SerializeField] private ParticleFactory particleFactory;
 
     public override void InstallBindings()
     {
@@ -120,6 +122,10 @@ public class GameInstaller : MonoInstaller
 
         Container.Bind<ResourceFactory>()
             .FromInstance(resourceFactory)
+            .AsSingle();
+
+        Container.Bind<ParticleFactory>()
+            .FromInstance(particleFactory)
             .AsSingle();
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");

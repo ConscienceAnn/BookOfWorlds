@@ -13,25 +13,23 @@ public class PlayerMovement : MonoBehaviour
     [Inject] private Camera mainCamera;
 
     private Rigidbody rb;
-    private PlayerStateManager stateManager;
+    private PlayerController playerController;
     private Vector2 moveInput;
     private Vector3 moveDirection;
     private float currentSpeed;
 
     public Vector3 MoveDirection => moveDirection;
-    public bool IsMoving => moveInput.magnitude > minMoveThreshold;
+    public bool IsMoving => moveInput.magnitude > 0.1f;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        stateManager = GetComponent<PlayerStateManager>();
+        playerController = GetComponent<PlayerController>();
 
-        
         rb.constraints = RigidbodyConstraints.FreezeRotationX |
                         RigidbodyConstraints.FreezeRotationY |
                         RigidbodyConstraints.FreezeRotationZ;
 
-      
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.maxAngularVelocity = 0.01f;
@@ -40,43 +38,44 @@ public class PlayerMovement : MonoBehaviour
     public void SetMoveInput(Vector2 input)
     {
         moveInput = input;
-
-        if (!stateManager.IsCollecting())
-        {
-            UpdateMovementState();
-        }
-    }
-
-    private void UpdateMovementState()
-    {
-        float inputMagnitude = moveInput.magnitude;
-        PlayerState newState;
-
-        if (inputMagnitude < minMoveThreshold)
-        {
-            newState = PlayerState.Idle;
-            currentSpeed = 0f;
-        }
-        else if (inputMagnitude > runThreshold)
-        {
-            newState = PlayerState.Run;
-            currentSpeed = runSpeed;
-        }
-        else
-        {
-            newState = PlayerState.Walk;
-            currentSpeed = walkSpeed;
-        }
-
-        stateManager.ChangeState(newState);
     }
 
     public void FixedUpdateMovement()
     {
-        if (stateManager.IsCollecting()) return;
+        //  Проверяем, не собирает ли игрок
+        if (playerController != null && playerController.IsCollecting)
+        {
+            // Если собирает — останавливаемся
+            rb.velocity = new Vector3(0, rb.velocity.y, 0);
+            return;
+        }
 
         Move();
         Rotate();
+
+        // Обновляем состояние в зависимости от движения
+        UpdateMovementState();
+    }
+
+    private void UpdateMovementState()
+    {
+        if (playerController == null || playerController.StateMachine == null) return;
+
+        float inputMagnitude = moveInput.magnitude;
+
+        if (inputMagnitude < minMoveThreshold)
+        {
+            currentSpeed = 0f;
+            // Состояние Idle установит сам PlayerStateMachine через IsMoving
+        }
+        else if (inputMagnitude > runThreshold)
+        {
+            currentSpeed = runSpeed;
+        }
+        else
+        {
+            currentSpeed = walkSpeed;
+        }
     }
 
     private void Move()
@@ -101,7 +100,6 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            
             Vector3 velocity = rb.velocity;
             velocity.x = 0;
             velocity.z = 0;
@@ -112,7 +110,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void Rotate()
     {
-      
         if (moveDirection.magnitude > minMoveThreshold && currentSpeed > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);

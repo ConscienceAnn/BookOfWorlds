@@ -119,7 +119,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   data: {fileID: 11400000, guid: 469efbddbd517ed42bdf191c861c8b83, type: 2}
   amountPerCollect: 10
-  visualState: {fileID: 0}
+  visualState: {fileID: 7845226802457965590}
 --- !u!114 &7845226802457965590
 MonoBehaviour:
   m_ObjectHideFlags: 0

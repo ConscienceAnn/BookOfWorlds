@@ -28,24 +28,19 @@ public class WorldSpaceUIFollower : MonoBehaviour
     {
         if (!followTarget || target == null || mainCamera == null)
         {
-            if (gameObject.activeSelf)
-                gameObject.SetActive(false);
             return;
         }
 
         Vector3 worldPos = target.position + worldOffset;
         Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPos);
 
+        //  Если объект за камерой — просто не обновляем позицию, НО НЕ ВЫКЛЮЧАЕМ
         if (screenPos.z < 0)
         {
-            if (gameObject.activeSelf)
-                gameObject.SetActive(false);
             return;
         }
 
-        if (!gameObject.activeSelf)
-            gameObject.SetActive(true);
-
+        //  Обновляем позицию (объект остаётся включённым)
         rectTransform.position = screenPos;
     }
 

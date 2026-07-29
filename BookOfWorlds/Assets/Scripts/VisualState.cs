@@ -3,32 +3,31 @@ using UnityEngine;
 public class VisualState : MonoBehaviour
 {
     [Header("Settings")]
-    [SerializeField] private Material activeMaterial;      // Оригинальный материал
-    [SerializeField] private Material inactiveMaterial;    // Серый/бесцветный материал
-    [SerializeField] private bool useDefaultInactive = true; // Использовать стандартный серый
+    [SerializeField] private Material activeMaterial;
+    [SerializeField] private Material inactiveMaterial;
+    [SerializeField] private bool useDefaultInactive = true;
 
     private Renderer[] renderers;
     private Material[] originalMaterials;
 
     private void Awake()
     {
-        // Находим все рендеры на объекте и дочерних
         renderers = GetComponentsInChildren<Renderer>();
         originalMaterials = new Material[renderers.Length];
 
-        // Сохраняем оригинальные материалы
         for (int i = 0; i < renderers.Length; i++)
         {
-            originalMaterials[i] = renderers[i].sharedMaterial;
+            if (renderers[i] != null)
+            {
+                originalMaterials[i] = renderers[i].sharedMaterial;
+            }
         }
 
-        // Если активный материал не задан — используем оригинальный
-        if (activeMaterial == null && renderers.Length > 0)
+        if (activeMaterial == null && renderers.Length > 0 && renderers[0] != null)
         {
             activeMaterial = originalMaterials[0];
         }
 
-        // Если неактивный материал не задан — создаём серый
         if (inactiveMaterial == null && useDefaultInactive)
         {
             inactiveMaterial = CreateGrayMaterial();
@@ -38,67 +37,79 @@ public class VisualState : MonoBehaviour
     private Material CreateGrayMaterial()
     {
         Material grayMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        grayMat.color = Color.gray;
-        grayMat.SetFloat("_Smoothness", 0.2f);
+        if (grayMat != null)
+        {
+            grayMat.color = Color.gray;
+            grayMat.SetFloat("_Smoothness", 0.2f);
+        }
+        else
+        {
+            // Fallback для Standard
+            grayMat = new Material(Shader.Find("Standard"));
+            grayMat.color = Color.gray;
+        }
         return grayMat;
-    }
-
-    public void SetActive(bool isActive)
-    {
-        if (renderers == null || renderers.Length == 0) return;
-
-        foreach (var renderer in renderers)
-        {
-            renderer.sharedMaterial = isActive ? activeMaterial : inactiveMaterial;
-        }
-    }
-
-    public void SetActiveMaterial(Material material)
-    {
-        if (renderers == null || renderers.Length == 0) return;
-
-        foreach (var renderer in renderers)
-        {
-            renderer.sharedMaterial = material;
-        }
-    }
-
-    public void RestoreOriginalMaterials()
-    {
-        if (renderers == null || renderers.Length == 0) return;
-
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (i < originalMaterials.Length)
-            {
-                renderers[i].sharedMaterial = originalMaterials[i];
-            }
-        }
     }
 
     public void SetGray()
     {
-        SetActive(false);
+        Debug.Log($"[VisualState] SetGray() ВЫЗВАН для {gameObject.name}");
+        Debug.Log($"   - renderers: {(renderers != null ? renderers.Length.ToString() : "NULL")}");
+
+        if (renderers == null || renderers.Length == 0)
+        {
+            Debug.LogWarning($"   - renderers = null или пустой!");
+            return;
+        }
+
+        if (inactiveMaterial == null)
+        {
+            Debug.LogWarning($"   - inactiveMaterial = NULL, создаём...");
+            inactiveMaterial = CreateGrayMaterial();
+            if (inactiveMaterial == null)
+            {
+                Debug.LogError($"   - НЕ УДАЛОСЬ создать серый материал!");
+                return;
+            }
+            Debug.Log($"   - серый материал создан");
+        }
+
+        int changedCount = 0;
+        foreach (var renderer in renderers)
+        {
+            if (renderer != null)
+            {
+                renderer.sharedMaterial = inactiveMaterial;
+                changedCount++;
+                Debug.Log($"   - материал изменён для {renderer.name}");
+            }
+        }
+        Debug.Log($"   - изменено материалов: {changedCount}");
     }
 
     public void SetColored()
     {
-        RestoreOriginalMaterials();
-    }
+        Debug.Log($" [VisualState] SetColored() ВЫЗВАН для {gameObject.name}");
+        Debug.Log($"   - renderers: {(renderers != null ? renderers.Length.ToString() : "NULL")}");
+        Debug.Log($"   - originalMaterials: {(originalMaterials != null ? originalMaterials.Length.ToString() : "NULL")}");
 
-    // Визуализация в Editor
-    private void OnDrawGizmosSelected()
-    {
-        if (renderers != null)
+        if (renderers == null || renderers.Length == 0) return;
+
+        int restoredCount = 0;
+        for (int i = 0; i < renderers.Length; i++)
         {
-            Gizmos.color = Color.cyan;
-            foreach (var renderer in renderers)
+            if (renderers[i] != null && i < originalMaterials.Length && originalMaterials[i] != null)
             {
-                if (renderer != null)
-                {
-                    Gizmos.DrawWireCube(renderer.bounds.center, renderer.bounds.size);
-                }
+                renderers[i].sharedMaterial = originalMaterials[i];
+                restoredCount++;
+                Debug.Log($"   - материал восстановлен для {renderers[i].name}");
             }
         }
+        Debug.Log($"  - восстановлено материалов: {restoredCount}");
+    }
+
+    public void RestoreOriginalMaterials()
+    {
+        SetColored();
     }
 }

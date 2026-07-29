@@ -8,19 +8,21 @@ public class PlayerCollector : MonoBehaviour
     [SerializeField] private float collectDuration = 1.5f;
     [SerializeField] private float interactRange = 2f;
 
-    private PlayerStateManager stateManager;
-    private ResourceSource currentTarget;
+    private PlayerController playerController;
+    private ICollectable currentTarget;
     private bool isCollecting = false;
 
-    public event System.Action<ResourceSource> OnCollectStart;
-    public event System.Action<ResourceSource> OnCollectComplete;
+    public event System.Action<ICollectable> OnCollectStart;
+    public event System.Action<ICollectable> OnCollectComplete;
 
-    [Inject] private IPlayerInventory inventory; 
+    [Inject] private IPlayerInventory inventory;
     [Inject] private PlayerUI playerUI;
+
+    public bool IsCollecting => isCollecting;
 
     private void Awake()
     {
-        stateManager = GetComponent<PlayerStateManager>();
+        playerController = GetComponent<PlayerController>();
     }
 
     public void TryInteract()
@@ -28,21 +30,22 @@ public class PlayerCollector : MonoBehaviour
         if (isCollecting)
         {
             playerUI?.ShowNotification("Уже собираем ресурс...", 1.5f);
-            Debug.Log("Уже собираем ресурс...");
             return;
         }
 
-        // 1. Ресурс
-        ResourceSource target = FindCollectable();
-        if (target != null)
+        // 1. Находим любой собираемый объект
+        ICollectable collectable = FindCollectable();
+        if (collectable != null)
         {
-            if (!inventory.CanAdd(target.ResourceName, target.AmountPerCollect))
+            // Проверяем инвентарь
+            if (!inventory.CanAdd(collectable.GetResourceName(), collectable.GetAmount()))
             {
-                playerUI?.ShowNotification($"Инвентарь для {target.ResourceName} полон!");
+                playerUI?.ShowNotification($"Инвентарь для {collectable.GetResourceName()} полон!");
                 return;
             }
 
-            StartCollect(target);
+            // Запускаем сбор (универсально!)
+            StartCollect(collectable);
             return;
         }
 
@@ -63,30 +66,26 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        // 4. Животное
-        AnimalController animal = FindAnimalAnyState(); //  новый метод
-        if (animal != null)
-        {
-            if (!animal.IsAvailable)
-            {
-                playerUI?.ShowNotification($" {animal.GetAnimalName()} ещё не готова дать {animal.GetResourceName()}!");
-                return;
-            }
-            animal.Interact();
-            return;
-        }
-
         Debug.Log("Рядом нет ресурсов, зоны продажи, зданий или животных");
     }
 
-    private ResourceSource FindCollectable()
+    /// <summary>
+    /// Поиск собираемого объекта в радиусе
+    /// </summary>
+    private ICollectable FindCollectable()
     {
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
         foreach (var hit in hitColliders)
         {
+            // Проверяем ResourceSource (деревья, камни)
             ResourceSource resource = hit.GetComponent<ResourceSource>();
             if (resource != null && resource.IsAvailable)
                 return resource;
+
+            // Проверяем AnimalController (корова)
+            AnimalController animal = hit.GetComponentInParent<AnimalController>();
+            if (animal != null && animal.IsAvailable)
+                return animal;
         }
         return null;
     }
@@ -119,35 +118,29 @@ public class PlayerCollector : MonoBehaviour
         return null;
     }
 
-    private AnimalController FindAnimalAnyState()
-    {
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
-        foreach (var hit in hitColliders)
-        {
-            AnimalController animal = hit.GetComponentInParent<AnimalController>();
-            if (animal != null)
-                return animal; //  возвращаем ЛЮБОЕ животное, даже недоступное
-        }
-        return null;
-    
-    }
-
-    private void StartCollect(ResourceSource target)
+    /// <summary>
+    /// Универсальный старт сбора для любого объекта, реализующего ICollectable
+    /// </summary>
+    private void StartCollect(ICollectable collectable)
     {
         isCollecting = true;
-        currentTarget = target;
+        currentTarget = collectable;
 
-        stateManager.ChangeState(PlayerState.Collect);
-        RotateToTarget(target.transform);
+        // Поворачиваемся к объекту
+        RotateToTarget(collectable.GetTransform());
 
-        OnCollectStart?.Invoke(target);
-        Debug.Log($"Начинаем сбор: {target.ResourceName}");
+        // Вызываем событие
+        OnCollectStart?.Invoke(collectable);
+        Debug.Log($" Начинаем сбор: {collectable.GetResourceName()}");
 
-        CollectAsync(target).Forget();
+        // Запускаем асинхронный сбор
+        CollectAsync(collectable).Forget();
     }
 
     private void RotateToTarget(Transform target)
     {
+        if (target == null) return;
+
         Vector3 direction = (target.position - transform.position).normalized;
         direction.y = 0;
 
@@ -158,7 +151,10 @@ public class PlayerCollector : MonoBehaviour
         }
     }
 
-    private async UniTaskVoid CollectAsync(ResourceSource target)
+    /// <summary>
+    /// Асинхронный процесс сбора
+    /// </summary>
+    private async UniTaskVoid CollectAsync(ICollectable collectable)
     {
         float timer = 0f;
 
@@ -166,7 +162,8 @@ public class PlayerCollector : MonoBehaviour
         {
             timer += Time.deltaTime;
 
-            if (target == null || !target.IsAvailable)
+            // Проверяем, доступен ли объект
+            if (collectable == null || !collectable.IsAvailable)
             {
                 Debug.Log("Ресурс пропал во время сбора");
                 FinishCollect();
@@ -176,23 +173,23 @@ public class PlayerCollector : MonoBehaviour
             await UniTask.Yield(this.GetCancellationTokenOnDestroy());
         }
 
-        CompleteCollect(target);
+        CompleteCollect(collectable);
     }
 
-    private void CompleteCollect(ResourceSource target)
+    private void CompleteCollect(ICollectable collectable)
     {
-        if (target != null && target.IsAvailable)
+        if (collectable != null && collectable.IsAvailable)
         {
-            bool success = target.Interact();
+            bool success = collectable.TryCollect();
 
             if (success)
             {
-                OnCollectComplete?.Invoke(target);
-                Debug.Log($"Собран {target.ResourceName}");
+                OnCollectComplete?.Invoke(collectable);
+                Debug.Log($" Собран {collectable.GetResourceName()}");
             }
             else
             {
-                Debug.Log($"Не удалось собрать {target.ResourceName} (инвентарь полон или другая ошибка)");
+                Debug.Log($" Не удалось собрать {collectable.GetResourceName()}");
             }
         }
         else
@@ -207,19 +204,7 @@ public class PlayerCollector : MonoBehaviour
     {
         isCollecting = false;
         currentTarget = null;
-
-        var movement = GetComponent<PlayerMovement>();
-        if (movement != null && movement.IsMoving)
-        {
-            stateManager.ChangeState(PlayerState.Run);
-        }
-        else
-        {
-            stateManager.ChangeState(PlayerState.Idle);
-        }
     }
-
-    public bool IsCollecting() => isCollecting;
 
     private void OnDrawGizmosSelected()
     {

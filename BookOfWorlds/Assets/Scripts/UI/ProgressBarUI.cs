@@ -6,7 +6,6 @@ public class ProgressBarUI : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private Slider progressSlider;
     [SerializeField] private WorldSpaceUIFollower uiFollower;
-    [SerializeField] private Canvas parentCanvas;
 
     private void Awake()
     {
@@ -15,14 +14,15 @@ public class ProgressBarUI : MonoBehaviour
 
         if (uiFollower == null)
             Debug.LogError("ProgressBarUI: WorldSpaceUIFollower не найден!");
-
-        if (parentCanvas == null)
-            parentCanvas = GetComponentInParent<Canvas>();
     }
 
     private void Start()
     {
-        gameObject.SetActive(false);
+        //  Объект НЕ выключаем, просто скрываем слайдер
+        if (progressSlider != null)
+        {
+            progressSlider.gameObject.SetActive(false);
+        }
         SetProgress(0f);
     }
 
@@ -34,16 +34,10 @@ public class ProgressBarUI : MonoBehaviour
             return;
         }
 
-        // Активируем родительский Canvas
-        if (parentCanvas != null && !parentCanvas.gameObject.activeSelf)
+        //  Показываем слайдер
+        if (progressSlider != null)
         {
-            parentCanvas.gameObject.SetActive(true);
-        }
-
-        // Активируем объект
-        if (!gameObject.activeSelf)
-        {
-            gameObject.SetActive(true);
+            progressSlider.gameObject.SetActive(true);
         }
 
         if (uiFollower != null)
@@ -64,11 +58,15 @@ public class ProgressBarUI : MonoBehaviour
 
     public void Hide()
     {
+        //  Скрываем слайдер, но объект остаётся активным
+        if (progressSlider != null)
+        {
+            progressSlider.gameObject.SetActive(false);
+        }
+
         if (uiFollower != null)
             uiFollower.ClearTarget();
-
-        gameObject.SetActive(false);
     }
 
-    public bool IsActive => gameObject.activeSelf && uiFollower != null && uiFollower.IsFollowing;
+    public bool IsActive => progressSlider != null && progressSlider.gameObject.activeSelf;
 }

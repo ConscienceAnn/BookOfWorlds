@@ -7,28 +7,37 @@ public class PlayerController : MonoBehaviour
 
     private PlayerMovement movement;
     private PlayerCollector collector;
-    private PlayerStateManager stateManager;
+    private Animator animator;
 
-    // Публичные события для внешних систем
-    public event System.Action<ResourceSource> OnCollectStart;   
-    public event System.Action<ResourceSource> OnCollectComplete; 
-    public event System.Action<PlayerState> OnStateChanged;
+    // ===== НОВАЯ STATE MACHINE =====
+    public PlayerStateMachine StateMachine { get; private set; }
+
+    // ===== СВОЙСТВА ДЛЯ СОСТОЯНИЙ =====
+    public bool IsMoving => movement != null && movement.IsMoving;
+    public bool IsCollecting => collector != null && collector.IsCollecting;
+
+    // ===== СОБЫТИЯ =====
+    public event System.Action<ICollectable> OnCollectStart;
+    public event System.Action<ICollectable> OnCollectComplete;
 
     private void Awake()
     {
         movement = GetComponent<PlayerMovement>();
         collector = GetComponent<PlayerCollector>();
-        stateManager = GetComponent<PlayerStateManager>();
+        animator = GetComponent<Animator>();
 
+        //  Добавляем новую State Machine
+        StateMachine = GetComponent<PlayerStateMachine>();
+        if (StateMachine == null)
+        {
+            StateMachine = gameObject.AddComponent<PlayerStateMachine>();
+        }
+
+        //  Подписки на события сбора
         if (collector != null)
         {
             collector.OnCollectStart += HandleCollectStart;
             collector.OnCollectComplete += HandleCollectComplete;
-        }
-
-        if (stateManager != null)
-        {
-            stateManager.OnStateChanged += HandleStateChanged;
         }
     }
 
@@ -39,27 +48,28 @@ public class PlayerController : MonoBehaviour
             collector.OnCollectStart -= HandleCollectStart;
             collector.OnCollectComplete -= HandleCollectComplete;
         }
+    }
 
-        if (stateManager != null)
+    // ===== МЕТОД ДЛЯ АНИМАЦИЙ =====
+    public void SetAnimation(string parameter, bool value)
+    {
+        if (animator != null)
         {
-            stateManager.OnStateChanged -= HandleStateChanged;
+            animator.SetBool(parameter, value);
         }
     }
 
-
-    private void HandleCollectStart(ResourceSource target)
+    // ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
+    private void HandleCollectStart(ICollectable target)
     {
         OnCollectStart?.Invoke(target);
+        Debug.Log($" Событие: Начало сбора {target?.GetResourceName()}");
     }
 
-    private void HandleCollectComplete(ResourceSource target)
+    private void HandleCollectComplete(ICollectable target)
     {
         OnCollectComplete?.Invoke(target);
-    }
-
-    private void HandleStateChanged(PlayerState state)
-    {
-        OnStateChanged?.Invoke(state);
+        Debug.Log($" Событие: Завершение сбора {target?.GetResourceName()}");
     }
 
     private void OnEnable()
