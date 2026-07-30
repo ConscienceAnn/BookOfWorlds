@@ -1,11 +1,21 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "AnimalData", menuName = "Game/Animal Data")]
+[CreateAssetMenu(fileName = "AnimalData", menuName = "ScriptableObjects/AnimalData")]
 public class AnimalDataSO : ScriptableObject
 {
-    [Header("Основные параметры")]
     public string animalName;
-    public ResourceDataSO resourceData; //  Ссылка на существующий ResourceDataSO
+    public ResourceDataSO resourceData;
     public int resourceAmount = 1;
     public float cooldownTime = 8f;
+
+    [Header("Movement Settings (для зайца)")]
+    public bool canMove = false;
+    public float moveSpeed = 3f;
+    public float moveRadius = 5f;
+    public float idleTimeMin = 2f;
+    public float idleTimeMax = 5f;
+
+    
+    public enum AnimalType { Cow, Rabbit }
+    public AnimalType animalType;
 }
