@@ -16,8 +16,8 @@ public class ResourceSpawner : MonoBehaviour
     [SerializeField] private bool randomYRotation = true;
 
     [Header("Behaviour")]
-    [SerializeField] private ParticleFactory particleFactory; 
-    [SerializeField] private ResourceFlyAnimation flyAnimation; 
+    [SerializeField] private ParticleFactory particleFactory;
+    [SerializeField] private ResourceFlyAnimation flyAnimation;
 
     private List<ResourceSource> activeResources = new List<ResourceSource>();
     private Dictionary<Transform, ResourceSource> occupiedPoints = new Dictionary<Transform, ResourceSource>();
@@ -107,18 +107,17 @@ public class ResourceSpawner : MonoBehaviour
         ResourceSource source = obj.GetComponent<ResourceSource>();
         if (source != null)
         {
-            // СОЗДАЁМ ПОВЕДЕНИЕ В ЗАВИСИМОСТИ ОТ ТИПА РЕСУРСА
             if (isStone)
             {
-                var behaviour = new StoneBehaviour(particleFactory);
+                var behaviour = new StoneBehaviour(particleFactory, flyAnimation);
                 source.SetBehaviour(behaviour);
-                Debug.Log($"Создан StoneBehaviour для {obj.name}");
+                Debug.Log($"Created StoneBehaviour for {obj.name}");
             }
             else
             {
-                var behaviour = new TreeBehaviour(particleFactory);
+                var behaviour = new TreeBehaviour(particleFactory, flyAnimation);
                 source.SetBehaviour(behaviour);
-                Debug.Log($"Создан TreeBehaviour для {obj.name}");
+                Debug.Log($"Created TreeBehaviour for {obj.name}");
             }
 
             source.OnCollected += OnResourceCollected;
@@ -127,12 +126,12 @@ public class ResourceSpawner : MonoBehaviour
             if (spawnPoint != null && !occupiedPoints.ContainsKey(spawnPoint))
             {
                 occupiedPoints.Add(spawnPoint, source);
-                Debug.Log($"Точка {spawnPoint.name} занята");
+                Debug.Log($"Point {spawnPoint.name} occupied");
             }
         }
         else
         {
-            Debug.LogWarning($"ResourceSpawner: ResourceSource не найден на {obj.name}");
+            Debug.LogWarning($"ResourceSpawner: ResourceSource not found on {obj.name}");
         }
     }
 
@@ -143,7 +142,6 @@ public class ResourceSpawner : MonoBehaviour
         source.OnCollected -= OnResourceCollected;
         activeResources.Remove(source);
 
-        // Находим точку, которой принадлежал этот ресурс
         Transform occupiedPoint = null;
         foreach (var kvp in occupiedPoints)
         {
@@ -157,7 +155,7 @@ public class ResourceSpawner : MonoBehaviour
         if (occupiedPoint != null)
         {
             occupiedPoints.Remove(occupiedPoint);
-            Debug.Log($"Точка {occupiedPoint.name} освободилась");
+            Debug.Log($"Point {occupiedPoint.name} freed");
         }
 
         if (isStone)
@@ -169,14 +167,13 @@ public class ResourceSpawner : MonoBehaviour
             resourceFactory?.ReturnWood(source.gameObject);
         }
 
-        // Респавн в ту же точку через время из данных ресурса
         if (occupiedPoint != null)
         {
             pendingRespawnPoint = occupiedPoint;
             float respawnDelay = source.ResourceData?.respawnTime ?? 5f;
             CancelInvoke(nameof(RespawnResource));
             Invoke(nameof(RespawnResource), respawnDelay);
-            Debug.Log($"Запланирован респавн через {respawnDelay} сек в точку {occupiedPoint.name}");
+            Debug.Log($"Respawn scheduled in {respawnDelay} sec at point {occupiedPoint.name}");
         }
     }
 
@@ -184,10 +181,8 @@ public class ResourceSpawner : MonoBehaviour
     {
         if (pendingRespawnPoint != null)
         {
-            // Проверяем, свободна ли точка
             if (IsPositionOccupied(pendingRespawnPoint.position))
             {
-                // Ищем другую свободную точку
                 List<Transform> freePoints = spawnPoints
                     .Where(p => p != null && !occupiedPoints.ContainsKey(p))
                     .ToList();
@@ -198,14 +193,13 @@ public class ResourceSpawner : MonoBehaviour
                     if (point != null)
                     {
                         SpawnResource(point.position, point.rotation, point);
-                        Debug.Log($"Ресурс респавнулся в свободную точку {point.name}");
+                        Debug.Log($"Resource respawned at free point {point.name}");
                         pendingRespawnPoint = null;
                         return;
                     }
                 }
 
-                // Если свободных точек нет — ждём 0.5 сек и пробуем снова
-                Debug.LogWarning("Нет свободных точек, повторная попытка через 0.5 сек");
+                Debug.LogWarning("No free points, retrying in 0.5 sec");
                 Invoke(nameof(RespawnResource), 0.5f);
                 return;
             }
@@ -215,19 +209,18 @@ public class ResourceSpawner : MonoBehaviour
                 pendingRespawnPoint.rotation,
                 pendingRespawnPoint
             );
-            Debug.Log($"Ресурс респавнулся в точку {pendingRespawnPoint.name}");
+            Debug.Log($"Resource respawned at point {pendingRespawnPoint.name}");
             pendingRespawnPoint = null;
         }
         else
         {
-            // Если по какой-то причине точка не сохранена — ищем свободную
             List<Transform> freePoints = spawnPoints
                 .Where(p => p != null && !occupiedPoints.ContainsKey(p))
                 .ToList();
 
             if (freePoints.Count == 0)
             {
-                Debug.LogWarning("ResourceSpawner: нет свободных точек для респавна!");
+                Debug.LogWarning("ResourceSpawner: no free points for respawn!");
                 return;
             }
 
@@ -235,13 +228,13 @@ public class ResourceSpawner : MonoBehaviour
             if (point != null)
             {
                 SpawnResource(point.position, point.rotation, point);
-                Debug.Log($"Ресурс респавнулся в свободную точку {point.name}");
+                Debug.Log($"Resource respawned at free point {point.name}");
             }
         }
     }
+
     private bool IsPositionOccupied(Vector3 position)
     {
-        // Проверяем наличие игрока в радиусе 2f
         Collider[] colliders = Physics.OverlapSphere(position, 4f);
         foreach (var collider in colliders)
         {
@@ -252,6 +245,7 @@ public class ResourceSpawner : MonoBehaviour
         }
         return false;
     }
+
     public int GetActiveResourceCount()
     {
         return activeResources.Count;

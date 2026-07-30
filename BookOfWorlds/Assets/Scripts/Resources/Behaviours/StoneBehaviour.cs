@@ -4,64 +4,70 @@ using Cysharp.Threading.Tasks;
 public class StoneBehaviour : IResourceBehaviour
 {
     private ParticleFactory particleFactory;
+    private ResourceFlyAnimation flyAnimation;
     private Vector3 particleOffset = new Vector3(0, 0.8f, 0);
-    private float shakeDuration = 0.2f;      // Короткая тряска
-    private float shakeMagnitude = 0.06f;    // Слабая тряска
-   // private float hideDelay = 1.5f;          // Задержка перед скрытием
+    private float shakeDuration = 0.2f;
+    private float shakeMagnitude = 0.06f;
 
-    public StoneBehaviour(ParticleFactory particleFactory)
+    public StoneBehaviour(ParticleFactory particleFactory, ResourceFlyAnimation flyAnimation)
     {
         this.particleFactory = particleFactory;
+        this.flyAnimation = flyAnimation;
     }
 
     public async void OnCollect(ResourceSource resource)
     {
         if (resource == null) return;
 
-        Debug.Log($"[StoneBehaviour] ====== НАЧАЛО СБОРА ======");
+        Debug.Log($"[StoneBehaviour] ====== COLLECTION START ======");
 
-        // 1. СТАНОВИМСЯ СЕРЫМ (без текстур)
         resource.SetGray();
-        Debug.Log($" [StoneBehaviour] ШАГ 1: resource.SetGray() ВЫЗВАН");
+        Debug.Log($"[StoneBehaviour] STEP 1: resource.SetGray() CALLED");
 
-        // 2. ДАЁМ ВРЕМЯ ОТРЕНДЕРИТЬ СЕРЫЙ ЦВЕТ
         await UniTask.Delay(50);
-        Debug.Log($" [StoneBehaviour] ШАГ 2: Серый цвет применён");
+        Debug.Log($"[StoneBehaviour] STEP 2: Gray color applied");
 
-        // 3. ТРЯСКА КАМНЯ
-        Debug.Log($" [StoneBehaviour] ШАГ 3: Трясём камень...");
+        Debug.Log($"[StoneBehaviour] STEP 3: Shaking stone...");
         await ShakeStone(resource.transform, shakeDuration, shakeMagnitude);
-        Debug.Log($" [StoneBehaviour] ШАГ 3: Тряска завершена");
+        Debug.Log($"[StoneBehaviour] STEP 3: Shake completed");
 
-        // 4. ПАРТИКЛЫ (пыль)
-        Debug.Log($" [StoneBehaviour] ШАГ 4: Создаём партиклы...");
+        Debug.Log($"[StoneBehaviour] STEP 4: Creating particles...");
         Vector3 position = resource.transform.position + particleOffset;
         if (particleFactory != null)
         {
             particleFactory.CreateStoneParticles(position);
         }
-        Debug.Log($" [StoneBehaviour] ШАГ 4: Партиклы созданы");
+        Debug.Log($"[StoneBehaviour] STEP 4: Particles created");
 
-        // 5. ЖДЁМ
-        //Debug.Log($" [StoneBehaviour] ШАГ 5: Ждём {hideDelay} сек...");
-        //await UniTask.Delay((int)(hideDelay * 1000));
-        //Debug.Log($" [StoneBehaviour] ШАГ 5: Ожидание завершено");
+        if (flyAnimation != null)
+        {
+            Debug.Log($"[StoneBehaviour] STEP 5: Starting fly animation...");
+            await flyAnimation.Play(position, resource.ResourceName);
+            Debug.Log($"[StoneBehaviour] STEP 5: Fly animation completed");
+        }
 
-        // 6. СКРЫВАЕМ
-        Debug.Log($" [StoneBehaviour] ШАГ 6: Скрываем ресурс");
+        Debug.Log($"[StoneBehaviour] STEP 6: Hiding resource");
         resource.Hide();
-        Debug.Log($" [StoneBehaviour] ШАГ 6: Ресурс скрыт");
+        Debug.Log($"[StoneBehaviour] STEP 6: Resource hidden");
 
-        // 7. ВЫЗЫВАЕМ СОБЫТИЕ (возвращаем в пул)
         resource.InvokeCollected();
-        Debug.Log($" [StoneBehaviour] ШАГ 7: InvokeCollected вызван");
+        Debug.Log($"[StoneBehaviour] STEP 7: InvokeCollected called");
 
-        Debug.Log($" [StoneBehaviour] ====== КОНЕЦ СБОРА ======");
+        Debug.Log($"[StoneBehaviour] ====== COLLECTION END ======");
     }
 
-    /// <summary>
-    /// Анимация тряски камня (с вращением)
-    /// </summary>
+    public void OnRespawn(ResourceSource resource)
+    {
+        if (resource != null)
+        {
+            resource.SetColored();
+            resource.Show();
+        }
+        Debug.Log($"[StoneBehaviour] Resource respawned");
+    }
+
+    public void OnCollect(Transform target) { }
+
     private async UniTask ShakeStone(Transform transform, float duration, float magnitude)
     {
         Vector3 originalPosition = transform.position;
@@ -87,20 +93,7 @@ public class StoneBehaviour : IResourceBehaviour
             await UniTask.Yield();
         }
 
-        // Возвращаем в исходное положение
         transform.position = originalPosition;
         transform.rotation = originalRotation;
     }
-
-    public void OnRespawn(ResourceSource resource)
-    {
-        if (resource != null)
-        {
-            resource.SetColored();
-            resource.Show();
-        }
-        Debug.Log($"[StoneBehaviour] Ресурс восстановлен");
-    }
-
-    public void OnCollect(Transform target) { }
 }

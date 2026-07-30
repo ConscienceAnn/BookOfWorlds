@@ -4982,6 +4982,7 @@ MonoBehaviour:
   animator: {fileID: 1049071394}
   visualState: {fileID: 0}
   progressBar: {fileID: 922374505}
+  flyAnimation: {fileID: 0}
 --- !u!95 &1049071394
 Animator:
   serializedVersion: 5
@@ -5036,7 +5037,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fac6ee27682ee1418f4443cb1454cab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activeMaterial: {fileID: 0}
   inactiveMaterial: {fileID: 2100000, guid: c70c37aa909d8f44da8993eec22b3699, type: 2}
   useDefaultInactive: 1
 --- !u!1 &1051944430
@@ -9358,7 +9358,7 @@ GameObject:
   - component: {fileID: 1960038411}
   - component: {fileID: 1960038410}
   m_Layer: 0
-  m_Name: ResourceFlyAnimation
+  m_Name: FlyAnimationManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9379,6 +9379,39 @@ MonoBehaviour:
   targetCanvas: {fileID: 673842325}
   woodIconTarget: {fileID: 766358998}
   stoneIconTarget: {fileID: 935281367}
+  milkIconTarget: {fileID: 545869182}
+  woolIconTarget: {fileID: 767281219}
+  woodSprite: {fileID: 21300000, guid: d794dfc5ab585ad4dac7a4717b5d093f, type: 3}
+  stoneSprite: {fileID: 21300000, guid: 749efb95306500b47985683929e56717, type: 3}
+  milkSprite: {fileID: 21300000, guid: 6ffcfe8167caca546a50117384dbc728, type: 3}
+  woolSprite: {fileID: 21300000, guid: 68adc1bae3f8e3e4fbf2251813016e00, type: 3}
+  flyDuration: 0.6
+  startScale: 0.5
+  endScale: 1.2
+  scaleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.5
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &1960038411
 Transform:
   m_ObjectHideFlags: 0

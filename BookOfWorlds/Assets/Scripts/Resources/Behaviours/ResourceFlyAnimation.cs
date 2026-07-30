@@ -1,6 +1,7 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using TMPro;
+using System.Threading;
+using System;
 
 public class ResourceFlyAnimation : MonoBehaviour
 {
@@ -8,8 +9,23 @@ public class ResourceFlyAnimation : MonoBehaviour
     [SerializeField] private Canvas targetCanvas;
     [SerializeField] private RectTransform woodIconTarget;
     [SerializeField] private RectTransform stoneIconTarget;
+    [SerializeField] private RectTransform milkIconTarget;
+    [SerializeField] private RectTransform woolIconTarget;
+
+    [Header("Resource Icons (PNG Sprites)")]
+    [SerializeField] private Sprite woodSprite;
+    [SerializeField] private Sprite stoneSprite;
+    [SerializeField] private Sprite milkSprite;
+    [SerializeField] private Sprite woolSprite;
+
+    [Header("Animation Settings")]
+    [SerializeField] private float flyDuration = 0.6f;
+    [SerializeField] private float startScale = 0.5f;
+    [SerializeField] private float endScale = 1.2f;
+    [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0, 0.5f, 1, 1.2f);
 
     private Camera mainCamera;
+    private CancellationTokenSource cts;
 
     private void Start()
     {
@@ -18,59 +34,133 @@ public class ResourceFlyAnimation : MonoBehaviour
 
     public async UniTask Play(Vector3 worldStartPosition, string resourceName)
     {
-        Debug.Log($"ResourceFlyAnimation.Play() START: {resourceName}, позиция: {worldStartPosition}");
-
         if (targetCanvas == null)
         {
-            Debug.LogWarning($" targetCanvas is NULL!");
+            Debug.LogWarning($"ResourceFlyAnimation: targetCanvas is NULL!");
             return;
         }
 
-        // 1. Создаём иконку
-        Debug.Log($" Создаём иконку для {resourceName}");
-        GameObject icon = new GameObject("FlyingResource");
-        icon.transform.position = worldStartPosition;
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
 
-        var text = icon.AddComponent<TextMeshPro>();
-        text.text = GetResourceIcon(resourceName);
-        text.fontSize = 20;
-        text.alignment = TextAlignmentOptions.Center;
+        try
+        {
+            await PlayInternal(worldStartPosition, resourceName, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.Log($" Анимация полёта {resourceName} отменена");
+        }
+    }
 
-        // 2. Получаем целевую позицию
+    private async UniTask PlayInternal(Vector3 worldStartPosition, string resourceName, CancellationToken token)
+    {
+        Debug.Log($" [ResourceFlyAnimation] Начинаем полёт: {resourceName}");
+
+        // 1. Получаем спрайт для ресурса
+        Sprite iconSprite = GetResourceSprite(resourceName);
+        if (iconSprite == null)
+        {
+            Debug.LogWarning($" Нет спрайта для {resourceName}");
+            return;
+        }
+
+        // 2. Создаём GameObject с Image в мире (на Canvas)
+        GameObject iconObj = new GameObject($"FlyingResource_{resourceName}");
+        iconObj.transform.SetParent(targetCanvas.transform, false);
+
+        // Добавляем Image и назначаем спрайт
+        var image = iconObj.AddComponent<UnityEngine.UI.Image>();
+        image.sprite = iconSprite;
+        image.raycastTarget = false;
+
+        // Настраиваем размер
+        RectTransform rectTransform = iconObj.GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(48, 48); // Размер иконки
+
+        // Позиция в мире - экран
+        Vector3 startScreenPos = mainCamera.WorldToScreenPoint(worldStartPosition);
+        rectTransform.position = startScreenPos;
+
+        // 3. Получаем целевую позицию
         RectTransform targetRect = GetTargetRect(resourceName);
         if (targetRect == null)
         {
             Debug.LogWarning($" targetRect is NULL для {resourceName}");
-            Destroy(icon);
+            Destroy(iconObj);
             return;
         }
 
-        Vector3 targetScreenPos = targetRect.position;
-        Vector3 startScreenPos = mainCamera.WorldToScreenPoint(worldStartPosition);
-        Debug.Log($" startScreenPos: {startScreenPos}, targetScreenPos: {targetScreenPos}");
+        Vector3 endScreenPos = targetRect.position;
 
-        // 3. Анимация полёта
-        float duration = 0.5f;
+        // 4. Анимация полёта
         float elapsed = 0f;
+        float duration = flyDuration;
 
-        Debug.Log($" Начинаем анимацию полёта...");
+        Vector3 startPos = startScreenPos;
+        Vector3 endPos = endScreenPos;
+
         while (elapsed < duration)
         {
+            if (token.IsCancellationRequested)
+            {
+                Destroy(iconObj);
+                return;
+            }
+
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             float smoothT = 1f - Mathf.Pow(1f - t, 3f);
 
-            Vector3 currentPos = Vector3.Lerp(startScreenPos, targetScreenPos, smoothT);
-            icon.transform.position = currentPos;
+            // Дуга
+            float arcHeight = Mathf.Sin(t * Mathf.PI) * 80f;
+            Vector3 currentPos = Vector3.Lerp(startPos, endPos, smoothT);
+            currentPos.z += arcHeight;
 
-            await UniTask.Yield();
+            rectTransform.position = currentPos;
+
+            // Масштаб
+            float scale = Mathf.Lerp(startScale, endScale, scaleCurve.Evaluate(t));
+            rectTransform.localScale = Vector3.one * scale;
+
+            await UniTask.Yield(token);
         }
 
-        Debug.Log($" Анимация полёта завершена");
+        // 5. Финальный pop-эффект
+        float popDuration = 0.15f;
+        float popElapsed = 0f;
+        while (popElapsed < popDuration)
+        {
+            if (token.IsCancellationRequested)
+            {
+                Destroy(iconObj);
+                return;
+            }
 
-        // 4. Удаляем иконку
-        Destroy(icon);
-        Debug.Log($" ResourceFlyAnimation.Play() END");
+            popElapsed += Time.deltaTime;
+            float popT = popElapsed / popDuration;
+            float scale = Mathf.Lerp(endScale, endScale * 1.5f, popT);
+            rectTransform.localScale = Vector3.one * scale;
+
+            await UniTask.Yield(token);
+        }
+
+        // 6. Удаляем иконку
+        Destroy(iconObj);
+        Debug.Log($" [ResourceFlyAnimation] Полёт завершён: {resourceName}");
+    }
+
+    private Sprite GetResourceSprite(string resourceName)
+    {
+        switch (resourceName)
+        {
+            case "Wood": return woodSprite;
+            case "Stone": return stoneSprite;
+            case "Milk": return milkSprite;
+            case "Wool": return woolSprite;
+            default: return null;
+        }
     }
 
     private RectTransform GetTargetRect(string resourceName)
@@ -79,17 +169,15 @@ public class ResourceFlyAnimation : MonoBehaviour
         {
             case "Wood": return woodIconTarget;
             case "Stone": return stoneIconTarget;
+            case "Milk": return milkIconTarget;
+            case "Wool": return woolIconTarget;
             default: return null;
         }
     }
 
-    private string GetResourceIcon(string resourceName)
+    private void OnDestroy()
     {
-        switch (resourceName)
-        {
-            case "Wood": return "w";
-            case "Stone": return "s";
-            default: return "_";
-        }
+        cts?.Cancel();
+        cts?.Dispose();
     }
 }

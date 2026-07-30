@@ -1,5 +1,6 @@
 using UnityEngine;
 using Zenject;
+using Cysharp.Threading.Tasks; 
 
 public class AnimalController : MonoBehaviour, ICollectable, IInteractable
 {
@@ -13,6 +14,9 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
     [Header("Progress Bar")]
     [SerializeField] private ProgressBarUI progressBar;
 
+    [Header("Fly Animation")]
+    [SerializeField] private ResourceFlyAnimation flyAnimation;
+
     [Inject] private IPlayerInventory inventory;
     [Inject] private PlayerUI playerUI;
 
@@ -20,7 +24,6 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
     private float cooldownTimer = 0f;
     private CowBehaviour behaviour;
 
-    // ===== РЕАЛИЗАЦИЯ ICollectable =====
     public bool IsAvailable => isAvailable;
     public string GetResourceName() => animalData?.resourceData?.resourceName ?? "Unknown";
     public int GetAmount() => animalData?.resourceAmount ?? 1;
@@ -28,35 +31,28 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
 
     public bool TryCollect()
     {
-        // НЕ ВЫЗЫВАЕМ Interact() — это уже сделано!
-        // Просто проверяем, доступна ли корова
         if (!isAvailable) return false;
-
-        //  Выполняем сбор напрямую
         PerformCollect();
         return true;
     }
-    // ===== КОНЕЦ РЕАЛИЗАЦИИ =====
 
-    // ===== РЕАЛИЗАЦИЯ IInteractable =====
     public void Interact()
     {
-        Debug.Log($" AnimalController.Interact() вызван. IsAvailable: {isAvailable}");
+        Debug.Log($"[AnimalController] Interact() called. IsAvailable: {isAvailable}");
 
         if (!isAvailable)
         {
-            string message = $" {animalData.animalName} ещё не готова дать {GetResourceName()}!";
+            string message = $"{animalData.animalName} is not ready to give {GetResourceName()}!";
             playerUI?.ShowNotification(message, 2f);
             return;
         }
 
         if (!inventory.CanAdd(GetResourceName(), GetAmount()))
         {
-            playerUI?.ShowNotification($" Нет места для {GetResourceName()}!", 2f);
+            playerUI?.ShowNotification($"No space for {GetResourceName()}!", 2f);
             return;
         }
 
-        // Запускаем сбор через PlayerCollector
         PlayerCollector collector = FindObjectOfType<PlayerCollector>();
         if (collector != null)
         {
@@ -67,32 +63,32 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
             PerformCollect();
         }
     }
-    // ===== КОНЕЦ РЕАЛИЗАЦИИ =====
 
-    /// <summary>
-    /// Основная логика сбора (без дублирования)
-    /// </summary>
     private void PerformCollect()
     {
-        Debug.Log($" PerformCollect() вызван. Ресурс: {GetResourceName()}");
+        Debug.Log($"[AnimalController] PerformCollect() called. Resource: {GetResourceName()}");
 
-        // Добавляем ресурс
         inventory.TryAdd(GetResourceName(), GetAmount());
 
-        // Делаем корову недоступной
         isAvailable = false;
         cooldownTimer = animalData?.cooldownTime ?? 8f;
 
-        // Корова становится серой
         if (visualState != null)
             visualState.SetGray();
 
-        // Запускаем поведение сбора (прогресс-бар)
         behaviour.OnCollect(transform);
 
         PlayCollectAnimation();
 
-        Debug.Log($"Собрано {GetResourceName()} (+{GetAmount()}) от {animalData.animalName}");
+        
+        if (flyAnimation != null)
+        {
+            Vector3 flyPosition = transform.position + new Vector3(0, 1.5f, 0);
+            flyAnimation.Play(flyPosition, GetResourceName()).Forget();
+            Debug.Log($"[AnimalController] Fly animation started for {GetResourceName()}");
+        }
+
+        Debug.Log($"[AnimalController] Collected {GetResourceName()} (+{GetAmount()}) from {animalData.animalName}");
     }
 
     private void Awake()
@@ -105,6 +101,9 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
 
         behaviour = new CowBehaviour(progressBar, animalData?.cooldownTime ?? 8f);
         behaviour.OnCowRespawned += OnCowRespawned;
+
+        if (flyAnimation == null)
+            flyAnimation = FindObjectOfType<ResourceFlyAnimation>();
     }
 
     private void OnDestroy()
@@ -135,14 +134,7 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
                 if (visualState != null)
                     visualState.SetColored();
 
-                Debug.Log($" {animalData.animalName} готова дать {GetResourceName()}!");
-
-                //  Уведомление, что корова снова готова
-                //
-                //
-                //
-                //
-                //playerUI?.ShowNotification($" {animalData.animalName} готова дать {GetResourceName()}!", 2f);
+                Debug.Log($"[AnimalController] {animalData.animalName} is ready to give {GetResourceName()}!");
             }
         }
     }
@@ -154,7 +146,7 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
         if (visualState != null)
             visualState.SetColored();
 
-        Debug.Log($" {animalData.animalName} готова дать {GetResourceName()}!");
+        Debug.Log($"[AnimalController] {animalData.animalName} is ready to give {GetResourceName()}!");
     }
 
     private void PlayCollectAnimation()
@@ -165,7 +157,7 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
 
     public string GetAnimalName()
     {
-        return animalData?.animalName ?? "Животное";
+        return animalData?.animalName ?? "Animal";
     }
 
     public string GetResourceNamePublic()
@@ -173,9 +165,4 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
         return GetResourceName();
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = isAvailable ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(transform.position, 1f);
-    }
 }

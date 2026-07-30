@@ -4,58 +4,56 @@ using Cysharp.Threading.Tasks;
 public class TreeBehaviour : IResourceBehaviour
 {
     private ParticleFactory particleFactory;
+    private ResourceFlyAnimation flyAnimation;
     private Vector3 particleOffset = new Vector3(0, 3f, 0);
-    // private float hideDelay = 5f; //  УВЕЛИЧИЛА ДО 5 СЕКУНД!
     private float shakeDuration = 0.3f;
     private float shakeMagnitude = 0.15f;
 
-    public TreeBehaviour(ParticleFactory particleFactory)
+    public TreeBehaviour(ParticleFactory particleFactory, ResourceFlyAnimation flyAnimation)
     {
         this.particleFactory = particleFactory;
+        this.flyAnimation = flyAnimation;
     }
 
     public async void OnCollect(ResourceSource resource)
     {
         if (resource == null) return;
 
-        Debug.Log($" [TreeBehaviour] ====== НАЧАЛО СБОРА ======");
+        Debug.Log($"[TreeBehaviour] ====== COLLECTION START ======");
 
-        //  СНАЧАЛА ЖДЁМ 0.1 СЕКУНДЫ (чтобы всё стабилизировалось)
-        //await UniTask.Delay(100);
-
-        //  ПОТОМ МЕНЯЕМ ЦВЕТ
         resource.SetGray();
-        Debug.Log($" [TreeBehaviour] ШАГ 1: resource.SetGray() ВЫЗВАН");
+        Debug.Log($"[TreeBehaviour] STEP 1: resource.SetGray() CALLED");
 
-        //  ТЕПЕРЬ ЖДЁМ 1 СЕКУНДУ (дерево стоит серое)
-        await UniTask.Delay(450);
-        Debug.Log($" [TreeBehaviour] ШАГ 2: Ожидание завершено");
+        await UniTask.Delay(50);
+        Debug.Log($"[TreeBehaviour] STEP 2: Gray color applied");
 
+        Debug.Log($"[TreeBehaviour] STEP 3: Shaking tree...");
         await ShakeTree(resource.transform, shakeDuration, shakeMagnitude);
+        Debug.Log($"[TreeBehaviour] STEP 3: Shake completed");
 
-        // 3. ПАРТИКЛЫ
-        Debug.Log($" [TreeBehaviour] ШАГ 3: Создаём партиклы...");
+        Debug.Log($"[TreeBehaviour] STEP 4: Creating particles...");
         Vector3 position = resource.transform.position + particleOffset;
         if (particleFactory != null)
         {
             particleFactory.CreateWoodParticles(position);
         }
-         
-        // 4. ЖДЁМ 4 СЕКУНДЫ
-        //Debug.Log($" [TreeBehaviour] ШАГ 4: Ждём 4 секунды...");
-        //await UniTask.Delay(4000);
-        //Debug.Log($" [TreeBehaviour] ШАГ 4: Ожидание завершено");
+        Debug.Log($"[TreeBehaviour] STEP 4: Particles created");
 
-        // 5. СКРЫВАЕМ
-        Debug.Log($" [TreeBehaviour] ШАГ 5: Скрываем ресурс");
+        if (flyAnimation != null)
+        {
+            Debug.Log($"[TreeBehaviour] STEP 5: Starting fly animation...");
+            await flyAnimation.Play(position, resource.ResourceName);
+            Debug.Log($"[TreeBehaviour] STEP 5: Fly animation completed");
+        }
+
+        Debug.Log($"[TreeBehaviour] STEP 7: Hiding resource");
         resource.Hide();
-        Debug.Log($" [TreeBehaviour] ШАГ 5: Ресурс скрыт");
+        Debug.Log($"[TreeBehaviour] STEP 7: Resource hidden");
 
-        // 6.  ВЫЗЫВАЕМ СОБЫТИЕ ЧЕРЕЗ ОБЁРТКУ
         resource.InvokeCollected();
-        Debug.Log($" [TreeBehaviour] ШАГ 6: InvokeCollected вызван");
+        Debug.Log($"[TreeBehaviour] STEP 8: InvokeCollected called");
 
-        Debug.Log($" [TreeBehaviour] ====== КОНЕЦ СБОРА ======");
+        Debug.Log($"[TreeBehaviour] ====== COLLECTION END ======");
     }
 
     public void OnRespawn(ResourceSource resource)
@@ -65,14 +63,11 @@ public class TreeBehaviour : IResourceBehaviour
             resource.SetColored();
             resource.Show();
         }
-        Debug.Log($" [TreeBehaviour] Ресурс восстановлен");
+        Debug.Log($"[TreeBehaviour] Resource respawned");
     }
 
     public void OnCollect(Transform target) { }
 
-    /// <summary>
-    /// Анимация тряски дерева
-    /// </summary>
     private async UniTask ShakeTree(Transform transform, float duration, float magnitude)
     {
         Vector3 originalPosition = transform.position;
@@ -81,8 +76,6 @@ public class TreeBehaviour : IResourceBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-
-            // Случайное смещение в пределах magnitude
             float x = Random.Range(-magnitude, magnitude);
             float z = Random.Range(-magnitude, magnitude);
 
@@ -95,7 +88,6 @@ public class TreeBehaviour : IResourceBehaviour
             await UniTask.Yield();
         }
 
-        // Возвращаем в исходное положение
         transform.position = originalPosition;
     }
 }
