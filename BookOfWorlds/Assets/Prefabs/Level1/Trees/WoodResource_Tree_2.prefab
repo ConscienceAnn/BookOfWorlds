@@ -134,4 +134,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   activeMaterial: {fileID: 0}
   inactiveMaterial: {fileID: 2100000, guid: c70c37aa909d8f44da8993eec22b3699, type: 2}
-  useDefaultInactive: 1
+  useDefaultInactive: 0

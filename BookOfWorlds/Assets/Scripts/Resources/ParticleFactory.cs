@@ -16,10 +16,14 @@ public class ParticleFactory : MonoBehaviour
 
         Debug.Log($" Создаём WoodParticles в {position}");
 
+        //  Создаём на уровне сцены
         ParticleSystem instance = Instantiate(woodParticles, position, Quaternion.identity, null);
 
-        //  Убираем проверку particleCount (она не нужна)
+        //  Принудительно очищаем и запускаем
+        instance.Clear();
         instance.Play();
+
+        Debug.Log($" WoodParticles запущены, частиц: {instance.particleCount}");
 
         Destroy(instance.gameObject, instance.main.duration + 0.5f);
 
@@ -38,7 +42,10 @@ public class ParticleFactory : MonoBehaviour
 
         ParticleSystem instance = Instantiate(stoneParticles, position, Quaternion.identity, null);
 
+        instance.Clear();
         instance.Play();
+
+        Debug.Log($" StoneParticles запущены, частиц: {instance.particleCount}");
 
         Destroy(instance.gameObject, instance.main.duration + 0.5f);
 

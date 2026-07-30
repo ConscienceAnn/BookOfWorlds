@@ -3,9 +3,12 @@ using Zenject;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 
-public class ResourceSource : MonoBehaviour, ICollectable
+/// <summary>
+/// Управляет состоянием ресурса: доступность, инвентарь, визуал
+/// </summary>
+public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 {
-    [Header("Настройки ресурса")]
+    [Header("Resource Data")]
     [SerializeField] private ResourceDataSO data;
     [SerializeField] private int amountPerCollect = 1;
 
@@ -20,65 +23,57 @@ public class ResourceSource : MonoBehaviour, ICollectable
     private CancellationTokenSource cts;
     private IResourceBehaviour behaviour;
 
-    // ===== РЕАЛИЗАЦИЯ ICollectable =====
+
+    public event System.Action<ResourceSource> OnCollected;
+
+    // ===== ПУБЛИЧНЫЕ СВОЙСТВА =====
     public bool IsAvailable => isAvailable;
+    public string ResourceName => data?.resourceName ?? "Unknown";
+    public ResourceDataSO ResourceData => data;
+    public int AmountPerCollect => amountPerCollect;
+
+    // ===== РЕАЛИЗАЦИЯ ICollectable =====
     public string GetResourceName() => data?.resourceName ?? "Unknown";
     public int GetAmount() => amountPerCollect;
     public Transform GetTransform() => transform;
 
     public bool TryCollect()
     {
-        return Interact();
-    }
-    // ===== КОНЕЦ РЕАЛИЗАЦИИ =====
-
-    public string ResourceName => data?.resourceName ?? "Unknown";
-    public ResourceDataSO ResourceData => data;
-    public int AmountPerCollect => amountPerCollect;
-
-    public void SetBehaviour(IResourceBehaviour newBehaviour)
-    {
-        behaviour = newBehaviour;
-        Debug.Log($"ResourceSource: поведение установлено для {gameObject.name}");
+        return PerformCollect();
     }
 
-    private void Awake()
+    // ===== РЕАЛИЗАЦИЯ IInteractable =====
+    public void Interact()
     {
-        if (visualState == null)
+        if (!isAvailable)
         {
-            visualState = GetComponent<VisualState>();
-            if (visualState == null)
-            {
-                visualState = GetComponentInChildren<VisualState>();
-            }
+            playerUI?.ShowNotification($"Ресурс {GetResourceName()} ещё не восстановился!");
+            return;
+        }
+
+        if (!inventory.CanAdd(GetResourceName(), GetAmount()))
+        {
+            playerUI?.ShowNotification($"Инвентарь для {GetResourceName()} полон!");
+            return;
+        }
+
+        PlayerCollector collector = FindObjectOfType<PlayerCollector>();
+        if (collector != null)
+        {
+            collector.StartCollect(this);
+        }
+        else
+        {
+            PerformCollect();
         }
     }
 
-    private void Start()
-    {
-        if (visualState != null)
-        {
-            visualState.SetColored();
-        }
-    }
-
-    private void OnDestroy()
-    {
-        cts?.Cancel();
-        cts?.Dispose();
-    }
-
-    public void SetData(ResourceDataSO newData)
-    {
-        data = newData;
-        Debug.Log($"ResourceSource.SetData: data теперь = {data?.resourceName ?? "NULL"}");
-    }
-
-    public bool Interact()
+    // ===== ОСНОВНАЯ ЛОГИКА =====
+    private bool PerformCollect()
     {
         if (data == null)
         {
-            Debug.LogError($"ResourceSource: data is NULL on {gameObject.name}!");
+            Debug.LogError($"[ResourceSource] data is NULL on {gameObject.name}!");
             return false;
         }
 
@@ -98,11 +93,6 @@ public class ResourceSource : MonoBehaviour, ICollectable
 
         isAvailable = false;
 
-        if (visualState != null)
-        {
-            visualState.SetGray();
-        }
-
         if (behaviour != null)
         {
             behaviour.OnCollect(this);
@@ -113,52 +103,62 @@ public class ResourceSource : MonoBehaviour, ICollectable
             RespawnAsync(cts.Token).Forget();
         }
 
-        OnCollected?.Invoke(this);
-
-        Debug.Log($"Собран {data.resourceName} (+{amountPerCollect})");
+        Debug.Log($"[ResourceSource] Собран {data.resourceName} (+{amountPerCollect})");
         return true;
     }
 
-    public event System.Action<ResourceSource> OnCollected;
+    // ===== УПРАВЛЕНИЕ ВИЗУАЛОМ =====
+    public void SetGray()
+    {
+        visualState?.SetGray();
+    }
 
+    public void SetColored()
+    {
+        visualState?.SetColored();
+    }
+
+    // ===== УПРАВЛЕНИЕ СОСТОЯНИЕМ =====
     public void Hide()
     {
         isAvailable = false;
-        if (visualState != null)
-        {
-            visualState.SetGray();
-        }
+        SetGray();
         gameObject.SetActive(false);
     }
 
     public void Show()
     {
         isAvailable = true;
-        if (visualState != null)
-        {
-            visualState.SetColored();
-        }
+        SetColored();
+        gameObject.SetActive(true);
+        Debug.Log($"[ResourceSource] Show() вызван для {gameObject.name}, isAvailable={isAvailable}");
+    }
+
+    public void ResetState()
+    {
+        isAvailable = true;
+        SetColored();
         gameObject.SetActive(true);
     }
 
-    public void SetGray()
+    // ===== ПОВЕДЕНИЕ =====
+    public void SetBehaviour(IResourceBehaviour newBehaviour)
     {
-        if (visualState != null)
-        {
-            visualState.SetGray();
-        }
+        behaviour = newBehaviour;
     }
 
-    public void SetColored()
+    // ===== ВЫЗОВ СОБЫТИЯ (из TreeBehaviour/StoneBehaviour) =====
+    public void InvokeCollected()
     {
-        if (visualState != null)
-        {
-            visualState.SetColored();
-        }
+        OnCollected?.Invoke(this);
+        Debug.Log($"[ResourceSource] InvokeCollected() вызван для {gameObject.name}");
     }
 
+    // ===== РЕСПАВН =====
     private async UniTaskVoid RespawnAsync(CancellationToken token)
     {
+        if (data == null) return;
+
         float elapsed = 0f;
         float duration = data.respawnTime;
 
@@ -178,17 +178,37 @@ public class ResourceSource : MonoBehaviour, ICollectable
         }
 
         Show();
-        Debug.Log($"Ресурс {data.resourceName} восстановился!");
+        Debug.Log($"[ResourceSource] Ресурс {data.resourceName} восстановился!");
     }
 
-    public void ResetState()
+    // ===== UNITY EVENTS =====
+    private void Awake()
     {
-        isAvailable = true;
-        if (visualState != null)
+        if (visualState == null)
         {
-            visualState.SetColored();
+            visualState = GetComponent<VisualState>();
+            if (visualState == null)
+            {
+                visualState = GetComponentInChildren<VisualState>();
+            }
         }
-        gameObject.SetActive(true);
+    }
+
+    private void Start()
+    {
+        SetColored();
+    }
+
+    private void OnDestroy()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+
+    // ===== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =====
+    public void SetData(ResourceDataSO newData)
+    {
+        data = newData;
     }
 
     public bool HasInventory()

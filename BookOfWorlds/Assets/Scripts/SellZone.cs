@@ -2,7 +2,7 @@ using UnityEngine;
 using Zenject;
 using UnityEngine.InputSystem;
 
-public class SellZone : MonoBehaviour
+public class SellZone : MonoBehaviour, IInteractable
 {
     [Header("Settings")]
     [SerializeField] private float sellPromptDuration = 3f;
@@ -14,6 +14,14 @@ public class SellZone : MonoBehaviour
 
     private bool isPlayerNear = false;
     private bool isSelling = false;
+
+
+    // ===== –≈¿À»«¿÷»ﬂ IInteractable =====
+    public void Interact()
+    {
+        Sell();
+    }
+    // =====  ŒÕ≈÷ –≈¿À»«¿÷»» =====
 
     private void OnTriggerEnter(Collider other)
     {

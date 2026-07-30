@@ -4,15 +4,15 @@ using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text;
 
-public class BuildingController : MonoBehaviour
+public class BuildingController : MonoBehaviour, IInteractable
 {
-    [Header("Building Data")]
+    [Header("Building Data")] 
     [SerializeField] private BuildingDataSO buildingData;
 
     [Header("Visuals")]
     [SerializeField] private GameObject ruinedVisual;
     [SerializeField] private GameObject restoredVisual;
-    [SerializeField] private GameObject[] blockedColliders; 
+    [SerializeField] private GameObject[] blockedColliders;
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private LevelProgress levelProgress;
@@ -20,9 +20,17 @@ public class BuildingController : MonoBehaviour
     [Inject] private PlayerUI playerUI;
 
     private bool isRestored = false;
-    private bool isPlayerNear = false;
+    //private bool isPlayerNear = false;
     private bool hasLoadedData = false;
     private Dictionary<string, int> investedResources = new Dictionary<string, int>();
+
+    // ===== РЕАЛИЗАЦИЯ IInteractable =====
+    public void Interact()
+    {
+        //  Запускаем асинхронный метод с ожиданием
+        TryRestore().Forget();
+    }
+    // ===== КОНЕЦ РЕАЛИЗАЦИИ =====
 
     private void Awake()
     {
@@ -63,7 +71,6 @@ public class BuildingController : MonoBehaviour
         if (ruinedVisual != null) ruinedVisual.SetActive(!restored);
         if (restoredVisual != null) restoredVisual.SetActive(restored);
 
-        // Управляем всеми блокирующими коллайдерами
         foreach (var collider in blockedColliders)
         {
             if (collider != null)
@@ -100,7 +107,6 @@ public class BuildingController : MonoBehaviour
         }
         else
         {
-            
             if (playerUI != null)
             {
                 playerUI.UpdateBuildingCostImmediate();
@@ -143,12 +149,12 @@ public class BuildingController : MonoBehaviour
     public void OnPlayerEnter()
     {
         if (isRestored) return;
-        isPlayerNear = true;
+       // isPlayerNear = true;
     }
 
     public void OnPlayerExit()
     {
-        isPlayerNear = false;
+        //isPlayerNear = false;
     }
 
     public async UniTaskVoid TryRestore()
@@ -203,8 +209,6 @@ public class BuildingController : MonoBehaviour
 
         Debug.Log($"  - allComplete: {allComplete}");
 
-        
-
         if (allComplete)
         {
             // 1. Обновляем UI (слайдер должен показать 100%)
@@ -257,14 +261,6 @@ public class BuildingController : MonoBehaviour
 
         Debug.Log($"  - investedResources FINAL: {GetInvestedString()}");
         Debug.Log($"========== [TryRestore] END ==========");
-    }
-
-    public void Interact()
-    {
-        if (!isRestored && isPlayerNear)
-        {
-            TryRestore().Forget();
-        }
     }
 
     public void SetInvestedAmount(string resourceName, int amount)

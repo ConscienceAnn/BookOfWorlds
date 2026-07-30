@@ -3,29 +3,44 @@ using UnityEngine;
 public class VisualState : MonoBehaviour
 {
     [Header("Settings")]
-    [SerializeField] private Material activeMaterial;
     [SerializeField] private Material inactiveMaterial;
     [SerializeField] private bool useDefaultInactive = true;
 
     private Renderer[] renderers;
+    private Color[] originalColors;
     private Material[] originalMaterials;
 
     private void Awake()
     {
-        renderers = GetComponentsInChildren<Renderer>();
+        FindRenderers();
+    }
+
+    public void ForceRefresh()
+    {
+        Debug.Log($"[VisualState] ForceRefresh() для {gameObject.name}");
+        FindRenderers();
+        SetColored();
+    }
+
+    private void FindRenderers()
+    {
+        renderers = GetComponentsInChildren<Renderer>(true);
+        originalColors = new Color[renderers.Length];
         originalMaterials = new Material[renderers.Length];
 
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i] != null)
             {
-                originalMaterials[i] = renderers[i].sharedMaterial;
+                originalColors[i] = renderers[i].material.color;
+                originalMaterials[i] = renderers[i].material;
+                Debug.Log($"[VisualState] Найден рендер: {renderers[i].name}, цвет: {originalColors[i]}");
             }
         }
 
-        if (activeMaterial == null && renderers.Length > 0 && renderers[0] != null)
+        if (renderers.Length == 0)
         {
-            activeMaterial = originalMaterials[0];
+            Debug.LogWarning($"[VisualState] Нет рендеров для {gameObject.name}!");
         }
 
         if (inactiveMaterial == null && useDefaultInactive)
@@ -34,82 +49,96 @@ public class VisualState : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Создаёт материал для "серого" состояния — без текстур, бело-серый
+    /// </summary>
     private Material CreateGrayMaterial()
     {
-        Material grayMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        if (grayMat != null)
+        //  Создаём материал с базовым шейдером
+        Material grayMat;
+
+        // Пробуем создать через URP
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null)
         {
-            grayMat.color = Color.gray;
-            grayMat.SetFloat("_Smoothness", 0.2f);
+            shader = Shader.Find("Standard");
         }
-        else
-        {
-            // Fallback для Standard
-            grayMat = new Material(Shader.Find("Standard"));
-            grayMat.color = Color.gray;
-        }
+
+        grayMat = new Material(shader);
+
+        //  Убираем текстуру — модель становится "голой"
+        grayMat.mainTexture = null;
+
+        //  Делаем очень светлый серый (почти белый, но с оттенком)
+        // Используй любой из вариантов:
+        // Color.gray - средний серый
+        // new Color(0.7f, 0.7f, 0.7f) - светлый серый
+        // new Color(0.85f, 0.85f, 0.85f) - почти белый
+        grayMat.color = new Color(0.9f, 0.9f, 0.9f); // ИЗМЕНИ ЗДЕСЬ!
+
+        // Настройки для URP
+        grayMat.SetFloat("_Smoothness", 0.3f);
+        grayMat.SetFloat("_Metallic", 0f);
+
+        Debug.Log($"[VisualState] Создан серый материал без текстур: цвет={grayMat.color}");
         return grayMat;
     }
 
     public void SetGray()
     {
-        Debug.Log($"[VisualState] SetGray() ВЫЗВАН для {gameObject.name}");
-        Debug.Log($"   - renderers: {(renderers != null ? renderers.Length.ToString() : "NULL")}");
-
         if (renderers == null || renderers.Length == 0)
         {
-            Debug.LogWarning($"   - renderers = null или пустой!");
-            return;
+            Debug.LogWarning($"[VisualState] Нет рендеров для {gameObject.name}, пробуем найти...");
+            FindRenderers();
+            if (renderers == null || renderers.Length == 0) return;
         }
 
-        if (inactiveMaterial == null)
-        {
-            Debug.LogWarning($"   - inactiveMaterial = NULL, создаём...");
-            inactiveMaterial = CreateGrayMaterial();
-            if (inactiveMaterial == null)
-            {
-                Debug.LogError($"   - НЕ УДАЛОСЬ создать серый материал!");
-                return;
-            }
-            Debug.Log($"   - серый материал создан");
-        }
+        Debug.Log($"[VisualState] SetGray() для {gameObject.name}, рендеров: {renderers.Length}");
 
-        int changedCount = 0;
         foreach (var renderer in renderers)
         {
             if (renderer != null)
             {
-                renderer.sharedMaterial = inactiveMaterial;
-                changedCount++;
-                Debug.Log($"   - материал изменён для {renderer.name}");
+                //  Меняем ВЕСЬ материал на серый (без текстур)
+                renderer.material = inactiveMaterial;
+                Debug.Log($"[VisualState] Материал заменён на серый для {renderer.name}");
             }
         }
-        Debug.Log($"   - изменено материалов: {changedCount}");
     }
 
     public void SetColored()
     {
-        Debug.Log($" [VisualState] SetColored() ВЫЗВАН для {gameObject.name}");
-        Debug.Log($"   - renderers: {(renderers != null ? renderers.Length.ToString() : "NULL")}");
-        Debug.Log($"   - originalMaterials: {(originalMaterials != null ? originalMaterials.Length.ToString() : "NULL")}");
+        if (renderers == null || renderers.Length == 0)
+        {
+            Debug.LogWarning($"[VisualState] Нет рендеров для {gameObject.name}, пробуем найти...");
+            FindRenderers();
+            if (renderers == null || renderers.Length == 0) return;
+        }
 
-        if (renderers == null || renderers.Length == 0) return;
+        Debug.Log($"[VisualState] SetColored() для {gameObject.name}, рендеров: {renderers.Length}");
 
-        int restoredCount = 0;
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i] != null && i < originalMaterials.Length && originalMaterials[i] != null)
             {
-                renderers[i].sharedMaterial = originalMaterials[i];
-                restoredCount++;
-                Debug.Log($"   - материал восстановлен для {renderers[i].name}");
+                //  Восстанавливаем оригинальный материал (с текстурой)
+                renderers[i].material = originalMaterials[i];
+                Debug.Log($"[VisualState] Материал восстановлен для {renderers[i].name}");
             }
         }
-        Debug.Log($"  - восстановлено материалов: {restoredCount}");
     }
 
     public void RestoreOriginalMaterials()
     {
+        SetColored();
+    }
+
+    private void OnEnable()
+    {
+        if (renderers == null || renderers.Length == 0)
+        {
+            FindRenderers();
+        }
         SetColored();
     }
 }
