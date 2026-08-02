@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class PlayerUI : MonoBehaviour
 {
@@ -15,6 +16,10 @@ public class PlayerUI : MonoBehaviour
 
     private Camera mainCamera;
     private RectTransform canvasRect;
+
+    private BuildingController currentBuilding;
+    private bool isPlayerNearBuilding = false;
+    private Coroutine showPromptCoroutine;
 
     private void Start()
     {
@@ -56,14 +61,46 @@ public class PlayerUI : MonoBehaviour
 
     public void ShowBuildingPrompt(BuildingController building)
     {
+        currentBuilding = building;
+        isPlayerNearBuilding = true;
+
+        // —крываем уведомление, если оно висит
+        HideNotification();
+
+        if (showPromptCoroutine != null)
+        {
+            StopCoroutine(showPromptCoroutine);
+            showPromptCoroutine = null;
+        }
+
         promptCanvas.gameObject.SetActive(true);
         buildingPromptUI?.Show(building);
     }
 
     public void HideBuildingPrompt()
     {
+        isPlayerNearBuilding = false;
+        currentBuilding = null;
+
+        if (showPromptCoroutine != null)
+        {
+            StopCoroutine(showPromptCoroutine);
+            showPromptCoroutine = null;
+        }
+
         buildingPromptUI?.Hide();
         promptCanvas.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// ѕринудительно скрыть уведомление
+    /// </summary>
+    public void HideNotification()
+    {
+        if (notificationUI != null)
+        {
+            notificationUI.Hide();
+        }
     }
 
     public void UpdateBuildingCost()
@@ -85,13 +122,38 @@ public class PlayerUI : MonoBehaviour
     {
         Debug.Log($"PlayerUI.ShowNotification: {message}");
 
-        // јктивируем Canvas дл€ уведомлени€
-        if (promptCanvas != null && !promptCanvas.gameObject.activeSelf)
+        bool wasBuildingPromptVisible = promptCanvas != null && promptCanvas.gameObject.activeSelf;
+
+        if (wasBuildingPromptVisible)
         {
-            promptCanvas.gameObject.SetActive(true);
+            buildingPromptUI?.Hide();
+            promptCanvas.gameObject.SetActive(false);
         }
 
         notificationUI?.Show(message, duration);
+
+        if (wasBuildingPromptVisible && currentBuilding != null)
+        {
+            if (showPromptCoroutine != null)
+            {
+                StopCoroutine(showPromptCoroutine);
+            }
+            showPromptCoroutine = StartCoroutine(ShowBuildingPromptAfter(duration + 0.1f));
+        }
+    }
+
+    private IEnumerator ShowBuildingPromptAfter(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        showPromptCoroutine = null;
+
+        if (isPlayerNearBuilding && currentBuilding != null && !currentBuilding.IsRestored())
+        {
+            promptCanvas.gameObject.SetActive(true);
+            buildingPromptUI?.Show(currentBuilding);
+            Debug.Log($"Building Prompt восстановлен дл€ {currentBuilding.GetBuildingName()}");
+        }
     }
 
     private void OnBuildingProgressChanged(BuildingController building)
@@ -107,9 +169,36 @@ public class PlayerUI : MonoBehaviour
     {
         if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
         {
+            isPlayerNearBuilding = false;
+            currentBuilding = null;
+
+            if (showPromptCoroutine != null)
+            {
+                StopCoroutine(showPromptCoroutine);
+                showPromptCoroutine = null;
+            }
+
+            // —крываем уведомление при восстановлении здани€
+            HideNotification();
+
             buildingPromptUI.Hide();
             promptCanvas.gameObject.SetActive(false);
             Debug.Log($"«дание {building.GetBuildingName()} восстановлено, UI скрыт");
+        }
+    }
+
+    public void SetPlayerNearBuilding(bool isNear, BuildingController building = null)
+    {
+        isPlayerNearBuilding = isNear;
+        if (isNear)
+        {
+            currentBuilding = building;
+        }
+        else if (!isNear && currentBuilding == building)
+        {
+            currentBuilding = null;
+            // ѕри выходе из зоны скрываем уведомление
+            HideNotification();
         }
     }
 }

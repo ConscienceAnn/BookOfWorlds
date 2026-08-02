@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
   m_Name: CartData
   m_EditorClassIdentifier: 
-  buildingName: Cart
+  buildingName: "\u0422\u0435\u043B\u0435\u0436\u043A\u0430"
   description: 
   icon: {fileID: 0}
   costs:
-  - resourceName: Wood
+  - resourceName: "\u0414\u0435\u0440\u0435\u0432\u043E"
     amount: 10
-  - resourceName: Milk
+  - resourceName: "\u041C\u043E\u043B\u043E\u043A\u043E"
     amount: 5
   ruinedPrefab: {fileID: 919132149155446097, guid: 0426c4fbc58d39e4c902d9307bcecd18, type: 3}
   restoredPrefab: {fileID: 919132149155446097, guid: 496283a08684e8146a554a98b08e2cf4, type: 3}

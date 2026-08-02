@@ -12,7 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e705fbef58e2cc54d8f5ef2f6873d240, type: 3}
   m_Name: CowData
   m_EditorClassIdentifier: 
-  animalName: Cow
+  animalName: "\u041A\u043E\u0440\u043E\u0432\u0430"
   resourceData: {fileID: 11400000, guid: a6134b8cce88008428776586533248ae, type: 2}
   resourceAmount: 1
   cooldownTime: 8
+  canMove: 0
+  moveSpeed: 3
+  moveRadius: 5
+  idleTimeMin: 2
+  idleTimeMax: 5
+  animalType: 0

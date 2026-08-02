@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ddaefa455b74ed4cbc5725c6cc5a344, type: 3}
   m_Name: MilkData
   m_EditorClassIdentifier: 
-  resourceName: Milk
+  resourceName: "\u041C\u043E\u043B\u043E\u043A\u043E"
   icon: {fileID: 0}
   basePrice: 3
   respawnTime: 8

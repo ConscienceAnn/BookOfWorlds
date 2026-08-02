@@ -37,20 +37,17 @@ public class NotificationUI : MonoBehaviour
 
         Debug.Log($"NotificationUI.Show() called: {message}");
 
-        if (parentCanvas != null)
+        if (parentCanvas != null && !parentCanvas.gameObject.activeSelf)
         {
-            if (!parentCanvas.gameObject.activeSelf)
-            {
-                parentCanvas.gameObject.SetActive(true);
-                Debug.Log("NotificationUI: Canvas was disabled, enabled!");
-            }
-            else
-            {
-                Debug.Log("NotificationUI: Canvas already enabled");
-            }
+            parentCanvas.gameObject.SetActive(true);
+            Debug.Log("NotificationUI: Canvas was disabled, enabled!");
         }
 
-        gameObject.SetActive(true);
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+            Debug.Log("NotificationUI: Object was disabled, enabled!");
+        }
 
         notificationText.text = message;
         notificationText.gameObject.SetActive(true);
@@ -61,7 +58,17 @@ public class NotificationUI : MonoBehaviour
         Debug.Log($"  - notificationText.activeSelf: {notificationText.gameObject.activeSelf}");
 
         if (hideCoroutine != null)
+        {
             StopCoroutine(hideCoroutine);
+            hideCoroutine = null;
+        }
+
+        StartCoroutine(DelayedHideCoroutine(duration));
+    }
+
+    private IEnumerator DelayedHideCoroutine(float duration)
+    {
+        yield return null;
 
         hideCoroutine = StartCoroutine(HideAfter(duration));
     }
@@ -69,7 +76,10 @@ public class NotificationUI : MonoBehaviour
     private IEnumerator HideAfter(float duration)
     {
         yield return new WaitForSeconds(duration);
-        notificationText.gameObject.SetActive(false);
+
+        if (notificationText != null)
+            notificationText.gameObject.SetActive(false);
+
         gameObject.SetActive(false);
         hideCoroutine = null;
     }

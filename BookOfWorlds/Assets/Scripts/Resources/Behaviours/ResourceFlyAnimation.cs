@@ -155,10 +155,10 @@ public class ResourceFlyAnimation : MonoBehaviour
     {
         switch (resourceName)
         {
-            case "Wood": return woodSprite;
-            case "Stone": return stoneSprite;
-            case "Milk": return milkSprite;
-            case "Wool": return woolSprite;
+            case "Дерево": return woodSprite;
+            case "Камень": return stoneSprite;
+            case "Молоко": return milkSprite;
+            case "Шерсть": return woolSprite;
             default: return null;
         }
     }
@@ -167,10 +167,10 @@ public class ResourceFlyAnimation : MonoBehaviour
     {
         switch (resourceName)
         {
-            case "Wood": return woodIconTarget;
-            case "Stone": return stoneIconTarget;
-            case "Milk": return milkIconTarget;
-            case "Wool": return woolIconTarget;
+            case "Дерево": return woodIconTarget;
+            case "Камень": return stoneIconTarget;
+            case "Молоко": return milkIconTarget;
+            case "Шерсть": return woolIconTarget;
             default: return null;
         }
     }

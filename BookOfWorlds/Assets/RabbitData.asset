@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e705fbef58e2cc54d8f5ef2f6873d240, type: 3}
   m_Name: RabbitData
   m_EditorClassIdentifier: 
-  animalName: Rabbit
+  animalName: "\u0417\u0430\u044F\u0446"
   resourceData: {fileID: 11400000, guid: c27754b34399fa641983e3862841e448, type: 2}
   resourceAmount: 1
   cooldownTime: 6

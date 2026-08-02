@@ -27,6 +27,17 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
     private float cooldownTimer = 0f;
     private IResourceBehaviour behaviour;
 
+    public float CooldownTime
+    {
+        get => animalData?.cooldownTime ?? 8f;
+        set
+        {
+            if (animalData != null)
+            {
+                animalData.cooldownTime = value;
+            }
+        }
+    }
     public bool IsAvailable => isAvailable;
     public string GetResourceName() => animalData?.resourceData?.resourceName ?? "Unknown";
     public int GetAmount() => animalData?.resourceAmount ?? 1;

@@ -12,7 +12,6 @@ public class ResourcePool : MonoBehaviour
     [Inject] private DiContainer container;
 
     private Queue<GameObject> pool = new Queue<GameObject>();
-    private GameObject defaultPrefab;
 
     private void Awake()
     {
@@ -22,17 +21,13 @@ public class ResourcePool : MonoBehaviour
             return;
         }
 
-        if (prefabs != null && prefabs.Length > 0)
-        {
-            defaultPrefab = prefabs[0];
-        }
-        else
+        if (prefabs == null || prefabs.Length == 0)
         {
             Debug.LogError($"ResourcePool: prefabs array is empty on {gameObject.name}!");
             return;
         }
 
-        Debug.Log($"[ResourcePool] Awake() for {gameObject.name}, resource: {resourceData.resourceName}");
+        Debug.Log($"[ResourcePool] Awake() for {gameObject.name}, resource: {resourceData.resourceName}, префабов: {prefabs.Length}");
 
         for (int i = 0; i < initialSize; i++)
         {
@@ -44,34 +39,34 @@ public class ResourcePool : MonoBehaviour
 
     private GameObject CreateNewObject()
     {
-        Debug.Log($"[ResourcePool] CreateNewObject() for {defaultPrefab?.name ?? "NULL"}");
+        //  ВЫБИРАЕМ СЛУЧАЙНЫЙ ПРЕФАБ ИЗ МАССИВА
+        GameObject selectedPrefab = prefabs[Random.Range(0, prefabs.Length)];
+        Debug.Log($"[ResourcePool] CreateNewObject() for {selectedPrefab?.name ?? "NULL"}");
 
-        if (defaultPrefab == null)
+        if (selectedPrefab == null)
         {
-            Debug.LogError($"[ResourcePool] defaultPrefab is NULL!");
+            Debug.LogError($"[ResourcePool] selectedPrefab is NULL!");
             return null;
         }
 
         GameObject obj;
         if (container != null)
         {
-            obj = container.InstantiatePrefab(defaultPrefab);
+            obj = container.InstantiatePrefab(selectedPrefab);
         }
         else
         {
-            obj = Instantiate(defaultPrefab);
+            obj = Instantiate(selectedPrefab);
         }
 
-        //  Сразу делаем неактивным (как и положено в пуле)
         obj.SetActive(false);
 
         Debug.Log($"[ResourcePool] Created object: {obj.name}, active: {obj.activeSelf}");
 
-        //  ПРИНУДИТЕЛЬНО ОБНОВЛЯЕМ VisualState
         VisualState vs = obj.GetComponent<VisualState>();
         if (vs != null)
         {
-            vs.ForceRefresh(); // Принудительно находим рендеры и применяем цвет
+            vs.ForceRefresh();
             Debug.Log($"[ResourcePool] VisualState.ForceRefresh() вызван для {obj.name}");
         }
         else
@@ -84,7 +79,7 @@ public class ResourcePool : MonoBehaviour
         {
             source.SetData(resourceData);
             source.SetColored();
-            source.Show(); //  Делаем доступным
+            source.Show();
             Debug.Log($"[ResourcePool] ResourceSource настроен для {obj.name}");
         }
 
@@ -113,14 +108,12 @@ public class ResourcePool : MonoBehaviour
             obj.transform.position = position;
             obj.transform.rotation = rotation;
 
-            //  Активируем объект
             obj.SetActive(true);
 
-            // Убеждаемся, что ресурс доступен и цветной
             ResourceSource source = obj.GetComponent<ResourceSource>();
             if (source != null)
             {
-                source.Show(); //  Гарантируем состояние
+                source.Show();
                 Debug.Log($"[ResourcePool] ResourceSource.Show() вызван для {obj.name}");
             }
             else
@@ -142,7 +135,6 @@ public class ResourcePool : MonoBehaviour
 
         Debug.Log($"[ResourcePool] Return() called for {obj.name}");
 
-        //  Деактивируем объект
         obj.SetActive(false);
         pool.Enqueue(obj);
 

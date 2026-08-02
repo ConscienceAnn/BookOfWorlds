@@ -1,6 +1,7 @@
 using UnityEngine;
 using Zenject;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 public class SellZone : MonoBehaviour, IInteractable
 {
@@ -14,7 +15,6 @@ public class SellZone : MonoBehaviour, IInteractable
 
     private bool isPlayerNear = false;
     private bool isSelling = false;
-
 
     // ===== РЕАЛИЗАЦИЯ IInteractable =====
     public void Interact()
@@ -77,6 +77,10 @@ public class SellZone : MonoBehaviour, IInteractable
             uiManager.AddCoins(coins);
             Debug.Log($"SellZone: продано! {coins} монет");
             playerUI?.ShowNotification($"Продано! Получено {coins} монет.", 2.5f);
+            
+
+            // Анимация монеты (вспышка или увеличение)
+            StartCoroutine(CoinFlash());
         }
         else
         {
@@ -86,6 +90,34 @@ public class SellZone : MonoBehaviour, IInteractable
 
         Invoke(nameof(ResetSellState), 0.5f);
     }
+    private IEnumerator CoinFlash()
+    {
+        Vector3 originalScale = transform.localScale;
+        Vector3 targetScale = originalScale * 1.5f;
+
+        // Увеличиваем
+        float elapsed = 0f;
+        while (elapsed < 0.3f)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / 0.3f;
+            transform.localScale = Vector3.Lerp(originalScale, targetScale, t);
+            yield return null;
+        }
+
+        // Возвращаем
+        elapsed = 0f;
+        while (elapsed < 0.3f)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / 0.3f;
+            transform.localScale = Vector3.Lerp(targetScale, originalScale, t);
+            yield return null;
+        }
+
+        transform.localScale = originalScale;
+    }
+
 
     private void ResetSellState()
     {

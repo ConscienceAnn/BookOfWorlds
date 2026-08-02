@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ddaefa455b74ed4cbc5725c6cc5a344, type: 3}
   m_Name: StoneData
   m_EditorClassIdentifier: 
-  resourceName: Stone
+  resourceName: "\u041A\u0430\u043C\u0435\u043D\u044C"
   icon: {fileID: 0}
   basePrice: 2
   respawnTime: 1

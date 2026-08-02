@@ -6,7 +6,7 @@ using System.Text;
 
 public class BuildingController : MonoBehaviour, IInteractable
 {
-    [Header("Building Data")] 
+    [Header("Building Data")]
     [SerializeField] private BuildingDataSO buildingData;
 
     [Header("Visuals")]
@@ -20,14 +20,25 @@ public class BuildingController : MonoBehaviour, IInteractable
     [Inject] private PlayerUI playerUI;
 
     private bool isRestored = false;
-    //private bool isPlayerNear = false;
     private bool hasLoadedData = false;
     private Dictionary<string, int> investedResources = new Dictionary<string, int>();
+
+    public string BuildingId { get; set; }
+    public string BuildingName { get; set; }
+   
+
+    public void UpdateBuildingPrompt()
+    {
+        // Вызываем существующий метод обновления UI
+        if (playerUI != null)
+        {
+            playerUI.UpdateBuildingCost();
+        }
+    }
 
     // ===== РЕАЛИЗАЦИЯ IInteractable =====
     public void Interact()
     {
-        //  Запускаем асинхронный метод с ожиданием
         TryRestore().Forget();
     }
     // ===== КОНЕЦ РЕАЛИЗАЦИИ =====
@@ -146,16 +157,19 @@ public class BuildingController : MonoBehaviour, IInteractable
         return 0;
     }
 
+    // ===== МЕТОДЫ ДЛЯ BuildingTrigger =====
     public void OnPlayerEnter()
     {
-        if (isRestored) return;
-       // isPlayerNear = true;
+        // Можно использовать для логики входа в зону
+        Debug.Log($"Игрок вошёл в зону {buildingData?.buildingName}");
     }
 
     public void OnPlayerExit()
     {
-        //isPlayerNear = false;
+        // Можно использовать для логики выхода из зоны
+        Debug.Log($"Игрок вышел из зоны {buildingData?.buildingName}");
     }
+    // ===== КОНЕЦ =====
 
     public async UniTaskVoid TryRestore()
     {
@@ -163,9 +177,16 @@ public class BuildingController : MonoBehaviour, IInteractable
         Debug.Log($"  - isRestored: {isRestored}");
         Debug.Log($"  - investedResources BEFORE: {GetInvestedString()}");
 
-        if (isRestored) return;
+        if (isRestored)
+        {
+            playerUI?.ShowNotification($"{buildingData.buildingName} уже восстановлено!", 2f);
+            Debug.Log($"  - Здание уже восстановлено");
+            return;
+        }
 
         bool anyResourceAdded = false;
+        bool anyResourceAvailable = false;
+        List<string> missingResources = new List<string>();
 
         foreach (var cost in buildingData.costs)
         {
@@ -179,23 +200,43 @@ public class BuildingController : MonoBehaviour, IInteractable
             if (remaining <= 0) continue;
 
             int available = inventory.GetAmount(resourceName);
-            int toTransfer = Mathf.Min(available, remaining);
+            Debug.Log($"  - {resourceName}: available={available}, toTransfer={Mathf.Min(available, remaining)}");
 
-            Debug.Log($"  - {resourceName}: available={available}, toTransfer={toTransfer}");
-
-            if (toTransfer > 0)
+            if (available > 0)
             {
+                anyResourceAvailable = true;
+                int toTransfer = Mathf.Min(available, remaining);
                 inventory.TrySpend(resourceName, toTransfer);
                 investedResources[resourceName] += toTransfer;
                 anyResourceAdded = true;
                 Debug.Log($"  - {resourceName}: transferred {toTransfer}, now {investedResources[resourceName]}");
             }
+            else if (available == 0 && remaining > 0)
+            {
+                missingResources.Add(resourceName);
+            }
         }
 
         Debug.Log($"  - anyResourceAdded: {anyResourceAdded}");
+        Debug.Log($"  - anyResourceAvailable: {anyResourceAvailable}");
         Debug.Log($"  - investedResources AFTER transfers: {GetInvestedString()}");
 
-        if (!anyResourceAdded) return;
+        //  ЕСЛИ НЕТ РЕСУРСОВ — ПОКАЗЫВАЕМ УВЕДОМЛЕНИЕ
+        if (!anyResourceAvailable)
+        {
+            string missingList = string.Join(", ", missingResources);
+            string message = $"Нет ресурсов для восстановления {buildingData.buildingName}! Нужно: {missingList}";
+            playerUI?.ShowNotification(message, 2.5f);
+            Debug.Log($"  - {message}");
+            return;
+        }
+
+        if (!anyResourceAdded)
+        {
+            playerUI?.ShowNotification($"Все ресурсы для {buildingData.buildingName} уже внесены!", 2f);
+            Debug.Log($"  - Все ресурсы уже внесены");
+            return;
+        }
 
         bool allComplete = true;
         foreach (var cost in buildingData.costs)
@@ -211,28 +252,22 @@ public class BuildingController : MonoBehaviour, IInteractable
 
         if (allComplete)
         {
-            // 1. Обновляем UI (слайдер должен показать 100%)
             if (playerUI != null)
             {
                 playerUI.UpdateBuildingCost();
             }
 
-            // 2. Получаем длительность анимации через PlayerUI
             float animationDuration = playerUI != null ? playerUI.GetBuildingPromptAnimationDuration() : 0.5f;
 
-            // 3. Ждём, пока анимация слайдера завершится
             await UniTask.Delay((int)(animationDuration * 1000) + 200);
 
-            // 4. Показываем финальный прогресс (100%)
             if (playerUI != null)
             {
                 playerUI.UpdateBuildingCostImmediate();
             }
 
-            // 5. Небольшая пауза, чтобы игрок увидел 100%
             await UniTask.Delay(500);
 
-            // 6. Восстанавливаем здание
             UpdateVisual(true);
 
             var trigger = GetComponentInChildren<BuildingTrigger>();
@@ -241,22 +276,26 @@ public class BuildingController : MonoBehaviour, IInteractable
                 trigger.gameObject.SetActive(false);
             }
 
-            // 7. Скрываем подсказку
             if (playerUI != null)
             {
                 playerUI.HideBuildingPrompt();
             }
 
             EventBus.BuildingRestored(this);
+
+            playerUI?.ShowNotification($" {buildingData.buildingName} восстановлено!", 2f);
         }
         else
         {
-            // Частичный прогресс — просто обновляем UI
             if (playerUI != null)
             {
                 playerUI.UpdateBuildingCost();
             }
             EventBus.BuildingProgressChanged(this);
+
+            await UniTask.Delay(300); 
+
+            playerUI?.ShowNotification($"Внесены ресурсы для {buildingData.buildingName}", 1.5f);
         }
 
         Debug.Log($"  - investedResources FINAL: {GetInvestedString()}");

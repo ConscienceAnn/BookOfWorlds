@@ -43,16 +43,16 @@ public class UIManager : MonoBehaviour
         if (inventory != null)
         {
             if (woodText != null)
-                woodText.text = $"{inventory.GetAmount("Wood")}/{inventory.GetMax("Wood")}";
+                woodText.text = $"{inventory.GetAmount("Дерево")}/{inventory.GetMax("Дерево")}";
 
             if (stoneText != null)
-                stoneText.text = $"{inventory.GetAmount("Stone")}/{inventory.GetMax("Stone")}";
+                stoneText.text = $"{inventory.GetAmount("Камень")}/{inventory.GetMax("Камень")}";
 
             if (milkText != null)
-                milkText.text = $"{inventory.GetAmount("Milk")}/{inventory.GetMax("Milk")}";
+                milkText.text = $"{inventory.GetAmount("Молоко")}/{inventory.GetMax("Молоко")}";
 
             if (woolText != null)
-                woolText.text = $"{inventory.GetAmount("Wool")}/{inventory.GetMax("Wool")}";
+                woolText.text = $"{inventory.GetAmount("Шерсть")}/{inventory.GetMax("Шерсть")}";
         }
 
         if (coinsText != null)

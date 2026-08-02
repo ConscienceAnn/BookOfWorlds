@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ddaefa455b74ed4cbc5725c6cc5a344, type: 3}
   m_Name: WoodData
   m_EditorClassIdentifier: 
-  resourceName: Wood
+  resourceName: "\u0414\u0435\u0440\u0435\u0432\u043E"
   icon: {fileID: 0}
   basePrice: 1
   respawnTime: 1

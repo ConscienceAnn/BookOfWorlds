@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ddaefa455b74ed4cbc5725c6cc5a344, type: 3}
   m_Name: WoolData
   m_EditorClassIdentifier: 
-  resourceName: Wool
+  resourceName: "\u0428\u0435\u0440\u0441\u0442\u044C"
   icon: {fileID: 0}
   basePrice: 4
   respawnTime: 10

@@ -26,6 +26,7 @@ public class BuildingTrigger : MonoBehaviour
 
             if (playerUI != null)
             {
+                playerUI.SetPlayerNearBuilding(true, buildingController);
                 playerUI.ShowBuildingPrompt(buildingController);
             }
         }
@@ -44,6 +45,7 @@ public class BuildingTrigger : MonoBehaviour
 
             if (playerUI != null)
             {
+                playerUI.SetPlayerNearBuilding(false);
                 playerUI.HideBuildingPrompt();
             }
         }

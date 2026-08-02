@@ -20,9 +20,10 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
     public int GetAmount(string resourceName)
     {
         var slot = GetSlot(resourceName);
-        return slot?.currentAmount ?? 0;
+        int amount = slot?.currentAmount ?? 0;
+        Debug.Log($"[PlayerInventory] GetAmount({resourceName}) = {amount}");
+        return amount;
     }
-
 
     public void SetAmount(string resourceName, int amount)
     {
@@ -32,55 +33,76 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
             int oldAmount = slot.currentAmount;
             slot.currentAmount = Mathf.Clamp(amount, 0, slot.maxCapacity);
 
-            
             OnInventoryChanged?.Invoke();
-            Debug.Log($"Инвентарь: {resourceName} = {slot.currentAmount}/{slot.maxCapacity} (было {oldAmount})");
+            Debug.Log($"[PlayerInventory] SetAmount: {resourceName} = {slot.currentAmount}/{slot.maxCapacity} (было {oldAmount})");
+        }
+        else
+        {
+            Debug.LogError($"[PlayerInventory] SetAmount: слот {resourceName} НЕ НАЙДЕН!");
         }
     }
+
     public int GetMax(string resourceName)
     {
         var slot = GetSlot(resourceName);
-        return slot?.maxCapacity ?? 0;
+        int max = slot?.maxCapacity ?? 0;
+        Debug.Log($"[PlayerInventory] GetMax({resourceName}) = {max}");
+        return max;
     }
 
     public bool CanAdd(string resourceName, int amount = 1)
     {
         var slot = GetSlot(resourceName);
-        if (slot == null) return false;
-        return slot.currentAmount + amount <= slot.maxCapacity;
+        if (slot == null)
+        {
+            Debug.LogError($"[PlayerInventory] CanAdd: слот {resourceName} НЕ НАЙДЕН!");
+            return false;
+        }
+
+        bool canAdd = slot.currentAmount + amount <= slot.maxCapacity;
+        Debug.Log($"[PlayerInventory] CanAdd({resourceName}, {amount}): current={slot.currentAmount}, max={slot.maxCapacity}, result={canAdd}");
+        return canAdd;
     }
 
     public bool TryAdd(string resourceName, int amount = 1)
     {
         var slot = GetSlot(resourceName);
-        if (slot == null) return false;
+        if (slot == null)
+        {
+            Debug.LogError($"[PlayerInventory] TryAdd: слот {resourceName} НЕ НАЙДЕН!");
+            return false;
+        }
 
         if (slot.currentAmount + amount > slot.maxCapacity)
         {
-            Debug.Log($" Инвентарь для {resourceName} полон! ({slot.currentAmount}/{slot.maxCapacity})");
+            Debug.Log($"[PlayerInventory] НЕЛЬЗЯ добавить {resourceName} ({amount}): полон! ({slot.currentAmount}/{slot.maxCapacity})");
             return false;
         }
 
         slot.currentAmount += amount;
         OnInventoryChanged?.Invoke();
-        Debug.Log($" Добавлен {resourceName} (+{amount}) - {slot.currentAmount}/{slot.maxCapacity}");
+        Debug.Log($"[PlayerInventory] ДОБАВЛЕН {resourceName} (+{amount}) - {slot.currentAmount}/{slot.maxCapacity}");
         return true;
     }
 
     public bool TrySpend(string resourceName, int amount)
     {
         var slot = GetSlot(resourceName);
-        if (slot == null) return false;
+        if (slot == null)
+        {
+            Debug.LogError($"[PlayerInventory] TrySpend: слот {resourceName} НЕ НАЙДЕН!");
+            return false;
+        }
 
         if (slot.currentAmount < amount)
         {
-            Debug.Log($" Недостаточно {resourceName}! Есть {slot.currentAmount}, нужно {amount}");
+            Debug.Log($"[PlayerInventory] НЕДОСТАТОЧНО {resourceName}! Есть {slot.currentAmount}, нужно {amount}");
             return false;
         }
 
         slot.currentAmount -= amount;
         OnInventoryChanged?.Invoke();
-        Debug.Log($" Потрачен {resourceName} (-{amount}) - {slot.currentAmount}/{slot.maxCapacity}");
+        Debug.Log($"[PlayerInventory] ПОТРАЧЕН {resourceName} (-{amount}) - {slot.currentAmount}/{slot.maxCapacity}");
         return true;
     }
 
@@ -91,6 +113,8 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
         {
             if (slot.currentAmount > 0)
                 items[slot.resourceName] = slot.currentAmount;
+
+            Debug.Log($"[PlayerInventory] GetAllItems: {slot.resourceName} = {slot.currentAmount}/{slot.maxCapacity}");
         }
         return items;
     }
@@ -100,6 +124,7 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
         foreach (var slot in resourceSlots)
             slot.currentAmount = 0;
         OnInventoryChanged?.Invoke();
+        Debug.Log("[PlayerInventory] Все ресурсы очищены");
     }
 
     private ResourceSlot GetSlot(string resourceName)
@@ -109,6 +134,7 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
             if (slot.resourceName == resourceName)
                 return slot;
         }
+        Debug.LogWarning($"[PlayerInventory] GetSlot: слот {resourceName} НЕ НАЙДЕН!");
         return null;
     }
 }

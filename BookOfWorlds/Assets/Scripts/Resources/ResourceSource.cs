@@ -79,15 +79,26 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
         if (!isAvailable)
         {
-            playerUI?.ShowNotification($"Ресурс {data.resourceName} ещё не восстановился!");
+            Debug.Log($"[ResourceSource] PerformCollect: isAvailable = false, ресурс ещё не восстановился");
+            playerUI?.ShowNotification($"Ресурс {data.resourceName} ещё не восстановился!", 2f);
             return false;
         }
 
-        if (!inventory.CanAdd(data.resourceName, amountPerCollect))
+        // Подробное логирование перед проверкой
+        int currentAmount = inventory.GetAmount(data.resourceName);
+        int maxCapacity = inventory.GetMax(data.resourceName);
+        bool canAdd = inventory.CanAdd(data.resourceName, amountPerCollect);
+
+        Debug.Log($"[ResourceSource] Проверка добавления {data.resourceName}: current={currentAmount}, max={maxCapacity}, need={amountPerCollect}, canAdd={canAdd}");
+
+        if (!canAdd)
         {
-            playerUI?.ShowNotification($"Инвентарь для {data.resourceName} полон!");
+            Debug.Log($"[ResourceSource] Нет места для {data.resourceName}! Текущее: {currentAmount}, Макс: {maxCapacity}");
+            playerUI?.ShowNotification($"Инвентарь для {data.resourceName} полон!", 2f);
             return false;
         }
+
+        Debug.Log($"[ResourceSource] Начинаем сбор {data.resourceName} (+{amountPerCollect})");
 
         inventory.TryAdd(data.resourceName, amountPerCollect);
 
@@ -214,5 +225,13 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
     public bool HasInventory()
     {
         return inventory != null;
+    }
+
+    public void SetRespawnTime(float time)
+    {
+        if (data != null)
+        {
+            data.respawnTime = time;
+        }
     }
 }
