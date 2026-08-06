@@ -2,7 +2,7 @@ using UnityEngine;
 using Zenject;
 using Cysharp.Threading.Tasks;
 
-public class AnimalController : MonoBehaviour, ICollectable, IInteractable
+public class AnimalController : MonoBehaviour, ICollectable
 {
     [Header("Animal Data")]
     [SerializeField] private AnimalDataSO animalData;
@@ -11,33 +11,15 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
     [SerializeField] private Animator animator;
     [SerializeField] private VisualState visualState;
 
-    [Header("Progress Bar")]
-    [SerializeField] private ProgressBarUI progressBar;
-
-    [Header("Fly Animation")]
-    [SerializeField] private ResourceFlyAnimation flyAnimation;
-
-    [Header("Movement")]
-    [SerializeField] private AnimalMover mover; 
-
     [Inject] private IPlayerInventory inventory;
     [Inject] private PlayerUI playerUI;
+    [Inject] private ProgressBarFactory progressBarFactory;
 
     private bool isAvailable = true;
     private float cooldownTimer = 0f;
     private IResourceBehaviour behaviour;
+    private ProgressBarUI progressBar;
 
-    public float CooldownTime
-    {
-        get => animalData?.cooldownTime ?? 8f;
-        set
-        {
-            if (animalData != null)
-            {
-                animalData.cooldownTime = value;
-            }
-        }
-    }
     public bool IsAvailable => isAvailable;
     public string GetResourceName() => animalData?.resourceData?.resourceName ?? "Unknown";
     public int GetAmount() => animalData?.resourceAmount ?? 1;
@@ -46,89 +28,69 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
     public bool TryCollect()
     {
         if (!isAvailable) return false;
-        PerformCollect();
+        Interact();
         return true;
-    }
-
-    public void Interact()
-    {
-        if (!isAvailable)
-        {
-            playerUI?.ShowNotification($"{animalData.animalName} is not ready!", 2f);
-            return;
-        }
-
-        if (!inventory.CanAdd(GetResourceName(), GetAmount()))
-        {
-            playerUI?.ShowNotification($"No space for {GetResourceName()}!", 2f);
-            return;
-        }
-
-        PlayerCollector collector = FindObjectOfType<PlayerCollector>();
-        if (collector != null)
-        {
-            collector.StartCollect(this);
-        }
-        else
-        {
-            PerformCollect();
-        }
-    }
-
-    private void PerformCollect()
-    {
-        inventory.TryAdd(GetResourceName(), GetAmount());
-
-        isAvailable = false;
-        cooldownTimer = animalData?.cooldownTime ?? 8f;
-
-        if (visualState != null)
-            visualState.SetGray();
-
-        behaviour?.OnCollect(transform);
-
-        PlayCollectAnimation();
-
-      
-        mover?.StopMoving();
-
-        if (flyAnimation != null)
-        {
-            Vector3 flyPosition = transform.position + new Vector3(0, 1.5f, 0);
-            flyAnimation.Play(flyPosition, GetResourceName()).Forget();
-        }
-
-        Debug.Log($"[AnimalController] Collected {GetResourceName()} (+{GetAmount()}) from {animalData.animalName}");
     }
 
     private void Awake()
     {
+
+        Debug.Log($" AnimalController.Awake() на {gameObject.name}, IsAvailable = {isAvailable}");
+        Debug.Log($" AnimalController реализует ICollectable: {(this is ICollectable ? "ДА" : "НЕТ")}");
+
+        Debug.Log($"AnimalController.Awake() для {animalData?.animalName}");
+
         if (visualState == null)
             visualState = GetComponent<VisualState>();
 
         if (visualState == null)
             visualState = GetComponentInChildren<VisualState>();
 
-        behaviour = AnimalBehaviourFactory.Create(animalData, progressBar);
-
-        if (behaviour is AnimalBehaviourBase animalBehaviour)
+        //  СОЗДАЁМ PROGRESS BAR ЧЕРЕЗ ФАБРИКУ
+        if (progressBarFactory != null)
         {
-            animalBehaviour.OnAnimalRespawned += OnAnimalRespawned;
+            progressBar = progressBarFactory.CreateProgressBar(
+                transform,
+                new Vector3(0, 2.5f, 0)
+            );
         }
 
-        if (flyAnimation == null)
-            flyAnimation = FindObjectOfType<ResourceFlyAnimation>();
+        //  СОЗДАЁМ ПОВЕДЕНИЕ ЧЕРЕЗ ФАБРИКУ
+        if (animalData != null && progressBar != null)
+        {
+            behaviour = AnimalBehaviourFactory.Create(animalData, progressBar);
+            Debug.Log($"AnimalController: behaviour {(behaviour != null ? "СОЗДАН" : "NULL")} для {animalData.animalType}");
+        }
+        else
+        {
+            Debug.LogError($"AnimalController: animalData или progressBar = NULL для {gameObject.name}!");
+        }
 
-      
-        if (mover == null)
-            mover = GetComponent<AnimalMover>();
+        // Подписываемся на события
+        if (behaviour is CowBehaviour cowBehaviour)
+        {
+            cowBehaviour.OnCowRespawned += OnRespawned;
+        }
+        else if (behaviour is RabbitBehaviour rabbitBehaviour)
+        {
+            rabbitBehaviour.OnRabbitRespawned += OnRespawned;
+        }
     }
 
     private void OnDestroy()
     {
-        if (behaviour is AnimalBehaviourBase animalBehaviour)
+        if (behaviour is CowBehaviour cowBehaviour)
         {
-            animalBehaviour.OnAnimalRespawned -= OnAnimalRespawned;
+            cowBehaviour.OnCowRespawned -= OnRespawned;
+        }
+        else if (behaviour is RabbitBehaviour rabbitBehaviour)
+        {
+            rabbitBehaviour.OnRabbitRespawned -= OnRespawned;
+        }
+
+        if (progressBarFactory != null && progressBar != null)
+        {
+            progressBarFactory.DestroyProgressBar(progressBar);
         }
     }
 
@@ -140,9 +102,9 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
         if (visualState != null)
             visualState.SetColored();
 
-        if (mover != null)
+        if (progressBar != null)
         {
-            mover.SetStartPosition(transform.position);
+            progressBar.Hide();
         }
     }
 
@@ -159,36 +121,58 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
                 if (visualState != null)
                     visualState.SetColored();
 
-              
-                if (animalData != null && animalData.canMove && mover != null)
-                {
-                    mover.StartMoving();
-                }
-
-                Debug.Log($"[AnimalController] {animalData.animalName} is ready!");
+                Debug.Log($"{animalData.animalName} готова дать {GetResourceName()}!");
             }
-            return;
-        }
-
-        if (animalData != null && animalData.canMove && mover != null)
-        {
-            mover.Tick();
         }
     }
 
-    private void OnAnimalRespawned()
+    public void Interact()
+    {
+        Debug.Log($"AnimalController.Interact() вызван для {animalData?.animalName}, behaviour = {(behaviour != null ? "ЕСТЬ" : "НЕТ")}, isAvailable = {isAvailable}");
+
+        if (!isAvailable)
+        {
+            playerUI?.ShowNotification($"{animalData.animalName} ещё не готова дать {GetResourceName()}!", 2f);
+            return;
+        }
+
+        if (!inventory.CanAdd(GetResourceName(), GetAmount()))
+        {
+            playerUI?.ShowNotification($"Нет места для {GetResourceName()}!", 2f);
+            return;
+        }
+
+        inventory.TryAdd(GetResourceName(), GetAmount());
+
+        isAvailable = false;
+        cooldownTimer = animalData?.cooldownTime ?? 8f;
+
+        if (visualState != null)
+            visualState.SetGray();
+
+        //  ВЫЗЫВАЕМ ПОВЕДЕНИЕ
+        if (behaviour != null)
+        {
+            behaviour.OnCollect(transform);
+        }
+        else
+        {
+            Debug.LogError($"AnimalController: behaviour = NULL для {animalData?.animalName}!");
+        }
+
+        PlayCollectAnimation();
+
+        Debug.Log($"Собрано {GetResourceName()} (+{GetAmount()}) от {animalData.animalName}");
+    }
+
+    private void OnRespawned()
     {
         isAvailable = true;
 
         if (visualState != null)
             visualState.SetColored();
 
-        if (animalData != null && animalData.canMove && mover != null)
-        {
-            mover.StartMoving();
-        }
-
-        Debug.Log($"[AnimalController] {animalData.animalName} respawned!");
+        Debug.Log($"{animalData.animalName} готова дать {GetResourceName()}!");
     }
 
     private void PlayCollectAnimation()
@@ -197,7 +181,22 @@ public class AnimalController : MonoBehaviour, ICollectable, IInteractable
             animator.SetTrigger("Collect");
     }
 
-    public string GetAnimalName() => animalData?.animalName ?? "Animal";
+    public string GetAnimalName()
+    {
+        return animalData?.animalName ?? "Животное";
+    }
 
-   
+    public void SetCooldown(float time)
+    {
+        if (animalData != null)
+        {
+            animalData.cooldownTime = time;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = isAvailable ? Color.green : Color.red;
+        Gizmos.DrawWireSphere(transform.position, 1f);
+    }
 }

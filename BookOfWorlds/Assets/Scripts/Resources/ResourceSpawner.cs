@@ -15,9 +15,8 @@ public class ResourceSpawner : MonoBehaviour
     [SerializeField] private bool useFixedRotation = true;
     [SerializeField] private bool randomYRotation = true;
 
-    [Header("Behaviour")]
-    [SerializeField] private ParticleFactory particleFactory;
-    [SerializeField] private ResourceFlyAnimation flyAnimation;
+    [Inject] private ParticleFactory particleFactory;
+    [Inject] private ResourceFlyAnimation flyAnimation;
 
     private List<ResourceSource> activeResources = new List<ResourceSource>();
     private Dictionary<Transform, ResourceSource> occupiedPoints = new Dictionary<Transform, ResourceSource>();

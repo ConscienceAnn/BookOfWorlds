@@ -1,11 +1,20 @@
 using UnityEngine;
 
-public class AnimalBehaviourFactory
+public static class AnimalBehaviourFactory
 {
     public static IResourceBehaviour Create(AnimalDataSO data, ProgressBarUI progressBar)
     {
-        if (data == null || progressBar == null)
+        if (data == null)
+        {
+            Debug.LogError("AnimalBehaviourFactory: data is NULL!");
             return null;
+        }
+
+        if (progressBar == null)
+        {
+            Debug.LogError("AnimalBehaviourFactory: progressBar is NULL!");
+            return null;
+        }
 
         float cooldown = data.cooldownTime;
 

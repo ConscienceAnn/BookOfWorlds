@@ -19,32 +19,15 @@ public class CowBehaviour : IResourceBehaviour
 
     public void OnCollect(ResourceSource resource)
     {
-        // Если есть ResourceSource — используем его Transform
         if (resource != null)
-        {
             OnCollect(resource.transform);
-        }
-        else
-        {
-            Debug.LogWarning("CowBehaviour: resource is NULL, cannot show progress bar");
-        }
     }
 
     public void OnCollect(Transform target)
     {
-        Debug.Log($"=== CowBehaviour.OnCollect(Transform) ===");
-        Debug.Log($"  - target: {(target != null ? target.name : "NULL")}");
-        Debug.Log($"  - progressBar: {(progressBar != null ? "ЕСТЬ" : "НЕТ")}");
-
-        if (progressBar == null)
+        if (progressBar == null || target == null)
         {
-            Debug.LogError("CowBehaviour: progressBar is NULL!");
-            return;
-        }
-
-        if (target == null)
-        {
-            Debug.LogError("CowBehaviour: target is NULL!");
+            Debug.LogWarning($"CowBehaviour: progressBar или target = null!");
             return;
         }
 
@@ -52,15 +35,8 @@ public class CowBehaviour : IResourceBehaviour
         cts?.Dispose();
         cts = new CancellationTokenSource();
 
-        Debug.Log($"  - progressBar.gameObject.activeSelf ДО Show: {progressBar.gameObject.activeSelf}");
-
         progressBar.Show(target, 0f);
-
-        Debug.Log($"  - progressBar.gameObject.activeSelf ПОСЛЕ Show: {progressBar.gameObject.activeSelf}");
-
         UpdateProgressAsync(cts.Token).Forget();
-
-        Debug.Log("=== CowBehaviour.OnCollect(Transform) END ===");
     }
 
     public void OnRespawn(ResourceSource resource)
@@ -79,7 +55,6 @@ public class CowBehaviour : IResourceBehaviour
 
             elapsed += Time.unscaledDeltaTime;
             float progress = Mathf.Clamp01(elapsed / cooldownTime);
-
             progressBar?.SetProgress(progress);
 
             await UniTask.Yield(token);

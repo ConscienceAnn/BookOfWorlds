@@ -23,7 +23,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
     private CancellationTokenSource cts;
     private IResourceBehaviour behaviour;
 
-
     public event System.Action<ResourceSource> OnCollected;
 
     // ===== ПУБЛИЧНЫЕ СВОЙСТВА =====
@@ -84,7 +83,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
             return false;
         }
 
-        // Подробное логирование перед проверкой
         int currentAmount = inventory.GetAmount(data.resourceName);
         int maxCapacity = inventory.GetMax(data.resourceName);
         bool canAdd = inventory.CanAdd(data.resourceName, amountPerCollect);

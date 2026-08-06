@@ -8,7 +8,6 @@ public class PlayerCollector : MonoBehaviour
     [SerializeField] private float collectDuration = 1.5f;
     [SerializeField] private float interactRange = 2f;
 
-    private PlayerController playerController;
     private ICollectable currentTarget;
     private bool isCollecting = false;
 
@@ -20,11 +19,6 @@ public class PlayerCollector : MonoBehaviour
 
     public bool IsCollecting => isCollecting;
 
-    private void Awake()
-    {
-        playerController = GetComponent<PlayerController>();
-    }
-
     public void TryInteract()
     {
         if (isCollecting)
@@ -33,47 +27,100 @@ public class PlayerCollector : MonoBehaviour
             return;
         }
 
-        // 1. Находим любой объект для взаимодействия
-        IInteractable interactable = FindInteractable();
-        if (interactable != null)
+        // 1. Сначала проверяем, есть ли рядом НЕДОСТУПНАЯ корова
+        AnimalController unavailableAnimal = FindUnavailableAnimal();
+        if (unavailableAnimal != null)
         {
-            //  Объект сам решает, что делать (показать уведомление или собрать)
-            interactable.Interact();
+            string message = $"{unavailableAnimal.GetAnimalName()} ещё не готова дать {unavailableAnimal.GetResourceName()}!";
+            playerUI?.ShowNotification(message, 2f);
             return;
         }
 
-        Debug.Log("Рядом нет объектов для взаимодействия");
+        // 2. Находим ДОСТУПНЫЙ собираемый объект
+        ICollectable collectable = FindCollectable();
+        if (collectable != null)
+        {
+            StartCollect(collectable);
+            return;
+        }
+
+        // 3. Зона продажи
+        SellZone sellZone = FindSellZone();
+        if (sellZone != null)
+        {
+            sellZone.Sell();
+            return;
+        }
+
+        // 4. Здание
+        BuildingController building = FindBuilding();
+        if (building != null)
+        {
+            building.Interact();
+            return;
+        }
     }
 
-    /// <summary>
-    /// Поиск объекта для взаимодействия в радиусе
-    /// </summary>
-    private IInteractable FindInteractable()
+    private AnimalController FindUnavailableAnimal()
     {
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
         foreach (var hit in hitColliders)
         {
-            // Проверяем IInteractable (универсальный интерфейс)
-            IInteractable interactable = hit.GetComponent<IInteractable>();
-            if (interactable != null)
-                return interactable;
-
-            // Проверяем в родителе (для животных)
-            interactable = hit.GetComponentInParent<IInteractable>();
-            if (interactable != null)
-                return interactable;
+            AnimalController animal = hit.GetComponentInParent<AnimalController>();
+            if (animal != null && !animal.IsAvailable)
+                return animal;
         }
         return null;
     }
 
-    /// <summary>
-    /// Универсальный старт сбора для ICollectable
-    /// </summary>
+    private ICollectable FindCollectable()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
+        foreach (var hit in hitColliders)
+        {
+            ResourceSource resource = hit.GetComponent<ResourceSource>();
+            if (resource != null && resource.IsAvailable && resource.gameObject.activeSelf)
+                return resource;
+
+            AnimalController animal = hit.GetComponentInParent<AnimalController>();
+            if (animal != null && animal.IsAvailable && animal.gameObject.activeSelf)
+                return animal;
+        }
+        return null;
+    }
+
+    private SellZone FindSellZone()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
+        foreach (var hit in hitColliders)
+        {
+            SellZone sellZone = hit.GetComponent<SellZone>();
+            if (sellZone != null)
+                return sellZone;
+        }
+        return null;
+    }
+
+    private BuildingController FindBuilding()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, interactRange);
+        foreach (var hit in hitColliders)
+        {
+            BuildingTrigger trigger = hit.GetComponent<BuildingTrigger>();
+            if (trigger != null)
+            {
+                BuildingController building = trigger.GetComponentInParent<BuildingController>();
+                if (building != null && !building.IsRestored())
+                    return building;
+            }
+        }
+        return null;
+    }
+
     public void StartCollect(ICollectable collectable)
     {
         if (isCollecting) return;
 
-        // Проверяем инвентарь
         if (!inventory.CanAdd(collectable.GetResourceName(), collectable.GetAmount()))
         {
             playerUI?.ShowNotification($"Инвентарь для {collectable.GetResourceName()} полон!");
@@ -139,7 +186,7 @@ public class PlayerCollector : MonoBehaviour
             }
             else
             {
-                Debug.Log($" Не удалось собрать {collectable.GetResourceName()}");
+                Debug.Log($"Не удалось собрать {collectable.GetResourceName()}");
             }
         }
         else
@@ -156,4 +203,9 @@ public class PlayerCollector : MonoBehaviour
         currentTarget = null;
     }
 
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, interactRange);
+    }
 }

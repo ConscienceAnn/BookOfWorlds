@@ -1,5 +1,6 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using Zenject;
 
 public class TreeBehaviour : IResourceBehaviour
 {

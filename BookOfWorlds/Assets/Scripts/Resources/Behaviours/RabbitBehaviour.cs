@@ -25,7 +25,11 @@ public class RabbitBehaviour : IResourceBehaviour
 
     public void OnCollect(Transform target)
     {
-        if (progressBar == null || target == null) return;
+        if (progressBar == null || target == null)
+        {
+            Debug.LogWarning($"RabbitBehaviour: progressBar или target = null!");
+            return;
+        }
 
         cts?.Cancel();
         cts?.Dispose();

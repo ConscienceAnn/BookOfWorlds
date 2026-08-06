@@ -6,17 +6,12 @@ public class LevelGenerator : MonoBehaviour
 {
     [Header("Parents")]
     [SerializeField] private Transform buildingsParent;
-    [SerializeField] private Transform resourcesParent;
     [SerializeField] private Transform animalsParent;
+    [SerializeField] private Transform collectableParent;
+    [SerializeField] private Transform sellZoneParent;
 
-    [Header("Prefabs")]
-    [SerializeField] private GameObject sellZonePrefab;
-    [SerializeField] private GameObject cowPrefab;
-    [SerializeField] private GameObject rabbitPrefab;
 
     [Inject] private DiContainer container;
-    [Inject] private ResourcePool woodPool;
-    [Inject] private ResourcePool stonePool;
     [Inject] private GameSaveController gameSaveController;
 
     private LevelDataSO currentLevelData;
@@ -31,114 +26,107 @@ public class LevelGenerator : MonoBehaviour
 
         currentLevelData = data;
 
-        Debug.Log($" Генерируем уровень: {data.levelName}");
+        Debug.Log($"Генерируем уровень: {data.levelName}");
 
-        GenerateBuildings(data.buildings);
-        GenerateResources(data.resources);
-        GenerateAnimals(data.animals);
-        GenerateSellZone(data.sellZonePosition);
+        // 1. СОЗДАЁМ ВСЕ РЕСУРСЫ ИЗ ПРЕФАБА!
+        GenerateCollectableObjects(data.collectableObjectsPrefab);
+
+        // 2. Создаём здания
+        GenerateBuildings(data.buildingsPrefab);
+
+        // 3. Создаём животных
+        GenerateAnimals(data.animalsPrefab);
+
+        // 4. Создаём зону продажи
+        GenerateSellZone(data.sellZoneData);
+
+        // 5. Устанавливаем позицию игрока
         SetPlayerStartPosition(data.playerStartPosition);
+
+        // 6. Применяем сохранённый прогресс
         ApplySavedProgress();
 
         Debug.Log($" Уровень {data.levelName} сгенерирован!");
     }
 
-    private void GenerateBuildings(List<BuildingSpawnData> buildingsData)
+    //  НОВЫЙ МЕТОД — СОЗДАЁТ ВСЕ РЕСУРСЫ ИЗ ПРЕФАБА!
+    private void GenerateCollectableObjects(GameObject prefab)
     {
-        foreach (var data in buildingsData)
+        if (prefab == null)
         {
-            if (data.buildingPrefab == null)
-            {
-                Debug.LogWarning($"Префаб для здания {data.buildingId} не назначен!");
-                continue;
-            }
-
-            GameObject buildingObj = container.InstantiatePrefab(
-                data.buildingPrefab,
-                data.position,
-                Quaternion.Euler(data.rotation),
-                buildingsParent
-            );
-
-            spawnedObjects.Add(buildingObj);
-
-            BuildingController building = buildingObj.GetComponent<BuildingController>();
-            if (building != null)
-            {
-                spawnedBuildings.Add(building);
-                Debug.Log($"- Создано здание: {building.GetBuildingName()}");
-            }
-        }
-    }
-
-    private void GenerateResources(List<ResourceSpawnData> resourcesData)
-    {
-        foreach (var data in resourcesData)
-        {
-            ResourcePool pool = data.resourceType == "Wood" ? woodPool : stonePool;
-
-            if (pool == null)
-            {
-                Debug.LogWarning($"Пул для {data.resourceType} не найден!");
-                continue;
-            }
-
-            for (int i = 0; i < data.poolSize; i++)
-            {
-                Vector3 offset = new Vector3(
-                    Random.Range(-0.5f, 0.5f),
-                    0,
-                    Random.Range(-0.5f, 0.5f)
-                );
-
-                GameObject obj = pool.Get(data.position + offset, Quaternion.identity);
-                if (obj != null)
-                {
-                    spawnedObjects.Add(obj);
-                }
-            }
-
-            Debug.Log($"- Создан ресурс: {data.resourceType} (x{data.poolSize}) в {data.position}");
-        }
-    }
-
-    private void GenerateAnimals(List<AnimalSpawnData> animalsData)
-    {
-        foreach (var data in animalsData)
-        {
-            GameObject prefab = data.animalType == "Cow" ? cowPrefab : rabbitPrefab;
-
-            if (prefab == null)
-            {
-                Debug.LogWarning($"Префаб для {data.animalType} не найден!");
-                continue;
-            }
-
-            GameObject animalObj = container.InstantiatePrefab(
-                prefab,
-                data.position,
-                Quaternion.identity,
-                animalsParent
-            );
-
-            spawnedObjects.Add(animalObj);
-
-            Debug.Log($" - Создано животное: {data.animalType}");
-        }
-    }
-
-    private void GenerateSellZone(Vector3 position)
-    {
-        if (sellZonePrefab == null)
-        {
-            Debug.LogWarning("SellZone префаб не назначен!");
+            Debug.LogWarning("CollectableObjects префаб не назначен в LevelData!");
             return;
         }
 
-        GameObject sellZone = container.InstantiatePrefab(sellZonePrefab, position, Quaternion.identity, null);
-        spawnedObjects.Add(sellZone);
+        GameObject collectableObj = container.InstantiatePrefab(
+            prefab,
+            Vector3.zero,
+            Quaternion.identity,
+            collectableParent
+        );
 
-        Debug.Log($" - SellZone создана в {position}");
+        spawnedObjects.Add(collectableObj);
+
+        Debug.Log($"- Созданы все ресурсы из префаба: {prefab.name}");
+    }
+
+    private void GenerateBuildings(GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            Debug.LogWarning("Buildings префаб не назначен в LevelData!");
+            return;
+        }
+
+        GameObject buildingsObj = container.InstantiatePrefab(prefab, buildingsParent);
+        spawnedObjects.Add(buildingsObj);
+
+        // Находим все BuildingController в созданном префабе
+        var buildings = buildingsObj.GetComponentsInChildren<BuildingController>();
+        foreach (var building in buildings)
+        {
+            spawnedBuildings.Add(building);
+            Debug.Log($"  - Найдено здание: {building.GetBuildingName()}");
+        }
+
+        Debug.Log($"  - Созданы все здания из префаба: {prefab.name}");
+    }
+
+    private void GenerateAnimals(GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            Debug.LogWarning("Animals префаб не назначен в LevelData!");
+            return;
+        }
+
+        GameObject animalsObj = container.InstantiatePrefab(
+            prefab,
+            Vector3.zero,
+            Quaternion.identity,
+            animalsParent
+        );
+
+        spawnedObjects.Add(animalsObj);
+
+        Debug.Log($"  - Созданы все животные из префаба: {prefab.name}");
+    }
+
+    private void GenerateSellZone(GameObject sellZonePrefab)
+    {
+        if (sellZonePrefab == null)
+        {
+            Debug.LogWarning("SellZone префаб не назначен в LevelData!");
+            return;
+        }
+
+        GameObject sellZone = container.InstantiatePrefab(
+            sellZonePrefab,
+            sellZoneParent
+        );
+
+        spawnedObjects.Add(sellZone);
+        Debug.Log($"  - SellZone создана из префаба: {sellZonePrefab.name}");
     }
 
     private void SetPlayerStartPosition(Vector3 position)
@@ -162,7 +150,6 @@ public class LevelGenerator : MonoBehaviour
             {
                 gameSaveController.RegisterBuilding(building);
             }
-
             gameSaveController.RefreshAllSystems();
         }
     }
@@ -173,13 +160,6 @@ public class LevelGenerator : MonoBehaviour
         {
             if (obj != null)
             {
-                ResourceSource source = obj.GetComponent<ResourceSource>();
-                if (source != null)
-                {
-                    source.Hide();
-                    continue;
-                }
-
                 Destroy(obj);
             }
         }

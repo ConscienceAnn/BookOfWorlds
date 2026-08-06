@@ -25,8 +25,8 @@ public class BuildingController : MonoBehaviour, IInteractable
 
     public string BuildingId { get; set; }
     public string BuildingName { get; set; }
-   
 
+  
     public void UpdateBuildingPrompt()
     {
         // Вызываем существующий метод обновления UI

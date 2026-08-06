@@ -32,8 +32,10 @@ public class GameInstaller : MonoInstaller
     [Header("Game Save")]
     [SerializeField] private GameSaveController gameSaveController;
 
-    [Header("Particle Factory")]
+    [Header("Services")]
     [SerializeField] private ParticleFactory particleFactory;
+    [SerializeField] private ResourceFlyAnimation flyAnimation;
+    [SerializeField] private ProgressBarFactory progressBarFactory;
 
     public override void InstallBindings()
     {
@@ -126,6 +128,14 @@ public class GameInstaller : MonoInstaller
 
         Container.Bind<ParticleFactory>()
             .FromInstance(particleFactory)
+            .AsSingle();
+
+        Container.Bind<ResourceFlyAnimation>()
+            .FromInstance(flyAnimation)
+            .AsSingle();
+
+        Container.Bind<ProgressBarFactory>()
+            .FromInstance(progressBarFactory)
             .AsSingle();
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");

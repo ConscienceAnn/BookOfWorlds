@@ -1,11 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 
 public class ProgressBarUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private Slider progressSlider;
     [SerializeField] private WorldSpaceUIFollower uiFollower;
+
+    private Canvas parentCanvas;
 
     private void Awake()
     {
@@ -14,11 +17,12 @@ public class ProgressBarUI : MonoBehaviour
 
         if (uiFollower == null)
             Debug.LogError("ProgressBarUI: WorldSpaceUIFollower не найден!");
+
+        parentCanvas = GetComponentInParent<Canvas>();
     }
 
     private void Start()
     {
-        //  Объект НЕ выключаем, просто скрываем слайдер
         if (progressSlider != null)
         {
             progressSlider.gameObject.SetActive(false);
@@ -34,7 +38,6 @@ public class ProgressBarUI : MonoBehaviour
             return;
         }
 
-        //  Показываем слайдер
         if (progressSlider != null)
         {
             progressSlider.gameObject.SetActive(true);
@@ -58,7 +61,6 @@ public class ProgressBarUI : MonoBehaviour
 
     public void Hide()
     {
-        //  Скрываем слайдер, но объект остаётся активным
         if (progressSlider != null)
         {
             progressSlider.gameObject.SetActive(false);
