@@ -13,6 +13,8 @@ public class ResourcePool : MonoBehaviour
 
     private Queue<GameObject> pool = new Queue<GameObject>();
 
+    // ===== UNITY LIFECYCLE =====
+
     private void Awake()
     {
         if (resourceData == null)
@@ -37,9 +39,22 @@ public class ResourcePool : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        //  Подписываемся на событие очистки уровня
+        LevelGenerator.OnLevelCleared += ClearPool;
+    }
+
+    private void OnDisable()
+    {
+        //  Отписываемся от события
+        LevelGenerator.OnLevelCleared -= ClearPool;
+    }
+
+    // ===== POOL METHODS =====
+
     private GameObject CreateNewObject()
     {
-        //  ВЫБИРАЕМ СЛУЧАЙНЫЙ ПРЕФАБ ИЗ МАССИВА
         GameObject selectedPrefab = prefabs[Random.Range(0, prefabs.Length)];
         Debug.Log($"[ResourcePool] CreateNewObject() for {selectedPrefab?.name ?? "NULL"}");
 
@@ -139,6 +154,24 @@ public class ResourcePool : MonoBehaviour
         pool.Enqueue(obj);
 
         Debug.Log($"[ResourcePool] Object returned to pool, pool size: {pool.Count}");
+    }
+
+    /// <summary>
+    /// Очищает пул — вызывается автоматически при очистке уровня
+    /// </summary>
+    public void ClearPool()
+    {
+        Debug.Log($"[ResourcePool] ClearPool() called for {name}");
+
+        foreach (var obj in pool)
+        {
+            if (obj != null)
+            {
+                Destroy(obj);
+            }
+        }
+        pool.Clear();
+        Debug.Log($"[ResourcePool] Пул {name} очищен, размер: {pool.Count}");
     }
 
     public int GetPoolSize()

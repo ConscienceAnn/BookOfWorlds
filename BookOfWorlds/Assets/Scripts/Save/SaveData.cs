@@ -1,25 +1,37 @@
-using System;
 using System.Collections.Generic;
 
-[Serializable]
+[System.Serializable]
 public class SaveData
 {
-    public int coins;
-    public List<ResourceEntry> resources = new List<ResourceEntry>(); // Wood, Stone, Milk, Wool
-    public List<BuildingProgressEntry> buildingProgress = new List<BuildingProgressEntry>();  // Bridge, House, Mill
-    public List<string> restoredBuildings = new List<string>();         // Названия восстановленных зданий
-    public List<string> openedLevels = new List<string>();               // Открытые локации
-    public int currentLevel;                        // Текущая локация
+    // ===== ГЛОБАЛЬНЫЕ ДАННЫЕ =====
+    public int currentLevel = 0;
+    public List<string> openedLevels = new List<string>();
+
+    // ===== ДАННЫЕ ТЕКУЩЕГО УРОВНЯ =====
+    public int coins = 0;
+    public List<ResourceEntry> resources = new List<ResourceEntry>();
+
+    // ===== ДАННЫЕ ЗДАНИЙ (по уровням) =====
+    public List<LevelProgressData> levelProgress = new List<LevelProgressData>();
 }
 
-[Serializable]
+[System.Serializable]
 public class ResourceEntry
 {
     public string resourceName;
     public int amount;
 }
 
-[Serializable]
+[System.Serializable]
+public class LevelProgressData
+{
+    public string levelName;
+    public bool isCompleted;
+    public List<BuildingProgressEntry> buildingProgress = new List<BuildingProgressEntry>();
+    public List<string> restoredBuildings = new List<string>();
+}
+
+[System.Serializable]
 public class BuildingProgressEntry
 {
     public string buildingId;

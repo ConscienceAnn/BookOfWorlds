@@ -4,12 +4,14 @@ using System.Collections.Generic;
 
 public class LevelGenerator : MonoBehaviour
 {
+    // СОБЫТИЕ — оповещает об очистке уровня
+    public static event System.Action OnLevelCleared;
+
     [Header("Parents")]
     [SerializeField] private Transform buildingsParent;
     [SerializeField] private Transform animalsParent;
     [SerializeField] private Transform collectableParent;
     [SerializeField] private Transform sellZoneParent;
-
 
     [Inject] private DiContainer container;
     [Inject] private GameSaveController gameSaveController;
@@ -28,43 +30,36 @@ public class LevelGenerator : MonoBehaviour
 
         Debug.Log($"Генерируем уровень: {data.levelName}");
 
-        // 1. СОЗДАЁМ ВСЕ РЕСУРСЫ ИЗ ПРЕФАБА!
+        // 1. Ресурсы
         GenerateCollectableObjects(data.collectableObjectsPrefab);
 
-        // 2. Создаём здания
+        // 2. Здания
         GenerateBuildings(data.buildingsPrefab);
 
-        //  Регистрируем все здания в GameSaveController
+        // 3. Регистрируем здания
         if (gameSaveController != null)
         {
             gameSaveController.RefreshBuildingsList();
         }
 
-        // Применяем сохранение после того, как все здания созданы
+        // 4. Позиция игрока
+        SetPlayerStartPosition(data.playerStartPosition);
+
+        // 5. Загружаем сохранение
         if (gameSaveController != null)
         {
             gameSaveController.LoadGame();
         }
 
-
-
-
-        // 3. Создаём животных
+        // 6. Животные
         GenerateAnimals(data.animalsPrefab);
 
-        // 4. Создаём зону продажи
+        // 7. Зона продажи
         GenerateSellZone(data.sellZoneData);
 
-        // 5. Устанавливаем позицию игрока
-        SetPlayerStartPosition(data.playerStartPosition);
-
-        // 6. Применяем сохранённый прогресс
-        ApplySavedProgress();
-
-        Debug.Log($" Уровень {data.levelName} сгенерирован!");
+        Debug.Log($"Уровень {data.levelName} сгенерирован!");
     }
 
-    //  НОВЫЙ МЕТОД — СОЗДАЁТ ВСЕ РЕСУРСЫ ИЗ ПРЕФАБА!
     private void GenerateCollectableObjects(GameObject prefab)
     {
         if (prefab == null)
@@ -81,8 +76,7 @@ public class LevelGenerator : MonoBehaviour
         );
 
         spawnedObjects.Add(collectableObj);
-
-        Debug.Log($"- Созданы все ресурсы из префаба: {prefab.name}");
+        Debug.Log($"  - Созданы ресурсы: {prefab.name}");
     }
 
     private void GenerateBuildings(GameObject prefab)
@@ -96,13 +90,11 @@ public class LevelGenerator : MonoBehaviour
         GameObject buildingsObj = container.InstantiatePrefab(prefab, buildingsParent);
         spawnedObjects.Add(buildingsObj);
 
-        // Находим все BuildingController в созданном префабе
         var buildings = buildingsObj.GetComponentsInChildren<BuildingController>();
         foreach (var building in buildings)
         {
             spawnedBuildings.Add(building);
 
-            // Регистрируем здание в GameSaveController
             if (gameSaveController != null)
             {
                 gameSaveController.RegisterBuilding(building);
@@ -111,7 +103,7 @@ public class LevelGenerator : MonoBehaviour
             Debug.Log($"  - Найдено здание: {building.GetBuildingName()}");
         }
 
-        Debug.Log($"  - Созданы все здания из префаба: {prefab.name}");
+        Debug.Log($"  - Созданы здания: {prefab.name}");
     }
 
     private void GenerateAnimals(GameObject prefab)
@@ -130,8 +122,7 @@ public class LevelGenerator : MonoBehaviour
         );
 
         spawnedObjects.Add(animalsObj);
-
-        Debug.Log($"  - Созданы все животные из префаба: {prefab.name}");
+        Debug.Log($"  - Созданы животные: {prefab.name}");
     }
 
     private void GenerateSellZone(GameObject sellZonePrefab)
@@ -142,13 +133,9 @@ public class LevelGenerator : MonoBehaviour
             return;
         }
 
-        GameObject sellZone = container.InstantiatePrefab(
-            sellZonePrefab,
-            sellZoneParent
-        );
-
+        GameObject sellZone = container.InstantiatePrefab(sellZonePrefab, sellZoneParent);
         spawnedObjects.Add(sellZone);
-        Debug.Log($"  - SellZone создана из префаба: {sellZonePrefab.name}");
+        Debug.Log($"  - SellZone создана: {sellZonePrefab.name}");
     }
 
     private void SetPlayerStartPosition(Vector3 position)
@@ -156,28 +143,21 @@ public class LevelGenerator : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
+            Debug.Log($"  - Найден игрок: {player.name}, текущая позиция: {player.transform.position}");
             player.transform.position = position;
-            Debug.Log($"- Игрок перемещён в {position}");
+            Debug.Log($"  - Игрок перемещён в {position}, новая позиция: {player.transform.position}");
         }
-    }
-
-    private void ApplySavedProgress()
-    {
-        SaveData saveData = SaveSystem.Load();
-        if (saveData == null) return;
-
-        if (gameSaveController != null)
+        else
         {
-            foreach (var building in spawnedBuildings)
-            {
-                gameSaveController.RegisterBuilding(building);
-            }
-            gameSaveController.RefreshAllSystems();
+            Debug.LogError($"  - Игрок НЕ НАЙДЕН по тегу 'Player'!");
         }
     }
 
     private void ClearLevel()
     {
+        Debug.Log($"Очистка уровня: {spawnedObjects.Count} объектов");
+
+        // 1. Удаляем все созданные объекты LevelGenerator
         foreach (var obj in spawnedObjects)
         {
             if (obj != null)
@@ -188,6 +168,58 @@ public class LevelGenerator : MonoBehaviour
         spawnedObjects.Clear();
         spawnedBuildings.Clear();
 
-        Debug.Log(" Уровень очищен");
+        // 2. Удаляем ресурсы по тегу
+        GameObject[] resources = GameObject.FindGameObjectsWithTag("Collectable");
+        foreach (var resource in resources)
+        {
+            if (resource != null)
+            {
+                Destroy(resource);
+            }
+        }
+        if (resources.Length > 0)
+        {
+            Debug.Log($"  - Удалено ресурсов: {resources.Length}");
+        }
+
+        // 3. Удаляем точки спавна
+        ResourceSpawner[] spawners = FindObjectsOfType<ResourceSpawner>();
+        foreach (var spawner in spawners)
+        {
+            if (spawner != null)
+            {
+                Destroy(spawner.gameObject);
+            }
+        }
+        if (spawners.Length > 0)
+        {
+            Debug.Log($"  - Удалено спавнеров: {spawners.Length}");
+        }
+
+        // 4. Очищаем родительские объекты
+        ClearParentChildren(collectableParent);
+        ClearParentChildren(buildingsParent);
+        ClearParentChildren(animalsParent);
+        ClearParentChildren(sellZoneParent);
+
+        // 5. Оповещаем всех подписчиков, что уровень очищен
+        OnLevelCleared?.Invoke();
+        Debug.Log("  - Отправлено событие OnLevelCleared");
+
+        Debug.Log("Уровень очищен");
+    }
+
+    private void ClearParentChildren(Transform parent)
+    {
+        if (parent == null) return;
+
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            Transform child = parent.GetChild(i);
+            if (child != null)
+            {
+                Destroy(child.gameObject);
+            }
+        }
     }
 }

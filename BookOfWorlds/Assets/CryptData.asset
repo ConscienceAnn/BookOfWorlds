@@ -10,17 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
-  m_Name: CartData
+  m_Name: CryptData
   m_EditorClassIdentifier: 
-  buildingId: Cart
-  buildingName: "\u0422\u0435\u043B\u0435\u0436\u043A\u0430"
+  buildingId: crypt
+  buildingName: "\u0413\u0440\u043E\u0431\u043D\u0438\u0446\u0430"
   description: 
   icon: {fileID: 0}
   costs:
-  - resourceName: "\u0414\u0435\u0440\u0435\u0432\u043E"
-    amount: 10
-  - resourceName: "\u041C\u043E\u043B\u043E\u043A\u043E"
-    amount: 1
-  ruinedPrefab: {fileID: 919132149155446097, guid: 0426c4fbc58d39e4c902d9307bcecd18, type: 3}
-  restoredPrefab: {fileID: 919132149155446097, guid: 496283a08684e8146a554a98b08e2cf4, type: 3}
+  - resourceName: "\u041A\u0430\u043C\u0435\u043D\u044C"
+    amount: 14
+  ruinedPrefab: {fileID: 919132149155446097, guid: 6561be29c857fc4499f218cd7de6e1a0, type: 3}
+  restoredPrefab: {fileID: 919132149155446097, guid: 437e0c580b996e04eb98e6f4d3cf261f, type: 3}
   restoreTime: 2
