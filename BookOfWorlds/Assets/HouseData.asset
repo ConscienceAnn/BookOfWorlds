@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
   m_Name: HouseData
   m_EditorClassIdentifier: 
+  buildingId: house
   buildingName: "\u0414\u043E\u043C"
   description: 
   icon: {fileID: 0}

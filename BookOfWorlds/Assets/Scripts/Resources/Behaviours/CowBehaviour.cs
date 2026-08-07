@@ -11,10 +11,22 @@ public class CowBehaviour : IResourceBehaviour
 
     public event Action OnCowRespawned;
 
+    // СТАРЫЙ КОНСТРУКТОР (для обратной совместимости)
+    public CowBehaviour(float cooldownTime)
+    {
+        this.cooldownTime = cooldownTime;
+    }
+
+    // НОВЫЙ КОНСТРУКТОР (для AnimalBehaviourFactory)
     public CowBehaviour(ProgressBarUI progressBar, float cooldownTime)
     {
         this.progressBar = progressBar;
         this.cooldownTime = cooldownTime;
+    }
+
+    public void SetProgressBar(ProgressBarUI bar)
+    {
+        progressBar = bar;
     }
 
     public void OnCollect(ResourceSource resource)
@@ -25,11 +37,7 @@ public class CowBehaviour : IResourceBehaviour
 
     public void OnCollect(Transform target)
     {
-        if (progressBar == null || target == null)
-        {
-            Debug.LogWarning($"CowBehaviour: progressBar или target = null!");
-            return;
-        }
+        if (progressBar == null || target == null) return;
 
         cts?.Cancel();
         cts?.Dispose();

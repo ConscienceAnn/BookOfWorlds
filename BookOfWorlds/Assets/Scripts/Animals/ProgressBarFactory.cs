@@ -1,16 +1,13 @@
 using UnityEngine;
-using Zenject;
 
 public class ProgressBarFactory : MonoBehaviour
 {
-    [Header("Prefab")]
+    [Header("Progress Bar Prefab")]
     [SerializeField] private GameObject progressBarPrefab;
 
-    [Header("Canvas")]
-    [SerializeField] private Canvas targetCanvas;
-
-    [Inject] private DiContainer container;
-
+    /// <summary>
+    /// Создаёт прогресс-бар над указанным объектом
+    /// </summary>
     public ProgressBarUI CreateProgressBar(Transform target, Vector3 offset)
     {
         if (progressBarPrefab == null)
@@ -19,52 +16,35 @@ public class ProgressBarFactory : MonoBehaviour
             return null;
         }
 
-        if (targetCanvas == null)
+        if (target == null)
         {
-            Debug.LogError("ProgressBarFactory: targetCanvas is NULL!");
+            Debug.LogError("ProgressBarFactory: target is NULL!");
             return null;
         }
 
-        //  1. СНАЧАЛА СОЗДАЁМ ЭКЗЕМПЛЯР БЕЗ РОДИТЕЛЯ
-        GameObject instance = container.InstantiatePrefab(
-            progressBarPrefab,
-            Vector3.zero,
-            Quaternion.identity,
-            null  
-        );
+        //  Создаём экземпляр префаба на корневом уровне сцены
+        GameObject progressBarObj = Instantiate(progressBarPrefab, target.position + offset, Quaternion.identity);
 
-        // 2. ПОТОМ УСТАНАВЛИВАЕМ РОДИТЕЛЯ (уже на сцене)
-        instance.transform.SetParent(targetCanvas.transform, false);
+        //  НЕ ДЕЛАЕМ ЕГО ДОЧЕРНИМ target!
+        // Просто размещаем в нужной позиции
 
-        ProgressBarUI progressBar = instance.GetComponent<ProgressBarUI>();
-        if (progressBar == null)
-        {
-            Debug.LogError("ProgressBarFactory: ProgressBarUI component not found!");
-            Destroy(instance);
-            return null;
-        }
-
-        // Настраиваем WorldSpaceUIFollower
-        WorldSpaceUIFollower follower = instance.GetComponent<WorldSpaceUIFollower>();
-        if (follower != null)
-        {
-            follower.SetTarget(target);
-            follower.SetOffset(offset);
-        }
-
-        // Скрываем по умолчанию
-        progressBar.Hide();
-
-        Debug.Log($"ProgressBarFactory: создан ProgressBar для {target.name}");
-
-        return progressBar;
-    }
-
-    public void DestroyProgressBar(ProgressBarUI progressBar)
-    {
+        ProgressBarUI progressBar = progressBarObj.GetComponent<ProgressBarUI>();
         if (progressBar != null)
         {
-            Destroy(progressBar.gameObject);
+            // Настраиваем фолловер на целевой объект
+            WorldSpaceUIFollower follower = progressBarObj.GetComponent<WorldSpaceUIFollower>();
+            if (follower != null)
+            {
+                follower.SetTarget(target);
+                follower.SetOffset(offset);
+            }
+
+            Debug.Log($"ProgressBarFactory: создан ProgressBar для {target.name}");
+            return progressBar;
         }
+
+        Debug.LogError($"ProgressBarFactory: ProgressBarUI не найден на {progressBarObj.name}");
+        Destroy(progressBarObj);
+        return null;
     }
 }

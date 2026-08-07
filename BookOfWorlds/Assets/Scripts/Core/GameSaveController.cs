@@ -1,360 +1,213 @@
 using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
+using System.Linq;
 
 public class GameSaveController : MonoBehaviour
 {
     [Inject] private IPlayerInventory inventory;
     [Inject] private UIManager uiManager;
     [Inject] private LevelProgress levelProgress;
+    [Inject] private LevelManager levelManager;
 
     private List<BuildingController> buildings = new List<BuildingController>();
 
-  
-    private SaveData pendingSaveData;
-    private bool isDataPending = false;
-
-    private void Start()
+    public void SaveGame(bool saveResources = true)
     {
-        FindBuildings();
-        LoadGame();
-    }
-
-    private void FindBuildings()
-    {
-        buildings.Clear();
-        buildings.AddRange(FindObjectsOfType<BuildingController>());
-        Debug.Log($"Найдено зданий: {buildings.Count}");
-    }
-
-    public void SaveGame()
-    {
-        Debug.Log("========== СОХРАНЕНИЕ ==========");
+        Debug.Log(" ========== СОХРАНЕНИЕ ==========");
 
         SaveData data = new SaveData();
 
-        data.coins = GetCoins();
-        Debug.Log($"Монеты: {data.coins}");
+        //  Гарантируем, что списки не null
+        if (data.resources == null) data.resources = new List<ResourceEntry>();
+        if (data.buildingProgress == null) data.buildingProgress = new List<BuildingProgressEntry>();
+        if (data.restoredBuildings == null) data.restoredBuildings = new List<string>();
+        if (data.openedLevels == null) data.openedLevels = new List<string>();
 
-        data.resources = new List<ResourceEntry>();
-        string[] resourceNames = { "Wood", "Stone", "Milk", "Wool" };
-        foreach (string name in resourceNames)
+        // 1. Монеты
+        data.coins = uiManager?.GetCoins() ?? 0;
+        Debug.Log($"  - Монеты: {data.coins}");
+
+        // 2. Ресурсы
+        if (saveResources)
         {
-            data.resources.Add(new ResourceEntry
+            string[] resourceNames = { "Дерево", "Камень", "Молоко", "Шерсть" };
+            foreach (string name in resourceNames)
             {
-                resourceName = name,
-                amount = inventory.GetAmount(name)
-            });
-            Debug.Log($"Ресурс {name}: {inventory.GetAmount(name)}");
+                int amount = inventory.GetAmount(name);
+                if (amount > 0)
+                {
+                    data.resources.Add(new ResourceEntry
+                    {
+                        resourceName = name,
+                        amount = amount
+                    });
+                    Debug.Log($"  - {name}: {amount}");
+                }
+            }
         }
 
-        data.buildingProgress = new List<BuildingProgressEntry>();
-        data.restoredBuildings = new List<string>();
-
-        FindBuildings();
-
+        // 3. Прогресс зданий
         foreach (var building in buildings)
         {
             if (building == null) continue;
 
-            string buildingName = building.name;
+            string buildingId = building.GetBuildingId();
 
             foreach (var cost in building.GetCosts())
             {
                 int invested = building.GetInvestedAmount(cost.resourceName);
-                data.buildingProgress.Add(new BuildingProgressEntry
+                if (invested > 0)
                 {
-                    buildingName = buildingName,
-                    resourceName = cost.resourceName,
-                    investedAmount = invested
-                });
-                Debug.Log($"Прогресс {buildingName} {cost.resourceName}: {invested}/{cost.amount}");
+                    data.buildingProgress.Add(new BuildingProgressEntry
+                    {
+                        buildingId = buildingId,
+                        resourceName = cost.resourceName,
+                        investedAmount = invested
+                    });
+                    Debug.Log($"  - {buildingId} {cost.resourceName}: {invested}/{cost.amount}");
+                }
             }
 
             if (building.IsRestored())
             {
-                data.restoredBuildings.Add(buildingName);
-                Debug.Log($"Восстановлено: {buildingName}");
+                data.restoredBuildings.Add(buildingId);
+                Debug.Log($"  - {buildingId} восстановлено");
             }
         }
 
-        data.currentLevel = 0;
-        data.openedLevels = new List<string> { "Level1" };
+        // 4. Текущий уровень
+        if (levelManager != null)
+        {
+            data.currentLevel = levelManager.CurrentLevelIndex;
+            Debug.Log($"  - Уровень: {data.currentLevel}");
+        }
+        else
+        {
+            data.currentLevel = 0;
+            Debug.LogWarning("  - LevelManager = NULL, уровень установлен в 0");
+        }
 
+        // 5. Открытые уровни
+        if (data.openedLevels == null || data.openedLevels.Count == 0)
+        {
+            data.openedLevels = new List<string> { "Level1" };
+            Debug.Log("  - Создан список открытых уровней");
+        }
+
+        //  Сохраняем
         SaveSystem.Save(data);
-        Debug.Log($"Сохранено: {data.restoredBuildings.Count} зданий");
-        Debug.Log("========== СОХРАНЕНИЕ ЗАВЕРШЕНО ==========");
+        Debug.Log($" Сохранено: {data.restoredBuildings.Count} зданий, {data.resources.Count} ресурсов");
+        Debug.Log(" ========== СОХРАНЕНИЕ ЗАВЕРШЕНО ==========");
     }
 
     public void LoadGame()
     {
+        Debug.Log(" ========== ЗАГРУЗКА ==========");
+
         SaveData data = SaveSystem.Load();
         if (data == null)
         {
-            Debug.Log("Нет сохранения");
+            Debug.Log("  - Нет сохранения");
+            Debug.Log(" ========== ЗАГРУЗКА ЗАВЕРШЕНА ==========");
             return;
         }
 
-        Debug.Log("========== ЗАГРУЗКА ==========");
-
-        SetCoins(data.coins);
-        Debug.Log($"Монеты: {data.coins}");
+        uiManager?.SetCoins(data.coins);
+        Debug.Log($"  - Монеты: {data.coins}");
 
         if (data.resources != null)
         {
             foreach (var entry in data.resources)
             {
                 inventory.SetAmount(entry.resourceName, entry.amount);
-                Debug.Log($"Ресурс {entry.resourceName} установлен: {entry.amount}");
+                Debug.Log($"  - {entry.resourceName}: {entry.amount}");
             }
         }
 
-        if (uiManager != null)
-        {
-            uiManager.ForceRefreshUI();
-        }
+        RefreshBuildingsList();
+        ApplyBuildingData(data);
 
-        FindBuildings();
+        uiManager?.ForceRefreshUI();
+        levelProgress?.ForceUpdate();
 
-        pendingSaveData = data;
-        isDataPending = true;
-
-        bool applied = TryApplyBuildingData();
-
-        if (!applied)
-        {
-            Debug.Log("Данные зданий будут применены позже");
-            Invoke(nameof(DelayedApplyBuildingData), 0.3f);
-        }
-        else
-        {
-            isDataPending = false;
-            pendingSaveData = null;
-        }
-
-        if (levelProgress != null)
-        {
-            levelProgress.ForceUpdate();
-            Debug.Log("Прогресс-бар обновлён");
-        }
-
-        Debug.Log("========== ЗАГРУЗКА ЗАВЕРШЕНА ==========");
+        Debug.Log(" ========== ЗАГРУЗКА ЗАВЕРШЕНА ==========");
     }
 
-    private void DelayedApplyBuildingData()
+    private void ApplyBuildingData(SaveData data)
     {
-        if (isDataPending && pendingSaveData != null)
-        {
-            Debug.Log("Повторная попытка применения данных к зданиям...");
-            bool applied = TryApplyBuildingData();
-
-            if (!applied)
-            {
-                Invoke(nameof(SecondDelayedApplyBuildingData), 0.5f);
-            }
-            else
-            {
-                isDataPending = false;
-                pendingSaveData = null;
-            }
-        }
-    }
-
-    private void SecondDelayedApplyBuildingData()
-    {
-        if (isDataPending && pendingSaveData != null)
-        {
-            Debug.Log("Третья попытка применения данных к зданиям...");
-            bool applied = TryApplyBuildingData();
-
-            if (applied)
-            {
-                isDataPending = false;
-                pendingSaveData = null;
-            }
-            else
-            {
-                Debug.LogWarning("Не удалось применить данные к зданиям после нескольких попыток!");
-                isDataPending = false;
-                pendingSaveData = null;
-            }
-        }
-    }
-
-    private bool TryApplyBuildingData()
-    {
-        if (pendingSaveData == null)
-        {
-            Debug.LogWarning("TryApplyBuildingData: pendingSaveData is NULL!");
-            return false;
-        }
-
-        FindBuildings();
-
         if (buildings == null || buildings.Count == 0)
         {
-            Debug.Log("TryApplyBuildingData: Здания ещё не найдены");
-            return false;
+            Debug.LogWarning("  - Нет зданий для применения данных");
+            return;
         }
 
-        Debug.Log($"TryApplyBuildingData: Применяем данные к {buildings.Count} зданиям...");
-        Debug.Log($"TryApplyBuildingData: buildingProgress entries = {pendingSaveData.buildingProgress?.Count ?? 0}");
-
-        var data = pendingSaveData;
-        bool anyDataApplied = false;
-
-        if (data.buildingProgress != null)
-        {
-            Debug.Log("TryApplyBuildingData: Все данные из сохранения:");
-            foreach (var entry in data.buildingProgress)
-            {
-                Debug.Log($"  - {entry.buildingName} {entry.resourceName} = {entry.investedAmount}");
-            }
-        }
-
-        var buildingProgressMap = new Dictionary<string, Dictionary<string, int>>();
-
+        var progressMap = new Dictionary<string, Dictionary<string, int>>();
         if (data.buildingProgress != null)
         {
             foreach (var entry in data.buildingProgress)
             {
-                if (!buildingProgressMap.ContainsKey(entry.buildingName))
-                {
-                    buildingProgressMap[entry.buildingName] = new Dictionary<string, int>();
-                }
-                buildingProgressMap[entry.buildingName][entry.resourceName] = entry.investedAmount;
-                anyDataApplied = true;
+                if (!progressMap.ContainsKey(entry.buildingId))
+                    progressMap[entry.buildingId] = new Dictionary<string, int>();
+                progressMap[entry.buildingId][entry.resourceName] = entry.investedAmount;
             }
         }
 
-        
-        string keysString = "";
-        foreach (var key in buildingProgressMap.Keys)
+        var restoredSet = new HashSet<string>();
+        if (data.restoredBuildings != null)
         {
-            keysString += key + ", ";
+            foreach (var id in data.restoredBuildings)
+                restoredSet.Add(id);
         }
-        Debug.Log($"TryApplyBuildingData: buildingProgressMap keys: {keysString}");
 
         foreach (var building in buildings)
         {
             if (building == null) continue;
 
-            string buildingName = building.name;
-            Debug.Log($"TryApplyBuildingData: Обработка здания '{buildingName}'");
-
-            bool isRestored = data.restoredBuildings != null &&
-                             data.restoredBuildings.Contains(buildingName);
-
-            var progress = buildingProgressMap.ContainsKey(buildingName) ?
-                          buildingProgressMap[buildingName] : null;
-
-            if (progress == null)
-            {
-                Debug.Log($"TryApplyBuildingData: Нет прогресса для '{buildingName}'");
-            }
-            else
-            {
-                Debug.Log($"TryApplyBuildingData: Прогресс для '{buildingName}': {DictToString(progress)}");
-            }
-
-            Debug.Log($"TryApplyBuildingData: BEFORE Sync - building.IsRestored()={building.IsRestored()}");
+            string id = building.GetBuildingId();
+            bool isRestored = restoredSet.Contains(id);
+            var progress = progressMap.ContainsKey(id) ? progressMap[id] : null;
 
             building.SyncStateFromSave(isRestored, progress);
-
-            Debug.Log($"TryApplyBuildingData: AFTER Sync - building.IsRestored()={building.IsRestored()}");
-
-            if (isRestored)
-            {
-                Debug.Log($"TryApplyBuildingData: Восстановлено: {buildingName}");
-            }
-        }
-
-        if (anyDataApplied)
-        {
-            if (levelProgress != null)
-            {
-                levelProgress.ForceUpdate();
-            }
-
-            isDataPending = false;
-            pendingSaveData = null;
-            Debug.Log("TryApplyBuildingData: Данные зданий применены успешно");
-            return true;
-        }
-
-        Debug.LogWarning("TryApplyBuildingData: Нет данных для применения к зданиям!");
-        return anyDataApplied;
-    }
-
-    
-    private string DictToString(Dictionary<string, int> dict)
-    {
-        if (dict == null || dict.Count == 0) return "EMPTY";
-
-        string result = "";
-        foreach (var kvp in dict)
-        {
-            result += $"{kvp.Key}={kvp.Value}, ";
-        }
-      
-        if (result.Length > 2)
-            result = result.Substring(0, result.Length - 2);
-        return result;
-    }
-
-    public void OnBuildingReady()
-    {
-        if (isDataPending && pendingSaveData != null)
-        {
-            Debug.Log("Здание готово, пытаемся применить данные...");
-            bool applied = TryApplyBuildingData();
-
-            if (applied)
-            {
-                isDataPending = false;
-                pendingSaveData = null;
-                CancelInvoke(nameof(DelayedApplyBuildingData));
-                CancelInvoke(nameof(SecondDelayedApplyBuildingData));
-            }
+            Debug.Log($"  - {id}: restored={isRestored}, progress={progress?.Count ?? 0} ресурсов");
         }
     }
 
-    private int GetCoins()
+    public void RefreshBuildingsList()
     {
-        return uiManager != null ? uiManager.GetCoins() : 0;
-    }
-
-    private void SetCoins(int coins)
-    {
-        if (uiManager != null)
-        {
-            uiManager.SetCoins(coins);
-        }
+        buildings.Clear();
+        buildings.AddRange(FindObjectsOfType<BuildingController>());
+        Debug.Log($"  - Найдено зданий: {buildings.Count}");
     }
 
     public void RegisterBuilding(BuildingController building)
     {
-        if (!buildings.Contains(building))
+        if (building != null && !buildings.Contains(building))
         {
             buildings.Add(building);
         }
     }
 
+    public void ResetProgress()
+    {
+        SaveSystem.DeleteSave();
+        Debug.Log("Прогресс сброшен");
+
+        if (levelManager != null)
+        {
+            levelManager.LoadLevel(0);
+        }
+        else
+        {
+            Debug.LogWarning("  - LevelManager = NULL, уровень не перезагружен");
+        }
+    }
+
     public void RefreshAllSystems()
     {
-        if (uiManager != null)
-            uiManager.ForceRefreshUI();
-
-        if (levelProgress != null)
-            levelProgress.ForceUpdate();
-
-        FindBuildings();
-        foreach (var building in buildings)
-        {
-            if (building != null && !building.IsRestored())
-            {
-                building.UpdateVisualFromProgress();
-            }
-        }
+        RefreshBuildingsList();
+        uiManager?.ForceRefreshUI();
+        levelProgress?.ForceUpdate();
+        Debug.Log("Все системы обновлены");
     }
 }

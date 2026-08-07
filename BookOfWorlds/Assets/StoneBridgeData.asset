@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
   m_Name: StoneBridgeData
   m_EditorClassIdentifier: 
+  buildingId: stonebridge
   buildingName: "\u041A\u0430\u043C\u0435\u043D\u043D\u044B\u0439 \u043C\u043E\u0441\u0442"
   description: 
   icon: {fileID: 0}

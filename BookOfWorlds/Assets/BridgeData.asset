@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
   m_Name: BridgeData
   m_EditorClassIdentifier: 
+  buildingId: bridge
   buildingName: "\u041C\u043E\u0441\u0442"
   description: 
   icon: {fileID: 0}

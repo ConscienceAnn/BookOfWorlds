@@ -134,7 +134,7 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
             if (slot.resourceName == resourceName)
                 return slot;
         }
-        Debug.LogWarning($"[PlayerInventory] GetSlot: ñëîò {resourceName} ÍÅ ÍÀÉÄÅÍ!");
+        Debug.Log($"[PlayerInventory] GetSlot: ñëîò {resourceName} ÍÅ ÍÀÉÄÅÍ!");
         return null;
     }
 }

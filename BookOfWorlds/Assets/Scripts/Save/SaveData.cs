@@ -5,10 +5,10 @@ using System.Collections.Generic;
 public class SaveData
 {
     public int coins;
-    public List<ResourceEntry> resources;     // Wood, Stone, Milk, Wool
-    public List<BuildingProgressEntry> buildingProgress;  // Bridge, House, Mill
-    public List<string> restoredBuildings;          // Названия восстановленных зданий
-    public List<string> openedLevels;               // Открытые локации
+    public List<ResourceEntry> resources = new List<ResourceEntry>(); // Wood, Stone, Milk, Wool
+    public List<BuildingProgressEntry> buildingProgress = new List<BuildingProgressEntry>();  // Bridge, House, Mill
+    public List<string> restoredBuildings = new List<string>();         // Названия восстановленных зданий
+    public List<string> openedLevels = new List<string>();               // Открытые локации
     public int currentLevel;                        // Текущая локация
 }
 
@@ -22,7 +22,7 @@ public class ResourceEntry
 [Serializable]
 public class BuildingProgressEntry
 {
-    public string buildingName;
+    public string buildingId;
     public string resourceName;
     public int investedAmount;
 }

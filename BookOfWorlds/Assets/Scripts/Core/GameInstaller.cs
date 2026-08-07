@@ -37,6 +37,9 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private ResourceFlyAnimation flyAnimation;
     [SerializeField] private ProgressBarFactory progressBarFactory;
 
+    [Header("Levels")]
+    [SerializeField] private LevelManager levelManager;
+
     public override void InstallBindings()
     {
         Debug.Log("=== GameInstaller: InstallBindings START ===");
@@ -137,6 +140,17 @@ public class GameInstaller : MonoInstaller
         Container.Bind<ProgressBarFactory>()
             .FromInstance(progressBarFactory)
             .AsSingle();
+
+        if (levelManager != null)
+        {
+            Container.Bind<LevelManager>().FromInstance(levelManager).AsSingle();
+            Debug.Log("LevelManager зарегистрирован в Zenject");
+        }
+        else
+        {
+            Debug.LogWarning(" LevelManager не назначен в GameInstaller!");
+        }
+
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");
     }

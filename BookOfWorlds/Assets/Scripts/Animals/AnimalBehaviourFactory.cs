@@ -21,10 +21,12 @@ public static class AnimalBehaviourFactory
         switch (data.animalType)
         {
             case AnimalDataSO.AnimalType.Rabbit:
+                Debug.Log($"AnimalBehaviourFactory: создаём RabbitBehaviour для {data.animalName}");
                 return new RabbitBehaviour(progressBar, cooldown);
 
             case AnimalDataSO.AnimalType.Cow:
             default:
+                Debug.Log($"AnimalBehaviourFactory: создаём CowBehaviour для {data.animalName}");
                 return new CowBehaviour(progressBar, cooldown);
         }
     }

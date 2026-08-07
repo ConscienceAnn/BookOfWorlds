@@ -12,6 +12,7 @@ public class ResourceCost
 public class BuildingDataSO : ScriptableObject
 {
     [Header("Основные параметры")]
+    public string buildingId;
     public string buildingName;        // "Мост", "Мельница", "Дом"
     public string description;         // Описание для UI
     public Sprite icon;

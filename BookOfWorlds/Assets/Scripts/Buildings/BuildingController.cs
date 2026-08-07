@@ -7,7 +7,7 @@ using System.Text;
 public class BuildingController : MonoBehaviour, IInteractable
 {
     [Header("Building Data")]
-    [SerializeField] private BuildingDataSO buildingData;
+    [SerializeField] private BuildingDataSO buildingData; //  buildingId внутри
 
     [Header("Visuals")]
     [SerializeField] private GameObject ruinedVisual;
@@ -23,26 +23,42 @@ public class BuildingController : MonoBehaviour, IInteractable
     private bool hasLoadedData = false;
     private Dictionary<string, int> investedResources = new Dictionary<string, int>();
 
-    public string BuildingId { get; set; }
-    public string BuildingName { get; set; }
+    // ===== PUBLIC METHODS =====
+    public string GetBuildingId() => buildingData?.buildingId ?? "unknown";
+    public string GetBuildingName() => buildingData?.buildingName ?? name;
+    public bool IsRestored() => isRestored;
+    public ResourceCost[] GetCosts() => buildingData?.costs;
 
-  
+    public int GetInvestedAmount(string resourceName)
+    {
+        return investedResources.ContainsKey(resourceName) ? investedResources[resourceName] : 0;
+    }
+
+    public int GetRequiredAmount(string resourceName)
+    {
+        foreach (var cost in buildingData.costs)
+        {
+            if (cost.resourceName == resourceName)
+                return cost.amount;
+        }
+        return 0;
+    }
+
     public void UpdateBuildingPrompt()
     {
-        // Вызываем существующий метод обновления UI
         if (playerUI != null)
         {
             playerUI.UpdateBuildingCost();
         }
     }
 
-    // ===== РЕАЛИЗАЦИЯ IInteractable =====
+    // ===== IInteractable =====
     public void Interact()
     {
         TryRestore().Forget();
     }
-    // ===== КОНЕЦ РЕАЛИЗАЦИИ =====
 
+    // ===== UNITY LIFECYCLE =====
     private void Awake()
     {
         if (buildingData != null && buildingData.costs != null)
@@ -55,7 +71,7 @@ public class BuildingController : MonoBehaviour, IInteractable
                 }
             }
         }
-        Debug.Log($"BuildingController {buildingData?.buildingName} Awake - словарь инициализирован");
+        Debug.Log($"BuildingController {GetBuildingName()} Awake - словарь инициализирован");
     }
 
     private void Start()
@@ -65,17 +81,13 @@ public class BuildingController : MonoBehaviour, IInteractable
             UpdateVisual(false);
         }
 
-        if (gameSaveController != null)
-        {
-            gameSaveController.OnBuildingReady();
-        }
-
-        Debug.Log($"BuildingController {buildingData.buildingName} инициализирован, restored={isRestored}, hasLoadedData={hasLoadedData}");
+        Debug.Log($"BuildingController {GetBuildingName()} инициализирован, restored={isRestored}, hasLoadedData={hasLoadedData}");
     }
 
+    // ===== VISUAL =====
     private void UpdateVisual(bool restored)
     {
-        Debug.Log($"  - UpdateVisual({restored}) called for {buildingData.buildingName}");
+        Debug.Log($"  - UpdateVisual({restored}) called for {GetBuildingName()}");
 
         isRestored = restored;
 
@@ -91,6 +103,7 @@ public class BuildingController : MonoBehaviour, IInteractable
         }
     }
 
+    // ===== SAVE / LOAD =====
     public void SyncStateFromSave(bool restored, Dictionary<string, int> savedInvested)
     {
         hasLoadedData = true;
@@ -126,9 +139,63 @@ public class BuildingController : MonoBehaviour, IInteractable
         }
     }
 
-    public int GetInvestedAmount(string resourceName)
+    public void RestoreImmediate()
     {
-        return investedResources.ContainsKey(resourceName) ? investedResources[resourceName] : 0;
+        UpdateVisual(true);
+
+        var trigger = GetComponentInChildren<BuildingTrigger>();
+        if (trigger != null)
+        {
+            trigger.gameObject.SetActive(false);
+        }
+
+        if (playerUI != null)
+        {
+            playerUI.HideBuildingPrompt();
+        }
+
+        EventBus.BuildingRestored(this);
+    }
+
+    public void UpdateVisualFromProgress()
+    {
+        bool allComplete = true;
+        foreach (var cost in buildingData.costs)
+        {
+            if (GetInvestedAmount(cost.resourceName) < cost.amount)
+            {
+                allComplete = false;
+                break;
+            }
+        }
+
+        if (allComplete)
+        {
+            RestoreImmediate();
+        }
+        else
+        {
+            EventBus.BuildingProgressChanged(this);
+        }
+    }
+
+    public void SyncStartState(bool restored)
+    {
+        isRestored = restored;
+        hasLoadedData = true;
+        UpdateVisual(restored);
+    }
+
+    public void SetInvestedAmount(string resourceName, int amount)
+    {
+        if (investedResources.ContainsKey(resourceName))
+        {
+            investedResources[resourceName] = amount;
+        }
+        else
+        {
+            investedResources[resourceName] = amount;
+        }
     }
 
     public string GetInvestedString()
@@ -144,42 +211,27 @@ public class BuildingController : MonoBehaviour, IInteractable
         return sb.ToString().Trim();
     }
 
-    public ResourceCost[] GetCosts() => buildingData?.costs;
-    public bool IsRestored() => isRestored;
-    public string GetBuildingName() => buildingData?.buildingName ?? name;
-    public int GetRequiredAmount(string resourceName)
-    {
-        foreach (var cost in buildingData.costs)
-        {
-            if (cost.resourceName == resourceName)
-                return cost.amount;
-        }
-        return 0;
-    }
-
-    // ===== МЕТОДЫ ДЛЯ BuildingTrigger =====
+    // ===== TRIGGER METHODS =====
     public void OnPlayerEnter()
     {
-        // Можно использовать для логики входа в зону
-        Debug.Log($"Игрок вошёл в зону {buildingData?.buildingName}");
+        Debug.Log($"Игрок вошёл в зону {GetBuildingName()}");
     }
 
     public void OnPlayerExit()
     {
-        // Можно использовать для логики выхода из зоны
-        Debug.Log($"Игрок вышел из зоны {buildingData?.buildingName}");
+        Debug.Log($"Игрок вышел из зоны {GetBuildingName()}");
     }
-    // ===== КОНЕЦ =====
 
+    // ===== RESTORE LOGIC =====
     public async UniTaskVoid TryRestore()
     {
-        Debug.Log($"========== [TryRestore] {buildingData.buildingName} ==========");
+        Debug.Log($"========== [TryRestore] {GetBuildingName()} ==========");
         Debug.Log($"  - isRestored: {isRestored}");
         Debug.Log($"  - investedResources BEFORE: {GetInvestedString()}");
 
         if (isRestored)
         {
-            playerUI?.ShowNotification($"{buildingData.buildingName} уже восстановлено!", 2f);
+            playerUI?.ShowNotification($"{GetBuildingName()} уже восстановлено!", 2f);
             Debug.Log($"  - Здание уже восстановлено");
             return;
         }
@@ -221,11 +273,10 @@ public class BuildingController : MonoBehaviour, IInteractable
         Debug.Log($"  - anyResourceAvailable: {anyResourceAvailable}");
         Debug.Log($"  - investedResources AFTER transfers: {GetInvestedString()}");
 
-        //  ЕСЛИ НЕТ РЕСУРСОВ — ПОКАЗЫВАЕМ УВЕДОМЛЕНИЕ
         if (!anyResourceAvailable)
         {
             string missingList = string.Join(", ", missingResources);
-            string message = $"Нет ресурсов для восстановления {buildingData.buildingName}! Нужно: {missingList}";
+            string message = $"Нет ресурсов для восстановления {GetBuildingName()}! Нужно: {missingList}";
             playerUI?.ShowNotification(message, 2.5f);
             Debug.Log($"  - {message}");
             return;
@@ -233,7 +284,7 @@ public class BuildingController : MonoBehaviour, IInteractable
 
         if (!anyResourceAdded)
         {
-            playerUI?.ShowNotification($"Все ресурсы для {buildingData.buildingName} уже внесены!", 2f);
+            playerUI?.ShowNotification($"Все ресурсы для {GetBuildingName()} уже внесены!", 2f);
             Debug.Log($"  - Все ресурсы уже внесены");
             return;
         }
@@ -283,7 +334,7 @@ public class BuildingController : MonoBehaviour, IInteractable
 
             EventBus.BuildingRestored(this);
 
-            playerUI?.ShowNotification($" {buildingData.buildingName} восстановлено!", 2f);
+            playerUI?.ShowNotification($" {GetBuildingName()} восстановлено!", 2f);
         }
         else
         {
@@ -293,71 +344,12 @@ public class BuildingController : MonoBehaviour, IInteractable
             }
             EventBus.BuildingProgressChanged(this);
 
-            await UniTask.Delay(300); 
+            await UniTask.Delay(300);
 
-            playerUI?.ShowNotification($"Внесены ресурсы для {buildingData.buildingName}", 1.5f);
+            playerUI?.ShowNotification($"Внесены ресурсы для {GetBuildingName()}", 1.5f);
         }
 
         Debug.Log($"  - investedResources FINAL: {GetInvestedString()}");
         Debug.Log($"========== [TryRestore] END ==========");
-    }
-
-    public void SetInvestedAmount(string resourceName, int amount)
-    {
-        if (investedResources.ContainsKey(resourceName))
-        {
-            investedResources[resourceName] = amount;
-        }
-        else
-        {
-            investedResources[resourceName] = amount;
-        }
-    }
-
-    public void RestoreImmediate()
-    {
-        UpdateVisual(true);
-
-        var trigger = GetComponentInChildren<BuildingTrigger>();
-        if (trigger != null)
-        {
-            trigger.gameObject.SetActive(false);
-        }
-
-        if (playerUI != null)
-        {
-            playerUI.HideBuildingPrompt();
-        }
-
-        EventBus.BuildingRestored(this);
-    }
-
-    public void UpdateVisualFromProgress()
-    {
-        bool allComplete = true;
-        foreach (var cost in buildingData.costs)
-        {
-            if (GetInvestedAmount(cost.resourceName) < cost.amount)
-            {
-                allComplete = false;
-                break;
-            }
-        }
-
-        if (allComplete)
-        {
-            RestoreImmediate();
-        }
-        else
-        {
-            EventBus.BuildingProgressChanged(this);
-        }
-    }
-
-    public void SyncStartState(bool restored)
-    {
-        isRestored = restored;
-        hasLoadedData = true;
-        UpdateVisual(restored);
     }
 }

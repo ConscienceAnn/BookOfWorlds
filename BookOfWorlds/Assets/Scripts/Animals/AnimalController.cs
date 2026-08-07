@@ -1,6 +1,5 @@
 using UnityEngine;
 using Zenject;
-using Cysharp.Threading.Tasks;
 
 public class AnimalController : MonoBehaviour, ICollectable
 {
@@ -11,6 +10,13 @@ public class AnimalController : MonoBehaviour, ICollectable
     [SerializeField] private Animator animator;
     [SerializeField] private VisualState visualState;
 
+    [Header("Progress Bar")]
+    [SerializeField] private ProgressBarUI progressBar;
+
+    [Header("Movement (только для зайца)")]
+    [SerializeField] private float moveSpeed = 1f;
+    [SerializeField] private float moveRadius = 3f;
+
     [Inject] private IPlayerInventory inventory;
     [Inject] private PlayerUI playerUI;
     [Inject] private ProgressBarFactory progressBarFactory;
@@ -18,79 +24,40 @@ public class AnimalController : MonoBehaviour, ICollectable
     private bool isAvailable = true;
     private float cooldownTimer = 0f;
     private IResourceBehaviour behaviour;
-    private ProgressBarUI progressBar;
+
+    private Vector3 startPosition;
+    private Vector3 targetPosition;
+    private float moveTimer = 0f;
+    private bool isMoving = false;
+    private bool isRabbit = false;
 
     public bool IsAvailable => isAvailable;
+
     public string GetResourceName() => animalData?.resourceData?.resourceName ?? "Unknown";
     public int GetAmount() => animalData?.resourceAmount ?? 1;
     public Transform GetTransform() => transform;
-
-    public bool TryCollect()
-    {
-        if (!isAvailable) return false;
-        Interact();
-        return true;
-    }
+    public bool TryCollect() { Interact(); return true; }
 
     private void Awake()
     {
-
-        Debug.Log($" AnimalController.Awake() на {gameObject.name}, IsAvailable = {isAvailable}");
-        Debug.Log($" AnimalController реализует ICollectable: {(this is ICollectable ? "ДА" : "НЕТ")}");
-
-        Debug.Log($"AnimalController.Awake() для {animalData?.animalName}");
+        Debug.Log($"AnimalController.Awake() на {gameObject.name}");
 
         if (visualState == null)
             visualState = GetComponent<VisualState>();
-
         if (visualState == null)
             visualState = GetComponentInChildren<VisualState>();
 
-        //  СОЗДАЁМ PROGRESS BAR ЧЕРЕЗ ФАБРИКУ
-        if (progressBarFactory != null)
-        {
-            progressBar = progressBarFactory.CreateProgressBar(
-                transform,
-                new Vector3(0, 2.5f, 0)
-            );
-        }
+        isRabbit = animalData != null && animalData.animalType == AnimalDataSO.AnimalType.Rabbit;
 
-        //  СОЗДАЁМ ПОВЕДЕНИЕ ЧЕРЕЗ ФАБРИКУ
-        if (animalData != null && progressBar != null)
+        if (isRabbit)
         {
-            behaviour = AnimalBehaviourFactory.Create(animalData, progressBar);
-            Debug.Log($"AnimalController: behaviour {(behaviour != null ? "СОЗДАН" : "NULL")} для {animalData.animalType}");
+            startPosition = transform.position;
+            ChooseNewTarget();
+            Debug.Log($"Заяц инициализирован, будет двигаться");
         }
         else
         {
-            Debug.LogError($"AnimalController: animalData или progressBar = NULL для {gameObject.name}!");
-        }
-
-        // Подписываемся на события
-        if (behaviour is CowBehaviour cowBehaviour)
-        {
-            cowBehaviour.OnCowRespawned += OnRespawned;
-        }
-        else if (behaviour is RabbitBehaviour rabbitBehaviour)
-        {
-            rabbitBehaviour.OnRabbitRespawned += OnRespawned;
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (behaviour is CowBehaviour cowBehaviour)
-        {
-            cowBehaviour.OnCowRespawned -= OnRespawned;
-        }
-        else if (behaviour is RabbitBehaviour rabbitBehaviour)
-        {
-            rabbitBehaviour.OnRabbitRespawned -= OnRespawned;
-        }
-
-        if (progressBarFactory != null && progressBar != null)
-        {
-            progressBarFactory.DestroyProgressBar(progressBar);
+            Debug.Log($"Корова инициализирована, будет стоять на месте");
         }
     }
 
@@ -102,14 +69,26 @@ public class AnimalController : MonoBehaviour, ICollectable
         if (visualState != null)
             visualState.SetColored();
 
-        if (progressBar != null)
+        if (progressBar == null && progressBarFactory != null)
         {
-            progressBar.Hide();
+            progressBar = progressBarFactory.CreateProgressBar(transform, GetProgressBarOffset());
+            Debug.Log($"ProgressBar создан для {animalData?.animalName}");
+        }
+
+        if (animalData != null && progressBar != null)
+        {
+            behaviour = AnimalBehaviourFactory.Create(animalData, progressBar);
+            Debug.Log($"Behaviour создан для {animalData.animalName} типа {animalData.animalType}");
         }
     }
 
     private void Update()
     {
+        if (isRabbit && isAvailable)
+        {
+            UpdateMovement();
+        }
+
         if (!isAvailable)
         {
             cooldownTimer -= Time.deltaTime;
@@ -126,13 +105,64 @@ public class AnimalController : MonoBehaviour, ICollectable
         }
     }
 
+    private void UpdateMovement()
+    {
+        Vector3 direction = (targetPosition - transform.position).normalized;
+        float distance = Vector3.Distance(transform.position, targetPosition);
+
+        if (distance > 0.1f)
+        {
+            transform.position += direction * moveSpeed * Time.deltaTime;
+            isMoving = true;
+
+            if (direction != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
+            }
+        }
+        else
+        {
+            isMoving = false;
+            moveTimer += Time.deltaTime;
+            if (moveTimer > 1f)
+            {
+                ChooseNewTarget();
+                moveTimer = 0f;
+            }
+        }
+
+        if (animator != null)
+        {
+            animator.SetBool("IsRunning", isMoving);
+        }
+    }
+
+    private void ChooseNewTarget()
+    {
+        Vector2 randomCircle = Random.insideUnitCircle * moveRadius;
+        targetPosition = startPosition + new Vector3(randomCircle.x, 0, randomCircle.y);
+        isMoving = true;
+    }
+
+    private Vector3 GetProgressBarOffset()
+    {
+        return new Vector3(0, 2.5f, 0);
+    }
+
+    private void OnDestroy()
+    {
+        if (behaviour is CowBehaviour cow)
+            cow.OnCowRespawned -= OnRespawned;
+        else if (behaviour is RabbitBehaviour rabbit)
+            rabbit.OnRabbitRespawned -= OnRespawned;
+    }
+
     public void Interact()
     {
-        Debug.Log($"AnimalController.Interact() вызван для {animalData?.animalName}, behaviour = {(behaviour != null ? "ЕСТЬ" : "НЕТ")}, isAvailable = {isAvailable}");
-
         if (!isAvailable)
         {
-            playerUI?.ShowNotification($"{animalData.animalName} ещё не готова дать {GetResourceName()}!", 2f);
+            playerUI?.ShowNotification($"{animalData.animalName} ещё не готова!", 2f);
             return;
         }
 
@@ -150,14 +180,10 @@ public class AnimalController : MonoBehaviour, ICollectable
         if (visualState != null)
             visualState.SetGray();
 
-        //  ВЫЗЫВАЕМ ПОВЕДЕНИЕ
         if (behaviour != null)
         {
             behaviour.OnCollect(transform);
-        }
-        else
-        {
-            Debug.LogError($"AnimalController: behaviour = NULL для {animalData?.animalName}!");
+            Debug.Log($"Behaviour.OnCollect() вызван для {animalData?.animalName}");
         }
 
         PlayCollectAnimation();
@@ -186,17 +212,10 @@ public class AnimalController : MonoBehaviour, ICollectable
         return animalData?.animalName ?? "Животное";
     }
 
-    public void SetCooldown(float time)
+    public string GetResourceNamePublic()
     {
-        if (animalData != null)
-        {
-            animalData.cooldownTime = time;
-        }
+        return GetResourceName();
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = isAvailable ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(transform.position, 1f);
-    }
+   
 }

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
   m_Name: CartData
   m_EditorClassIdentifier: 
+  buildingId: Cart
   buildingName: "\u0422\u0435\u043B\u0435\u0436\u043A\u0430"
   description: 
   icon: {fileID: 0}

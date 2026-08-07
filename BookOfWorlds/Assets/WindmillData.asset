@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b846c34136b61ec4488890d2797074cd, type: 3}
   m_Name: WindmillData
   m_EditorClassIdentifier: 
+  buildingId: mill
   buildingName: "\u041C\u0435\u043B\u044C\u043D\u0438\u0446\u0430"
   description: 
   icon: {fileID: 0}

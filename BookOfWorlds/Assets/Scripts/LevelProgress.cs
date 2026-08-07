@@ -12,9 +12,12 @@ public class LevelProgress : MonoBehaviour
     [SerializeField] private string prefix = "Восстановление: ";
     [SerializeField] private string suffix = "%";
 
+    public event System.Action OnLevelComplete;
+
     private BuildingController[] buildings;
     private int totalBuildings = 0;
     private int lastProgress = -1;
+    private bool isLevelComplete = false;
 
     private void Start()
     {
@@ -65,11 +68,20 @@ public class LevelProgress : MonoBehaviour
 
             Debug.Log($"Прогресс: {progressInt}% ({restoredCount}/{totalBuildings})");
         }
+
+       
+        if (progressInt >= 100 && !isLevelComplete)
+        {
+            isLevelComplete = true;
+            Debug.Log("УРОВЕНЬ ЗАВЕРШЁН!");
+            OnLevelComplete?.Invoke();
+        }
     }
 
     public void ForceUpdate()
     {
         lastProgress = -1;
+        isLevelComplete = false;
         UpdateProgress();
         Debug.Log("LevelProgress принудительно обновлён");
     }
@@ -92,4 +104,22 @@ public class LevelProgress : MonoBehaviour
         UpdateProgress();
         Debug.Log($"Прогресс обновлён (частично): {building.GetBuildingName()}");
     }
+
+
+    public float GetProgress() => totalBuildings > 0 ? (float)GetRestoredCount() / totalBuildings : 0f;
+    public int GetRestoredCount()
+    {
+        int count = 0;
+        if (buildings != null)
+        {
+            foreach (var building in buildings)
+            {
+                if (building != null && building.IsRestored())
+                    count++;
+            }
+        }
+        return count;
+    }
+    public int GetTotalCount() => totalBuildings;
+    public bool IsLevelComplete => isLevelComplete;
 }

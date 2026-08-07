@@ -34,6 +34,21 @@ public class LevelGenerator : MonoBehaviour
         // 2. Создаём здания
         GenerateBuildings(data.buildingsPrefab);
 
+        //  Регистрируем все здания в GameSaveController
+        if (gameSaveController != null)
+        {
+            gameSaveController.RefreshBuildingsList();
+        }
+
+        // Применяем сохранение после того, как все здания созданы
+        if (gameSaveController != null)
+        {
+            gameSaveController.LoadGame();
+        }
+
+
+
+
         // 3. Создаём животных
         GenerateAnimals(data.animalsPrefab);
 
@@ -86,6 +101,13 @@ public class LevelGenerator : MonoBehaviour
         foreach (var building in buildings)
         {
             spawnedBuildings.Add(building);
+
+            // Регистрируем здание в GameSaveController
+            if (gameSaveController != null)
+            {
+                gameSaveController.RegisterBuilding(building);
+            }
+
             Debug.Log($"  - Найдено здание: {building.GetBuildingName()}");
         }
 
