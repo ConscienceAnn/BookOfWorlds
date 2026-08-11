@@ -157,6 +157,14 @@ public class LevelGenerator : MonoBehaviour
     {
         Debug.Log($"Очистка уровня: {spawnedObjects.Count} объектов");
 
+        // УНИЧТОЖАЕМ ВИЗУАЛ ЗАВЕРШЕНИЯ
+        LevelProgress levelProgress = FindObjectOfType<LevelProgress>();
+        if (levelProgress != null)
+        {
+            levelProgress.ReturnToGameCamera();
+            levelProgress.HideComplete();
+        }
+
         // 1. Удаляем все созданные объекты LevelGenerator
         foreach (var obj in spawnedObjects)
         {

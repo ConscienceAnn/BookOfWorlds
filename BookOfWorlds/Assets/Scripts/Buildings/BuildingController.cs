@@ -26,7 +26,12 @@ public class BuildingController : MonoBehaviour, IInteractable
     // ===== PUBLIC METHODS =====
     public string GetBuildingId() => buildingData?.buildingId ?? "unknown";
     public string GetBuildingName() => buildingData?.buildingName ?? name;
-    public bool IsRestored() => isRestored;
+    public bool IsRestored()
+    {
+        bool result = isRestored;
+        Debug.Log($" {GetBuildingName()}.IsRestored() = {result}, investedResources={GetInvestedString()}");
+        return result;
+    }
     public ResourceCost[] GetCosts() => buildingData?.costs;
 
     public int GetInvestedAmount(string resourceName)
@@ -352,4 +357,55 @@ public class BuildingController : MonoBehaviour, IInteractable
         Debug.Log($"  - investedResources FINAL: {GetInvestedString()}");
         Debug.Log($"========== [TryRestore] END ==========");
     }
+
+    // ===== RESET =====
+
+    /// <summary>
+    /// ПОЛНОСТЬЮ СБРАСЫВАЕТ ЗДАНИЕ В ИСХОДНОЕ СОСТОЯНИЕ
+    /// </summary>
+    public void ResetBuilding()
+    {
+        Debug.Log($" ResetBuilding() для {GetBuildingName()}");
+
+        // 1. Сбрасываем флаги
+        isRestored = false;
+        hasLoadedData = false;
+
+        // 2. Очищаем вложенные ресурсы
+        if (investedResources != null)
+        {
+            investedResources.Clear();
+            Debug.Log($"  - investedResources очищен");
+        }
+
+        // 3. Инициализируем словарь заново
+        if (buildingData != null && buildingData.costs != null)
+        {
+            foreach (var cost in buildingData.costs)
+            {
+                if (!investedResources.ContainsKey(cost.resourceName))
+                {
+                    investedResources[cost.resourceName] = 0;
+                    Debug.Log($"  - {cost.resourceName}: 0");
+                }
+            }
+        }
+
+        // 4. Обновляем визуал
+        UpdateVisual(false);
+
+        // 5. Включаем триггер
+        var trigger = GetComponentInChildren<BuildingTrigger>();
+        if (trigger != null)
+        {
+            trigger.gameObject.SetActive(true);
+            Debug.Log($"  - Trigger включён");
+        }
+
+        // 6. Обновляем UI
+        EventBus.BuildingProgressChanged(this);
+
+        Debug.Log($"ResetBuilding() завершён для {GetBuildingName()}, isRestored={isRestored}");
+    }
+
 }

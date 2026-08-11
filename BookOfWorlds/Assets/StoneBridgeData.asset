@@ -20,7 +20,7 @@ MonoBehaviour:
   - resourceName: "\u0414\u0435\u0440\u0435\u0432\u043E"
     amount: 10
   - resourceName: "\u041A\u0430\u043C\u0435\u043D\u044C"
-    amount: 14
+    amount: 7
   ruinedPrefab: {fileID: 919132149155446097, guid: 80233f0ee90b4da439acc63c564eb19b, type: 3}
   restoredPrefab: {fileID: 919132149155446097, guid: b2c9a931d79785445a4c20f94af9b2ac, type: 3}
   restoreTime: 2

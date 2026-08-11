@@ -315,4 +315,47 @@ public class GameSaveController : MonoBehaviour
             levelManager.LoadLevel(0);
         }
     }
+
+    /// <summary>
+    /// СБРАСЫВАЕТ ПРОГРЕСС ТОЛЬКО ДЛЯ ТЕКУЩЕГО УРОВНЯ (при перезапуске)
+    /// </summary>
+    public void ClearLevelProgress()
+    {
+        Debug.Log(" ClearLevelProgress() START");
+
+        ClearInventory();
+        if (uiManager != null) uiManager.SetCoins(0);
+
+        RefreshBuildingsList();
+        Debug.Log($" Найдено зданий: {buildings.Count}");
+
+        foreach (var building in buildings)
+        {
+            Debug.Log($" Здание {building.GetBuildingName()}: IsRestored={building.IsRestored()}");
+            building.ResetBuilding();
+            Debug.Log($" После сброса: IsRestored={building.IsRestored()}");
+        }
+
+        LevelProgress levelProgress = FindObjectOfType<LevelProgress>();
+        if (levelProgress != null)
+        {
+            levelProgress.ResetState();
+        }
+
+        uiManager?.ForceRefreshUI();
+        levelProgress?.ForceUpdate();
+
+        SaveData data = SaveSystem.Load();
+        if (data != null)
+        {
+            data.levelProgress.RemoveAll(p => p.levelName == currentLevelName);
+            data.coins = 0;
+            data.resources = new List<ResourceEntry>();
+            SaveSystem.Save(data);
+            Debug.Log("  - Сохранение очищено");
+        }
+
+        Debug.Log(" ClearLevelProgress() END");
+    }
+
 }

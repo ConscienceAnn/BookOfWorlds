@@ -25,6 +25,7 @@ public class LevelManager : MonoBehaviour
     private LevelDataSO currentLevelData;
     private bool isLevelComplete = false;
     private bool isLoadingLevel = false;
+    private bool isRetry = false;
 
     public LevelDataSO CurrentLevelData => currentLevelData;
     public int CurrentLevelIndex => currentLevelIndex;
@@ -84,7 +85,23 @@ public class LevelManager : MonoBehaviour
         // 2. Загружаем сохранённый прогресс (монеты, ресурсы, здания)
         if (gameSaveController != null)
         {
-            gameSaveController.LoadGame();
+            if (isRetry)
+            {
+                gameSaveController.ClearLevelProgress();
+                Debug.Log($"Уровень {currentLevelData.levelName} сброшен (Retry)");
+
+                // СБРАСЫВАЕМ ФЛАГ ПОСЛЕ ЗАГРУЗКИ
+                if (levelProgress != null)
+                {
+                    levelProgress.SetRetryMode(false);
+                }
+                isRetry = false;
+            }
+            else
+            {
+                // ОБЫЧНАЯ ЗАГРУЗКА — ЗАГРУЖАЕМ СОХРАНЕНИЕ
+                gameSaveController.LoadGame();
+            }
         }
 
         // 3. Обновляем UI
@@ -104,6 +121,12 @@ public class LevelManager : MonoBehaviour
 
     public async void LoadNextLevel()
     {
+
+        if (levelProgress != null)
+        {
+            levelProgress.HideComplete();
+        }
+
         if (!isLevelComplete)
         {
             playerUI?.ShowNotification("Восстановите все здания!", 2f);
@@ -124,20 +147,43 @@ public class LevelManager : MonoBehaviour
         }
 
         await UniTask.Delay(300);
-
+        isRetry = false;
         LoadLevel(currentLevelIndex + 1);
     }
 
     public void RetryLevel()
     {
         Debug.Log($"Перезапуск уровня {currentLevelData?.levelName}");
+        isRetry = true;
+        // 1. СБРАСЫВАЕМ ПРОГРЕСС В LevelProgress (флаги, визуал, камера)
+        if (levelProgress != null)
+        {
+            levelProgress.ReturnToGameCamera();
+            levelProgress.SetRetryMode(true);
+            levelProgress.ResetState();
+        }
+
+        // 2. СБРАСЫВАЕМ ДАННЫЕ ИГРОКА (ресурсы, монеты)
+        if (gameSaveController != null)
+        {
+            gameSaveController.ClearLevelProgress();
+        }
+
         levelCompletePanel?.SetActive(false);
+        
+
+        // 3. ПЕРЕЗАГРУЖАЕМ УРОВЕНЬ (здания будут созданы заново)
         LoadLevel(currentLevelIndex);
     }
 
     public void GoToMainMenu()
     {
         Debug.Log("Возврат в главное меню");
+
+        if (levelProgress != null)
+        {
+            levelProgress.HideComplete();
+        }
 
         if (gameSaveController != null)
         {
