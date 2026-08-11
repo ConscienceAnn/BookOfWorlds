@@ -33,6 +33,12 @@ public class MainMenuController : MonoBehaviour
 
     private void Start()
     {
+        // ===== ВАЖНО: РАЗБЛОКИРУЕМ КУРСОР В ГЛАВНОМ МЕНЮ =====
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        Time.timeScale = 1f;
+        Debug.Log("MainMenu: Курсор разблокирован");
+
         if (bookUICanvasGroup != null)
         {
             bookUICanvasGroup.alpha = 0f;
@@ -156,6 +162,11 @@ public class MainMenuController : MonoBehaviour
     {
         Debug.Log("Новая игра");
         SaveSystem.DeleteSave();
+
+        // Разблокируем курсор перед переходом (на всякий случай)
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         SceneManager.LoadScene(gameSceneName);
     }
 
@@ -163,20 +174,22 @@ public class MainMenuController : MonoBehaviour
     {
         Debug.Log("Продолжить игру");
 
-        // Проверяем, что сохранение существует и валидное
         if (!SaveSystem.SaveExists())
         {
             Debug.LogWarning("Сохранение не найдено!");
             return;
         }
 
-        // Проверяем, что сохранение можно загрузить
         var testData = SaveSystem.Load();
         if (testData == null)
         {
             Debug.LogWarning("Сохранение повреждено!");
             return;
         }
+
+        // Разблокируем курсор перед переходом (на всякий случай)
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
         SceneManager.LoadScene(gameSceneName);
     }
@@ -203,6 +216,18 @@ public class MainMenuController : MonoBehaviour
         if (continueButton != null)
         {
             continueButton.interactable = SaveSystem.SaveExists();
+        }
+    }
+
+    // ===== ДОПОЛНИТЕЛЬНО: Принудительный сброс курсора при активации =====
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus)
+        {
+            // Когда окно получает фокус, снова показываем курсор
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            Debug.Log("MainMenu: Фокус получен, курсор разблокирован");
         }
     }
 }

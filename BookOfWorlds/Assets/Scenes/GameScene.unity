@@ -1165,33 +1165,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 742215756}
-        m_TargetAssemblyTypeName: LevelManager, Assembly-CSharp
-        m_MethodName: GoToMainMenu
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 306350501}
-        m_TargetAssemblyTypeName: LevelProgress, Assembly-CSharp
-        m_MethodName: ReturnToGameCamera
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 306350501}
-        m_TargetAssemblyTypeName: LevelProgress, Assembly-CSharp
-        m_MethodName: HideCompleteVisual
+      - m_Target: {fileID: 1290189937}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: OnMainMenuFromCompleteButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1907,33 +1883,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 742215756}
-        m_TargetAssemblyTypeName: LevelManager, Assembly-CSharp
-        m_MethodName: RetryLevel
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 306350501}
-        m_TargetAssemblyTypeName: LevelProgress, Assembly-CSharp
-        m_MethodName: HideCompleteVisual
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 306350501}
-        m_TargetAssemblyTypeName: LevelProgress, Assembly-CSharp
-        m_MethodName: ReturnToGameCamera
+      - m_Target: {fileID: 1290189937}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: OnRetryButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1992,8 +1944,6 @@ GameObject:
   - component: {fileID: 673842326}
   - component: {fileID: 673842325}
   - component: {fileID: 673842324}
-  - component: {fileID: 673842323}
-  - component: {fileID: 673842322}
   - component: {fileID: 673842327}
   m_Layer: 5
   m_Name: ResourcesCanvas
@@ -2002,41 +1952,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &673842322
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 673842321}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a1135424a5020944add4fa2bbb36e36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  woodText: {fileID: 766358996}
-  stoneText: {fileID: 935281365}
-  coinsText: {fileID: 1747926302}
-  milkText: {fileID: 545869183}
-  woolText: {fileID: 767281220}
-  inventory: {fileID: 1191278734}
---- !u!114 &673842323
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 673842321}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_IgnoreReversedGraphics: 1
-  m_BlockingObjects: 0
-  m_BlockingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
 --- !u!114 &673842324
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2090,9 +2005,9 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 673842321}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1921046210}
@@ -2106,13 +2021,13 @@ RectTransform:
   - {fileID: 650333608}
   - {fileID: 545869182}
   - {fileID: 306350500}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1290189936}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 960, y: 540}
+  m_SizeDelta: {x: 1920, y: 1080}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &673842327
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2390,8 +2305,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b670828ac43bf4b489f868338894107d, type: 2}
   levelGenerator: {fileID: 742215755}
   levelProgress: {fileID: 306350501}
-  levelCompletePanel: {fileID: 1216673022}
-  nextLevelButton: {fileID: 1811317535}
   mainMenuSceneName: MainMenu
 --- !u!1 &766358995
 GameObject:
@@ -3601,7 +3514,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 947074283}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1290189937}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: OnResumeButtonClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &947074283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4217,7 +4142,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1060562596}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1290189937}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: OnQuitWithoutSaveButtonClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1060562596
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4562,7 +4499,7 @@ MonoBehaviour:
   virtualCamera: {fileID: 1889694349}
   cameraFollow: {fileID: 963194231}
   cameraZoom: {fileID: 963194230}
-  uiManager: {fileID: 673842322}
+  uiManager: {fileID: 1290189937}
   levelProgress: {fileID: 306350501}
   playerUI: {fileID: 1191278737}
   allResources:
@@ -4991,7 +4928,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1216673023
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5400,6 +5337,7 @@ GameObject:
   - component: {fileID: 1290189935}
   - component: {fileID: 1290189934}
   - component: {fileID: 1290189933}
+  - component: {fileID: 1290189937}
   m_Layer: 5
   m_Name: GameUICanvas
   m_TagString: Untagged
@@ -5482,6 +5420,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 673842326}
   - {fileID: 1068328564}
   - {fileID: 1022206700}
   - {fileID: 1216673023}
@@ -5492,6 +5431,27 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1290189937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1290189932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a1135424a5020944add4fa2bbb36e36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  woodText: {fileID: 766358996}
+  stoneText: {fileID: 935281365}
+  coinsText: {fileID: 1747926302}
+  milkText: {fileID: 545869183}
+  woolText: {fileID: 767281220}
+  inventory: {fileID: 1191278734}
+  pauseMenuPanel: {fileID: 1022206699}
+  levelCompletePanel: {fileID: 1216673022}
+  nextLevelButton: {fileID: 1811317535}
 --- !u!1 &1313763768
 GameObject:
   m_ObjectHideFlags: 0
@@ -5840,55 +5800,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1433809052}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1460743828
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1460743829}
-  - component: {fileID: 1460743830}
-  m_Layer: 0
-  m_Name: GameMenuManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1460743829
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1460743828}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2093104002}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1460743830
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1460743828}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2af91bf3eea6a984399ec6b6f01c33c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pauseMenuPanel: {fileID: 1022206699}
-  continueButton: {fileID: 947074282}
-  saveAndQuitButton: {fileID: 1824448544}
-  quitWithoutSaveButton: {fileID: 1060562595}
-  mainMenuSceneName: MainMenu
 --- !u!1 &1471358508
 GameObject:
   m_ObjectHideFlags: 0
@@ -6646,33 +6557,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 742215756}
-        m_TargetAssemblyTypeName: LevelManager, Assembly-CSharp
-        m_MethodName: LoadNextLevel
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 306350501}
-        m_TargetAssemblyTypeName: LevelProgress, Assembly-CSharp
-        m_MethodName: ReturnToGameCamera
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 306350501}
-        m_TargetAssemblyTypeName: LevelProgress, Assembly-CSharp
-        m_MethodName: HideCompleteVisual
+      - m_Target: {fileID: 1290189937}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: OnNextLevelButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6802,7 +6689,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1824448545}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1290189937}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: OnSaveAndQuitButtonClick
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1824448545
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7753,7 +7652,6 @@ Transform:
   m_Children:
   - {fileID: 1140513144}
   - {fileID: 1969677927}
-  - {fileID: 1460743829}
   - {fileID: 68391213}
   - {fileID: 258569786}
   - {fileID: 1960038411}
@@ -8098,7 +7996,6 @@ SceneRoots:
   - {fileID: 1395001467}
   - {fileID: 1824749529077763442}
   - {fileID: 1290189936}
-  - {fileID: 673842326}
   - {fileID: 1065656732}
   - {fileID: 1513398423}
   - {fileID: 235201241}

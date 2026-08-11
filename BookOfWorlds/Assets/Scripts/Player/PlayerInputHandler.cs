@@ -17,6 +17,8 @@ public class PlayerInputHandler : MonoBehaviour
     private InputAction pauseAction;
     private InputAction collectAction;
 
+    private bool isInputEnabled = true;
+
     [Inject]
     public void Construct(PlayerInput input)
     {
@@ -67,16 +69,20 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnMovePerformed(InputAction.CallbackContext context)
     {
+        if (!isInputEnabled) return;
         OnMovementInput?.Invoke(context.ReadValue<Vector2>());
     }
 
     private void OnMoveCanceled(InputAction.CallbackContext context)
     {
+        if (!isInputEnabled) return;
         OnMovementInput?.Invoke(Vector2.zero);
     }
 
     private void OnZoomPerformed(InputAction.CallbackContext context)
     {
+        if (!isInputEnabled) return;
+
         float value = context.ReadValue<float>();
         float normalizedValue = 0f;
 
@@ -106,16 +112,19 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void OnResetZoomPerformed(InputAction.CallbackContext context)
     {
+        if (!isInputEnabled) return;
         OnResetZoomInput?.Invoke();
     }
 
     private void OnPausePerformed(InputAction.CallbackContext context)
     {
+        // PAUSE ÂÑÅÃÄÀ ÐÀÁÎÒÀÅÒ
         OnPauseInput?.Invoke();
     }
 
     private void OnCollectPerformed(InputAction.CallbackContext context)
     {
+        if (!isInputEnabled) return;
         OnCollectInput?.Invoke();
     }
 
@@ -143,4 +152,29 @@ public class PlayerInputHandler : MonoBehaviour
             collectAction.canceled -= OnCollectCanceled;
         }
     }
+
+    // ===== PUBLIC METHODS =====
+
+    public void SetInputEnabled(bool enabled)
+    {
+        isInputEnabled = enabled;
+        Debug.Log($"PlayerInput: input enabled = {enabled}");
+    }
+
+    public void LockCursor(bool locked)
+    {
+        if (locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        Debug.Log($"Cursor locked = {locked}");
+    }
+
+    public bool IsInputEnabled() => isInputEnabled;
 }

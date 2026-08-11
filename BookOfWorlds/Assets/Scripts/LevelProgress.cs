@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Cysharp.Threading.Tasks;
 using Cinemachine;
+using Zenject;
 
 public class LevelProgress : MonoBehaviour
 {
@@ -26,6 +27,10 @@ public class LevelProgress : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private string prefix = "Восстановление: ";
     [SerializeField] private string suffix = "%";
+
+    [Inject] private PlayerInputHandler playerInputHandler;
+    [Inject] private UIManager uiManager;
+    [Inject] private LevelManager levelManager;
 
     public event System.Action OnLevelComplete;
 
@@ -176,10 +181,20 @@ public class LevelProgress : MonoBehaviour
         // 4. Панель
         await UniTask.Delay((int)(showPanelDelay * 1000));
 
-        if (levelCompletePanel != null)
+        if (uiManager != null)
         {
-            levelCompletePanel.SetActive(true);
-            Debug.Log("LevelCompletePanel показан");
+            bool hasNextLevel = levelManager != null && levelManager.HasNextLevel();
+            uiManager.ShowLevelComplete(hasNextLevel);
+            Debug.Log($"LevelCompletePanel показан через UIManager, hasNextLevel={hasNextLevel}");
+        }
+        else
+        {
+            // Fallback
+            if (levelCompletePanel != null)
+            {
+                levelCompletePanel.SetActive(true);
+                Debug.LogWarning("UIManager не найден, LevelCompletePanel включён напрямую");
+            }
         }
 
         OnLevelComplete?.Invoke();
@@ -197,10 +212,17 @@ public class LevelProgress : MonoBehaviour
             visualInstance = null;
         }
 
-        // 2. Скрываем панель
-        if (levelCompletePanel != null)
+     
+        // 2. Скрываем панель через UIManager
+        if (uiManager != null)
+        {
+            uiManager.HideLevelComplete();
+            Debug.Log("LevelCompletePanel скрыт через UIManager");
+        }
+        else if (levelCompletePanel != null)
         {
             levelCompletePanel.SetActive(false);
+            Debug.LogWarning("UIManager не найден, LevelCompletePanel скрыт напрямую");
         }
 
         // 3. Возвращаем камеру

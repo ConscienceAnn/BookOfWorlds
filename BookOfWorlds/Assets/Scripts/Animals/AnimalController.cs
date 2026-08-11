@@ -216,6 +216,4 @@ public class AnimalController : MonoBehaviour, ICollectable
     {
         return GetResourceName();
     }
-
-   
 }

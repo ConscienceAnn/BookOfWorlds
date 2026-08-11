@@ -10,10 +10,6 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private LevelGenerator levelGenerator;
     [SerializeField] private LevelProgress levelProgress;
 
-    [Header("UI")]
-    [SerializeField] private GameObject levelCompletePanel;
-    [SerializeField] private GameObject nextLevelButton;
-
     [Header("Scene")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
 
@@ -33,12 +29,7 @@ public class LevelManager : MonoBehaviour
 
     public int GetLevelsCount() => levels.Count;
     public bool HasNextLevel() => currentLevelIndex + 1 < levels.Count;
-
-    public string GetLevelName(int index)
-    {
-        if (index < 0 || index >= levels.Count) return null;
-        return levels[index]?.levelName;
-    }
+    public string GetLevelName(int index) => index >= 0 && index < levels.Count ? levels[index]?.levelName : null;
 
     private void Start()
     {
@@ -66,7 +57,7 @@ public class LevelManager : MonoBehaviour
 
         if (levelIndex >= levels.Count)
         {
-            Debug.Log(" Все уровни пройдены!");
+            Debug.Log("Все уровни пройдены!");
             ShowGameComplete();
             isLoadingLevel = false;
             return;
@@ -76,13 +67,13 @@ public class LevelManager : MonoBehaviour
         currentLevelData = levels[levelIndex];
         isLevelComplete = false;
 
-        // 1. Генерируем уровень (очищает старые объекты)
+        // 1. Генерируем уровень
         if (levelGenerator != null)
         {
             levelGenerator.GenerateLevel(currentLevelData);
         }
 
-        // 2. Загружаем сохранённый прогресс (монеты, ресурсы, здания)
+        // 2. Загружаем сохранение или сбрасываем при ретрае
         if (gameSaveController != null)
         {
             if (isRetry)
@@ -90,7 +81,6 @@ public class LevelManager : MonoBehaviour
                 gameSaveController.ClearLevelProgress();
                 Debug.Log($"Уровень {currentLevelData.levelName} сброшен (Retry)");
 
-                // СБРАСЫВАЕМ ФЛАГ ПОСЛЕ ЗАГРУЗКИ
                 if (levelProgress != null)
                 {
                     levelProgress.SetRetryMode(false);
@@ -99,13 +89,15 @@ public class LevelManager : MonoBehaviour
             }
             else
             {
-                // ОБЫЧНАЯ ЗАГРУЗКА — ЗАГРУЖАЕМ СОХРАНЕНИЕ
                 gameSaveController.LoadGame();
             }
         }
 
-        // 3. Обновляем UI
-        levelCompletePanel?.SetActive(false);
+        // 3. Закрываем все панели через UIManager
+        if (uiManager != null)
+        {
+            uiManager.CloseAllPanels();
+        }
 
         if (levelProgress != null)
         {
@@ -116,17 +108,11 @@ public class LevelManager : MonoBehaviour
         SaveCurrentLevel();
 
         isLoadingLevel = false;
-        Debug.Log($" Загружен уровень {currentLevelIndex + 1}: {currentLevelData.levelName}");
+        Debug.Log($"Загружен уровень {currentLevelIndex + 1}: {currentLevelData.levelName}");
     }
 
     public async void LoadNextLevel()
     {
-
-        if (levelProgress != null)
-        {
-            levelProgress.HideComplete();
-        }
-
         if (!isLevelComplete)
         {
             playerUI?.ShowNotification("Восстановите все здания!", 2f);
@@ -135,15 +121,21 @@ public class LevelManager : MonoBehaviour
 
         if (!HasNextLevel())
         {
-            playerUI?.ShowNotification(" Это последний уровень!", 2f);
+            playerUI?.ShowNotification("Это последний уровень!", 2f);
             return;
         }
 
-        // Очищаем состояние игрока (монеты + ресурсы)
+        // Закрываем панель через UIManager
+        if (uiManager != null)
+        {
+            uiManager.HideLevelComplete();  // Используем метод вместо прямого доступа
+        }
+
+        // Очищаем состояние игрока
         if (gameSaveController != null)
         {
             gameSaveController.ClearPlayerState();
-            Debug.Log(" Игровое состояние очищено для нового уровня");
+            Debug.Log("Игровое состояние очищено для нового уровня");
         }
 
         await UniTask.Delay(300);
@@ -155,7 +147,8 @@ public class LevelManager : MonoBehaviour
     {
         Debug.Log($"Перезапуск уровня {currentLevelData?.levelName}");
         isRetry = true;
-        // 1. СБРАСЫВАЕМ ПРОГРЕСС В LevelProgress (флаги, визуал, камера)
+
+        // Сбрасываем прогресс
         if (levelProgress != null)
         {
             levelProgress.ReturnToGameCamera();
@@ -163,16 +156,19 @@ public class LevelManager : MonoBehaviour
             levelProgress.ResetState();
         }
 
-        // 2. СБРАСЫВАЕМ ДАННЫЕ ИГРОКА (ресурсы, монеты)
+        // Сбрасываем данные игрока
         if (gameSaveController != null)
         {
             gameSaveController.ClearLevelProgress();
         }
 
-        levelCompletePanel?.SetActive(false);
-        
+        // Закрываем все панели через UIManager
+        if (uiManager != null)
+        {
+            uiManager.CloseAllPanels();
+        }
 
-        // 3. ПЕРЕЗАГРУЖАЕМ УРОВЕНЬ (здания будут созданы заново)
+        // Перезагружаем уровень
         LoadLevel(currentLevelIndex);
     }
 
@@ -180,9 +176,10 @@ public class LevelManager : MonoBehaviour
     {
         Debug.Log("Возврат в главное меню");
 
-        if (levelProgress != null)
+        // Закрываем все панели
+        if (uiManager != null)
         {
-            levelProgress.HideComplete();
+            uiManager.CloseAllPanels();
         }
 
         if (gameSaveController != null)
@@ -207,68 +204,18 @@ public class LevelManager : MonoBehaviour
             Debug.Log("Прогресс сохранён");
         }
 
-        ShowCompleteUI();
-    }
-
-    private void ShowCompleteUI()
-    {
-        if (levelCompletePanel == null)
+        // ПОКАЗЫВАЕМ ПАНЕЛЬ ЧЕРЕЗ UIManager
+        if (uiManager != null)
         {
-            Debug.LogWarning("levelCompletePanel не назначен в LevelManager!");
-            return;
-        }
-
-        levelCompletePanel.SetActive(true);
-
-        bool hasNextLevel = HasNextLevel();
-
-        if (nextLevelButton != null)
-        {
-            nextLevelButton.SetActive(true);
-
-            UnityEngine.UI.Button button = nextLevelButton.GetComponent<UnityEngine.UI.Button>();
-            if (button != null)
-            {
-                button.interactable = hasNextLevel;
-            }
-
-            var text = nextLevelButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-            if (text != null)
-            {
-                text.text = hasNextLevel ? "Следующий уровень" : "Все уровни пройдены!";
-            }
-        }
-
-        if (!hasNextLevel)
-        {
-            playerUI?.ShowNotification("Все уровни пройдены!", 3f);
-        }
-        else
-        {
-            playerUI?.ShowNotification($"Уровень {currentLevelData.levelName} завершён!", 2f);
+            uiManager.ShowLevelComplete(HasNextLevel());
         }
     }
 
     private void ShowGameComplete()
     {
-        if (levelCompletePanel != null)
+        if (uiManager != null)
         {
-            levelCompletePanel.SetActive(true);
-        }
-
-        if (nextLevelButton != null)
-        {
-            nextLevelButton.SetActive(true);
-            UnityEngine.UI.Button button = nextLevelButton.GetComponent<UnityEngine.UI.Button>();
-            if (button != null)
-            {
-                button.interactable = false;
-            }
-            var text = nextLevelButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-            if (text != null)
-            {
-                text.text = "Игра пройдена!";
-            }
+            uiManager.ShowLevelComplete(false);
         }
 
         playerUI?.ShowNotification("Поздравляем! Игра пройдена!", 5f);
@@ -277,16 +224,8 @@ public class LevelManager : MonoBehaviour
     private void LoadProgress()
     {
         SaveData data = SaveSystem.Load();
-        if (data != null)
-        {
-            currentLevelIndex = data.currentLevel;
-            Debug.Log($"Загружен прогресс: уровень {currentLevelIndex}");
-        }
-        else
-        {
-            currentLevelIndex = 0;
-            Debug.Log("Нет сохранения, начинаем с первого уровня");
-        }
+        currentLevelIndex = data?.currentLevel ?? 0;
+        Debug.Log(currentLevelIndex > 0 ? $"Загружен прогресс: уровень {currentLevelIndex}" : "Нет сохранения, начинаем с первого уровня");
     }
 
     private void SaveCurrentLevel()
@@ -301,5 +240,23 @@ public class LevelManager : MonoBehaviour
 
         SaveSystem.Save(data);
         Debug.Log($"Сохранён текущий уровень: {currentLevelIndex}");
+    }
+
+    // <summary>
+    /// ПЕРЕХОД В ГЛАВНОЕ МЕНЮ БЕЗ СОХРАНЕНИЯ
+    /// </summary>
+    public void GoToMainMenuWithoutSave()
+    {
+        Debug.Log("Возврат в главное меню без сохранения");
+
+        // Закрываем все панели
+        if (uiManager != null)
+        {
+            uiManager.CloseAllPanels();
+        }
+
+        // НЕ СОХРАНЯЕМ ИГРУ!
+        // Просто переходим в главное меню
+        UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
     }
 }
