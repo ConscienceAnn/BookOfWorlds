@@ -13,9 +13,8 @@ public class AnimalController : MonoBehaviour, ICollectable
     [Header("Progress Bar")]
     [SerializeField] private ProgressBarUI progressBar;
 
-    [Header("Movement (только для зайца)")]
-    [SerializeField] private float moveSpeed = 1f;
-    [SerializeField] private float moveRadius = 3f;
+    [Header("Movement")]
+    [SerializeField] private AnimalMover animalMover;
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private PlayerUI playerUI;
@@ -24,12 +23,6 @@ public class AnimalController : MonoBehaviour, ICollectable
     private bool isAvailable = true;
     private float cooldownTimer = 0f;
     private IResourceBehaviour behaviour;
-
-    private Vector3 startPosition;
-    private Vector3 targetPosition;
-    private float moveTimer = 0f;
-    private bool isMoving = false;
-    private bool isRabbit = false;
 
     public bool IsAvailable => isAvailable;
 
@@ -40,25 +33,13 @@ public class AnimalController : MonoBehaviour, ICollectable
 
     private void Awake()
     {
-        Debug.Log($"AnimalController.Awake() на {gameObject.name}");
-
         if (visualState == null)
             visualState = GetComponent<VisualState>();
         if (visualState == null)
             visualState = GetComponentInChildren<VisualState>();
 
-        isRabbit = animalData != null && animalData.animalType == AnimalDataSO.AnimalType.Rabbit;
-
-        if (isRabbit)
-        {
-            startPosition = transform.position;
-            ChooseNewTarget();
-            Debug.Log($"Заяц инициализирован, будет двигаться");
-        }
-        else
-        {
-            Debug.Log($"Корова инициализирована, будет стоять на месте");
-        }
+        if (animalMover == null)
+            animalMover = GetComponent<AnimalMover>();
     }
 
     private void Start()
@@ -80,13 +61,28 @@ public class AnimalController : MonoBehaviour, ICollectable
             behaviour = AnimalBehaviourFactory.Create(animalData, progressBar);
             Debug.Log($"Behaviour создан для {animalData.animalName} типа {animalData.animalType}");
         }
+
+        if (animalMover != null)
+        {
+            animalMover.SetStartPosition(transform.position);
+            bool canMove = animalData != null && animalData.canMove;
+            animalMover.IsEnabled = canMove;
+            Debug.Log($"AnimalMover для {animalData?.animalName}: enabled={canMove}");
+        }
+
+        // Подписываемся на событие респавна
+        if (behaviour is AnimalBehaviourBase animalBehaviour)
+        {
+            animalBehaviour.OnAnimalRespawned += OnRespawned;
+        }
     }
 
     private void Update()
     {
-        if (isRabbit && isAvailable)
+        // Движение только если животное ДОСТУПНО и движение включено
+        if (animalMover != null && animalMover.IsEnabled && isAvailable)
         {
-            UpdateMovement();
+            animalMover.Tick();
         }
 
         if (!isAvailable)
@@ -100,49 +96,15 @@ public class AnimalController : MonoBehaviour, ICollectable
                 if (visualState != null)
                     visualState.SetColored();
 
+                // Возобновляем движение, когда животное снова доступно
+                if (animalMover != null && animalMover.IsEnabled)
+                {
+                    animalMover.Resume();
+                }
+
                 Debug.Log($"{animalData.animalName} готова дать {GetResourceName()}!");
             }
         }
-    }
-
-    private void UpdateMovement()
-    {
-        Vector3 direction = (targetPosition - transform.position).normalized;
-        float distance = Vector3.Distance(transform.position, targetPosition);
-
-        if (distance > 0.1f)
-        {
-            transform.position += direction * moveSpeed * Time.deltaTime;
-            isMoving = true;
-
-            if (direction != Vector3.zero)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
-            }
-        }
-        else
-        {
-            isMoving = false;
-            moveTimer += Time.deltaTime;
-            if (moveTimer > 1f)
-            {
-                ChooseNewTarget();
-                moveTimer = 0f;
-            }
-        }
-
-        if (animator != null)
-        {
-            animator.SetBool("IsRunning", isMoving);
-        }
-    }
-
-    private void ChooseNewTarget()
-    {
-        Vector2 randomCircle = Random.insideUnitCircle * moveRadius;
-        targetPosition = startPosition + new Vector3(randomCircle.x, 0, randomCircle.y);
-        isMoving = true;
     }
 
     private Vector3 GetProgressBarOffset()
@@ -152,10 +114,11 @@ public class AnimalController : MonoBehaviour, ICollectable
 
     private void OnDestroy()
     {
-        if (behaviour is CowBehaviour cow)
-            cow.OnCowRespawned -= OnRespawned;
-        else if (behaviour is RabbitBehaviour rabbit)
-            rabbit.OnRabbitRespawned -= OnRespawned;
+        if (behaviour is AnimalBehaviourBase animalBehaviour)
+        {
+            animalBehaviour.OnAnimalRespawned -= OnRespawned;
+            animalBehaviour.Dispose();
+        }
     }
 
     public void Interact()
@@ -170,6 +133,13 @@ public class AnimalController : MonoBehaviour, ICollectable
         {
             playerUI?.ShowNotification($"Нет места для {GetResourceName()}!", 2f);
             return;
+        }
+
+        // ===== НОВОЕ: ОСТАНАВЛИВАЕМ ДВИЖЕНИЕ ПРИ СБОРЕ =====
+        if (animalMover != null && animalMover.IsEnabled)
+        {
+            animalMover.Pause();
+            Debug.Log($"{animalData.animalName}: движение остановлено для сбора");
         }
 
         inventory.TryAdd(GetResourceName(), GetAmount());
@@ -197,6 +167,12 @@ public class AnimalController : MonoBehaviour, ICollectable
 
         if (visualState != null)
             visualState.SetColored();
+
+        // Возобновляем движение, когда респавн завершён
+        if (animalMover != null && animalMover.IsEnabled)
+        {
+            animalMover.Resume();
+        }
 
         Debug.Log($"{animalData.animalName} готова дать {GetResourceName()}!");
     }

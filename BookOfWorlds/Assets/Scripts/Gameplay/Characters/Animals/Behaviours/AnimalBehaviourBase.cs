@@ -57,6 +57,14 @@ public abstract class AnimalBehaviourBase : IResourceBehaviour
         }
 
         progressBar?.Hide();
+
+        // ===== ВАЖНО: вызываем событие, когда прогресс завершён =====
         OnAnimalRespawned?.Invoke();
+    }
+
+    public virtual void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
     }
 }

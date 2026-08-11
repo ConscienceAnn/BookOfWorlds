@@ -1,74 +1,14 @@
 using UnityEngine;
-using Cysharp.Threading.Tasks;
-using System;
-using System.Threading;
 
-public class CowBehaviour : IResourceBehaviour
+/// <summary>
+/// Поведение коровы.
+/// Ничего не переопределяет — использует базовую логику с прогресс-баром.
+/// </summary>
+public class CowBehaviour : AnimalBehaviourBase
 {
-    private ProgressBarUI progressBar;
-    private float cooldownTime;
-    private CancellationTokenSource cts;
-
-    public event Action OnCowRespawned;
-
-    // СТАРЫЙ КОНСТРУКТОР (для обратной совместимости)
-    public CowBehaviour(float cooldownTime)
-    {
-        this.cooldownTime = cooldownTime;
-    }
-
-    // НОВЫЙ КОНСТРУКТОР (для AnimalBehaviourFactory)
     public CowBehaviour(ProgressBarUI progressBar, float cooldownTime)
+        : base(progressBar, cooldownTime)
     {
-        this.progressBar = progressBar;
-        this.cooldownTime = cooldownTime;
-    }
-
-    public void SetProgressBar(ProgressBarUI bar)
-    {
-        progressBar = bar;
-    }
-
-    public void OnCollect(ResourceSource resource)
-    {
-        if (resource != null)
-            OnCollect(resource.transform);
-    }
-
-    public void OnCollect(Transform target)
-    {
-        if (progressBar == null || target == null) return;
-
-        cts?.Cancel();
-        cts?.Dispose();
-        cts = new CancellationTokenSource();
-
-        progressBar.Show(target, 0f);
-        UpdateProgressAsync(cts.Token).Forget();
-    }
-
-    public void OnRespawn(ResourceSource resource)
-    {
-        cts?.Cancel();
-        progressBar?.Hide();
-    }
-
-    private async UniTaskVoid UpdateProgressAsync(CancellationToken token)
-    {
-        float elapsed = 0f;
-
-        while (elapsed < cooldownTime)
-        {
-            if (token.IsCancellationRequested) return;
-
-            elapsed += Time.unscaledDeltaTime;
-            float progress = Mathf.Clamp01(elapsed / cooldownTime);
-            progressBar?.SetProgress(progress);
-
-            await UniTask.Yield(token);
-        }
-
-        progressBar?.Hide();
-        OnCowRespawned?.Invoke();
+        // Всё наследуется от AnimalBehaviourBase
     }
 }

@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Компонент для движения животных.
+/// </summary>
 public class AnimalMover : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -20,13 +23,16 @@ public class AnimalMover : MonoBehaviour
     private Vector3 targetPosition;
     private bool isMoving = false;
     private float idleTimer = 0f;
-
-    //  Для проверки застревания
     private float stuckTimer = 0f;
     private Vector3 lastPosition;
     private float moveTimer = 0f;
 
+    private bool isEnabled = true;
+    private bool isPaused = false;
+
     public bool IsMoving => isMoving;
+    public bool IsEnabled { get => isEnabled; set => isEnabled = value; }
+    public bool IsPaused => isPaused;
 
     public event System.Action OnStartedMoving;
     public event System.Action OnStoppedMoving;
@@ -41,8 +47,13 @@ public class AnimalMover : MonoBehaviour
         lastPosition = transform.position;
     }
 
+    /// <summary>
+    /// Вызывается каждый кадр из AnimalController
+    /// </summary>
     public void Tick()
     {
+        if (!isEnabled || isPaused) return;
+
         if (!isMoving)
         {
             idleTimer -= Time.deltaTime;
@@ -57,7 +68,7 @@ public class AnimalMover : MonoBehaviour
             return;
         }
 
-        //  Движение к цели
+        // Движение к цели
         Vector3 direction = (targetPosition - transform.position).normalized;
         transform.position += direction * moveSpeed * Time.deltaTime;
 
@@ -68,15 +79,13 @@ public class AnimalMover : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
         }
 
-        //  Проверка на застревание
+        // Проверка на застревание
         stuckTimer += Time.deltaTime;
         if (stuckTimer > stuckCheckInterval)
         {
             float distance = Vector3.Distance(transform.position, lastPosition);
             if (distance < stuckDistanceThreshold)
             {
-                // Застряли — выбираем новую цель
-                Debug.Log($"[AnimalMover] Застрял! Выбираем новую цель");
                 SetRandomTarget();
                 moveTimer = 0f;
             }
@@ -84,16 +93,15 @@ public class AnimalMover : MonoBehaviour
             stuckTimer = 0f;
         }
 
-        //  Таймаут движения (если слишком долго идёт к цели)
+        // Таймаут движения
         moveTimer += Time.deltaTime;
         if (moveTimer > maxMoveTime)
         {
-            Debug.Log($"[AnimalMover] Таймаут движения! Выбираем новую цель");
             SetRandomTarget();
             moveTimer = 0f;
         }
 
-        //  Проверка достижения цели
+        // Проверка достижения цели
         if (Vector3.Distance(transform.position, targetPosition) < 0.3f)
         {
             isMoving = false;
@@ -103,26 +111,50 @@ public class AnimalMover : MonoBehaviour
         }
     }
 
-    public void StartMoving()
+    /// <summary>
+    /// ПРИНУДИТЕЛЬНО ОСТАНОВИТЬ движение (при сборе ресурса)
+    /// </summary>
+    public void Pause()
     {
-        if (!isMoving)
-        {
-            isMoving = true;
-            SetAnimatorBool(true);
-            SetRandomTarget();
-            moveTimer = 0f;
-            OnStartedMoving?.Invoke();
-        }
+        if (isPaused) return;
+
+        isPaused = true;
+        isMoving = false;
+        SetAnimatorBool(false);
+        Debug.Log($"{gameObject.name}: AnimalMover приостановлен");
     }
 
-    public void StopMoving()
+    /// <summary>
+    /// ВОЗОБНОВИТЬ движение (после сбора) — С ФОРСИРОВАННЫМ ЗАПУСКОМ!
+    /// </summary>
+    public void Resume()
     {
-        if (isMoving)
-        {
-            isMoving = false;
-            SetAnimatorBool(false);
-            OnStoppedMoving?.Invoke();
-        }
+        if (!isPaused) return;
+
+        isPaused = false;
+
+        // ===== ВАЖНО: ПРИНУДИТЕЛЬНО ЗАПУСКАЕМ ДВИЖЕНИЕ =====
+        // Вместо того чтобы ждать, пока истечёт idleTimer,
+        // сразу начинаем двигаться
+        isMoving = true;
+        SetAnimatorBool(true);
+        SetRandomTarget();
+        moveTimer = 0f;
+        OnStartedMoving?.Invoke();
+
+        Debug.Log($"{gameObject.name}: AnimalMover возобновлён с принудительным запуском");
+    }
+
+    /// <summary>
+    /// Полная остановка движения (при уничтожении или отключении)
+    /// </summary>
+    public void ForceStop()
+    {
+        isMoving = false;
+        isPaused = false;
+        SetAnimatorBool(false);
+        idleTimer = Random.Range(idleTimeMin, idleTimeMax);
+        OnStoppedMoving?.Invoke();
     }
 
     private void SetRandomTarget()
@@ -134,15 +166,12 @@ public class AnimalMover : MonoBehaviour
             startPosition.z + randomCircle.y
         );
 
-        //  Сбрасываем таймеры при новой цели
         stuckTimer = 0f;
         lastPosition = transform.position;
         moveTimer = 0f;
 
-        // Проверяем, не слишком ли близко к текущей позиции
         if (Vector3.Distance(transform.position, targetPosition) < 0.5f)
         {
-            // Если цель слишком близко — выбираем новую
             SetRandomTarget();
         }
     }
