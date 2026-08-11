@@ -119,7 +119,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 51
+  controlID: 122
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -145,7 +145,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 52
+  controlID: 97
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -263,7 +263,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: ConsoleWindow
+  m_Name: ProjectBrowser
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -272,14 +272,14 @@ MonoBehaviour:
     y: 0
     width: 735
     height: 723
-  m_MinSize: {x: 100, y: 100}
-  m_MaxSize: {x: 4000, y: 4000}
-  m_ActualView: {fileID: 19}
+  m_MinSize: {x: 231, y: 271}
+  m_MaxSize: {x: 10001, y: 10021}
+  m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}
   - {fileID: 19}
-  m_Selected: 1
-  m_LastSelected: 0
+  m_Selected: 0
+  m_LastSelected: 1
 --- !u!114 &12
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -379,7 +379,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets
+    - Assets/Fonts
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -387,16 +387,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 16
   m_LastFolders:
-  - Assets
+  - Assets/Fonts
   m_LastFoldersGridSize: 16
   m_LastProjectPath: D:\UnityProjects\Book\BookOfWorlds
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 56750000
-    m_LastClickedID: 30038
-    m_ExpandedIDs: 000000005475000056750000587500005a7500005c7500005e75000060750000
+    m_SelectedIDs: a4750000
+    m_LastClickedID: 30116
+    m_ExpandedIDs: 0000000054750000567500005a7500005c7500005e75000060750000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -455,18 +455,18 @@ MonoBehaviour:
     m_ExpandedInstanceIDs: c6230000825d0000ba5b0000fe5b0000865e0000f8830000286700001aeb020008ea0200d2f0020010f2020078710000ceb7010074e00100ea710000488d0000b664000000000000bc6800003c690000786d0000646a0000de6e0000e068000006830000ec8400009c850000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
-      m_Name: 
-      m_OriginalName: 
+      m_Name: GameStation
+      m_OriginalName: GameStation
       m_EditFieldRect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 0
         height: 0
-      m_UserData: 0
+      m_UserData: 30186
       m_IsWaitingForDelay: 0
       m_IsRenaming: 0
-      m_OriginalEventType: 11
+      m_OriginalEventType: 0
       m_IsRenamingFilename: 1
       m_ClientGUIView: {fileID: 11}
     m_CreateAssetUtility:
@@ -517,20 +517,20 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
+      m_SelectedIDs: 1a690000
       m_LastClickedID: 0
-      m_ExpandedIDs: 0afbffff4a690000106a0000726a00002a6b0000
+      m_ExpandedIDs: 0afbffff0869000040690000ae690000ba690000c4690000f4690000fe690000566a0000726a0000d06a0000da6a0000fc6a0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: FlyAnimationManager
-        m_OriginalName: FlyAnimationManager
+        m_Name: LevelCompletePanel
+        m_OriginalName: LevelCompletePanel
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: 27408
+        m_UserData: 27214
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
         m_OriginalEventType: 0
@@ -659,8 +659,8 @@ MonoBehaviour:
       floating: 0
       collapsed: 0
       displayed: 1
-      snapOffset: {x: -112, y: -123.33333}
-      snapOffsetDelta: {x: 0, y: 0.000015258789}
+      snapOffset: {x: -112, y: -123.33331}
+      snapOffsetDelta: {x: 0, y: 0}
       snapCorner: 3
       id: Orientation
       index: 0
@@ -946,14 +946,14 @@ MonoBehaviour:
   m_OverrideSceneCullingMask: 6917529027641081856
   m_SceneIsLit: 1
   m_SceneLighting: 1
-  m_2DMode: 0
+  m_2DMode: 1
   m_isRotationLocked: 0
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: -6.2483683, y: -6.2950287, z: 9.568581}
+    m_Target: {x: 1175.1105, y: 706.2804, z: -2.3847365}
     speed: 2
-    m_Value: {x: -6.2483683, y: -6.2950287, z: 9.568581}
+    m_Value: {x: 1175.1105, y: 706.2804, z: -2.3847365}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -999,17 +999,17 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.0059262826, y: 0.8483788, z: -0.52930605, w: -0.009502432}
+    m_Target: {x: 0, y: 0, z: 0, w: 1}
     speed: 2
-    m_Value: {x: -0.0059261736, y: 0.8483632, z: -0.52929634, w: -0.009502258}
+    m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 80.63218
+    m_Target: 341.55054
     speed: 2
-    m_Value: 80.63218
+    m_Value: 341.55054
   m_Ortho:
-    m_Target: 0
+    m_Target: 1
     speed: 2
-    m_Value: 0
+    m_Value: 1
   m_CameraSettings:
     m_Speed: 1.1204399
     m_SpeedNormalized: 0.55999994
@@ -1023,7 +1023,7 @@ MonoBehaviour:
     m_FarClip: 10000
     m_DynamicClip: 1
     m_OcclusionCulling: 0
-  m_LastSceneViewRotation: {x: -0.08717229, y: 0.89959055, z: -0.21045254, w: -0.3726226}
+  m_LastSceneViewRotation: {x: -0.0059262826, y: 0.8483788, z: -0.52930605, w: -0.009502432}
   m_LastSceneViewOrtho: 0
   m_ReplacementShader: {fileID: 0}
   m_ReplacementString: 
