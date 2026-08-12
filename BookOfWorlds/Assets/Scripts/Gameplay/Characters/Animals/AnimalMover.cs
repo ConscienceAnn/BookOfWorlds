@@ -121,7 +121,6 @@ public class AnimalMover : MonoBehaviour
         isPaused = true;
         isMoving = false;
         SetAnimatorBool(false);
-        Debug.Log($"{gameObject.name}: AnimalMover приостановлен");
     }
 
     /// <summary>
@@ -141,8 +140,6 @@ public class AnimalMover : MonoBehaviour
         SetRandomTarget();
         moveTimer = 0f;
         OnStartedMoving?.Invoke();
-
-        Debug.Log($"{gameObject.name}: AnimalMover возобновлён с принудительным запуском");
     }
 
     /// <summary>

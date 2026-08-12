@@ -293,6 +293,8 @@ MonoBehaviour:
   animalData: {fileID: 11400000, guid: 98db6c8a8b28d1f4e96a65f161b4759a, type: 2}
   animator: {fileID: 7852268738015751000}
   visualState: {fileID: 7612044831591982366}
+  progressBar: {fileID: 0}
+  animalMover: {fileID: 0}
 --- !u!95 &7852268738015751000
 Animator:
   serializedVersion: 5
@@ -701,6 +703,8 @@ MonoBehaviour:
   animalData: {fileID: 11400000, guid: 3937e1c1cc7814f41b634208932837dd, type: 2}
   animator: {fileID: 1242394065780160439}
   visualState: {fileID: 5331487972076950278}
+  progressBar: {fileID: 0}
+  animalMover: {fileID: 0}
 --- !u!65 &6178269478588597972
 BoxCollider:
   m_ObjectHideFlags: 0

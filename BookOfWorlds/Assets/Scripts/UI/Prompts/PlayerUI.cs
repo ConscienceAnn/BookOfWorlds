@@ -120,8 +120,6 @@ public class PlayerUI : MonoBehaviour
 
     public void ShowNotification(string message, float duration = 2f)
     {
-        Debug.Log($"PlayerUI.ShowNotification: {message}");
-
         bool wasBuildingPromptVisible = promptCanvas != null && promptCanvas.gameObject.activeSelf;
 
         if (wasBuildingPromptVisible)
@@ -152,7 +150,6 @@ public class PlayerUI : MonoBehaviour
         {
             promptCanvas.gameObject.SetActive(true);
             buildingPromptUI?.Show(currentBuilding);
-            Debug.Log($"Building Prompt восстановлен для {currentBuilding.GetBuildingName()}");
         }
     }
 
@@ -161,7 +158,6 @@ public class PlayerUI : MonoBehaviour
         if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
         {
             buildingPromptUI.UpdateCostText();
-            Debug.Log($"UI здания обновлён для {building.GetBuildingName()}");
         }
     }
 
@@ -183,7 +179,6 @@ public class PlayerUI : MonoBehaviour
 
             buildingPromptUI.Hide();
             promptCanvas.gameObject.SetActive(false);
-            Debug.Log($"Здание {building.GetBuildingName()} восстановлено, UI скрыт");
         }
     }
 

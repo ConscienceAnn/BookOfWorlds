@@ -8,7 +8,8 @@ public class ProgressBarUI : MonoBehaviour
     [SerializeField] private Slider progressSlider;
     [SerializeField] private WorldSpaceUIFollower uiFollower;
 
-    private UIManager uiManager; // БЕЗ [Inject]
+    [Inject] private PanelManager panelManager;
+
     private Canvas parentCanvas;
     private bool isHiddenByPanel = false;
 
@@ -31,30 +32,24 @@ public class ProgressBarUI : MonoBehaviour
         }
         SetProgress(0f);
 
-        // ===== НАХОДИМ UIManager =====
-        if (uiManager == null)
+        // Подписываемся на события PanelManager
+        if (panelManager != null)
         {
-            uiManager = FindObjectOfType<UIManager>();
-            if (uiManager != null)
-            {
-                Debug.Log($"ProgressBarUI {gameObject.name}: UIManager найден");
-                uiManager.OnPanelsOpened += OnPanelsOpened;
-                uiManager.OnPanelsClosed += OnPanelsClosed;
-                Debug.Log($"ProgressBarUI {gameObject.name}: подписан на события UIManager");
-            }
-            else
-            {
-                Debug.LogWarning($"ProgressBarUI {gameObject.name}: UIManager не найден!");
-            }
+            panelManager.OnPanelsOpened += OnPanelsOpened;
+            panelManager.OnPanelsClosed += OnPanelsClosed;
+        }
+        else
+        {
+            Debug.LogWarning($"ProgressBarUI {gameObject.name}: PanelManager не найден!");
         }
     }
 
     private void OnDestroy()
     {
-        if (uiManager != null)
+        if (panelManager != null)
         {
-            uiManager.OnPanelsOpened -= OnPanelsOpened;
-            uiManager.OnPanelsClosed -= OnPanelsClosed;
+            panelManager.OnPanelsOpened -= OnPanelsOpened;
+            panelManager.OnPanelsClosed -= OnPanelsClosed;
         }
     }
 
@@ -64,7 +59,6 @@ public class ProgressBarUI : MonoBehaviour
         {
             isHiddenByPanel = true;
             progressSlider.gameObject.SetActive(false);
-            Debug.Log($"ProgressBarUI {gameObject.name}: скрыт из-за открытой панели");
         }
     }
 
@@ -76,7 +70,6 @@ public class ProgressBarUI : MonoBehaviour
             if (progressSlider != null)
             {
                 progressSlider.gameObject.SetActive(true);
-                Debug.Log($"ProgressBarUI {gameObject.name}: показан после закрытия панели");
             }
         }
     }

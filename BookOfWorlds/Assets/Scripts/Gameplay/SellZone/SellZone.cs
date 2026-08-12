@@ -29,7 +29,6 @@ public class SellZone : MonoBehaviour, IInteractable
         {
             isPlayerNear = true;
             playerUI?.ShowNotification("Здесь можно продать ресурсы. Нажмите E для продажи", sellPromptDuration);
-            Debug.Log("Игрок вошёл в зону продажи");
         }
     }
 
@@ -38,7 +37,6 @@ public class SellZone : MonoBehaviour, IInteractable
         if (other.CompareTag("Player"))
         {
             isPlayerNear = false;
-            Debug.Log(" Игрок вышел из зоны продажи");
         }
     }
 
@@ -64,7 +62,6 @@ public class SellZone : MonoBehaviour, IInteractable
         var items = inventory.GetAllItems();
         if (items.Count == 0)
         {
-            Debug.Log("SellZone: инвентарь пуст");
             playerUI?.ShowNotification("Инвентарь пуст! Нечего продавать.", 2.5f);
             isSelling = false;
             return;
@@ -75,21 +72,19 @@ public class SellZone : MonoBehaviour, IInteractable
         if (coins > 0)
         {
             uiManager.AddCoins(coins);
-            Debug.Log($"SellZone: продано! {coins} монет");
             playerUI?.ShowNotification($"Продано! Получено {coins} монет.", 2.5f);
-            
 
             // Анимация монеты (вспышка или увеличение)
             StartCoroutine(CoinFlash());
         }
         else
         {
-            Debug.LogWarning("SellZone: продажа не принесла монет");
             playerUI?.ShowNotification("Продажа не принесла монет.", 2.5f);
         }
 
         Invoke(nameof(ResetSellState), 0.5f);
     }
+
     private IEnumerator CoinFlash()
     {
         Vector3 originalScale = transform.localScale;
@@ -117,7 +112,6 @@ public class SellZone : MonoBehaviour, IInteractable
 
         transform.localScale = originalScale;
     }
-
 
     private void ResetSellState()
     {

@@ -49,7 +49,7 @@ public abstract class AnimalBehaviourBase : IResourceBehaviour
         {
             if (token.IsCancellationRequested) return;
 
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += Time.deltaTime;
             float progress = Mathf.Clamp01(elapsed / cooldownTime);
             progressBar?.SetProgress(progress);
 

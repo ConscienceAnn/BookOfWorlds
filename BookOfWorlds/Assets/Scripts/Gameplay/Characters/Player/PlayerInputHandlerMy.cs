@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Zenject;
 
-public class PlayerInputHandler : MonoBehaviour
+public class PlayerInputHandlerMy : MonoBehaviour
 {
     public event System.Action<Vector2> OnMovementInput;
     public event System.Action<float> OnZoomInput;
@@ -158,7 +158,6 @@ public class PlayerInputHandler : MonoBehaviour
     public void SetInputEnabled(bool enabled)
     {
         isInputEnabled = enabled;
-        Debug.Log($"PlayerInput: input enabled = {enabled}");
     }
 
     public void LockCursor(bool locked)
@@ -173,7 +172,6 @@ public class PlayerInputHandler : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
-        Debug.Log($"Cursor locked = {locked}");
     }
 
     public bool IsInputEnabled() => isInputEnabled;

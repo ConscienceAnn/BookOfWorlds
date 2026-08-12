@@ -1945,6 +1945,7 @@ GameObject:
   - component: {fileID: 673842325}
   - component: {fileID: 673842324}
   - component: {fileID: 673842327}
+  - component: {fileID: 673842328}
   m_Layer: 5
   m_Name: ResourcesCanvas
   m_TagString: Untagged
@@ -2040,6 +2041,23 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &673842328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 673842321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f34fe229bcc84f44b91541603457c2f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  woodText: {fileID: 766358996}
+  stoneText: {fileID: 935281365}
+  milkText: {fileID: 545869183}
+  woolText: {fileID: 767281220}
+  coinsText: {fileID: 1747926302}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -3817,6 +3835,7 @@ GameObject:
   - component: {fileID: 1022206700}
   - component: {fileID: 1022206702}
   - component: {fileID: 1022206701}
+  - component: {fileID: 1022206703}
   m_Layer: 5
   m_Name: PauseMenuPanel
   m_TagString: Untagged
@@ -3885,6 +3904,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1022206699}
   m_CullTransparentMesh: 1
+--- !u!114 &1022206703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1022206699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9be9723bfcafb5f43846d6558c045d8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  continueButton: {fileID: 947074282}
+  saveAndQuitButton: {fileID: 1824448544}
+  quitWithoutSaveButton: {fileID: 1060562595}
 --- !u!1 &1051944430
 GameObject:
   m_ObjectHideFlags: 0
@@ -4493,7 +4527,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1191278731}
   playerInput: {fileID: 1191278725}
-  playerInputHandler: {fileID: 1191278720}
+  playerInputHandlerMy: {fileID: 1191278740}
   playerInventory: {fileID: 1191278734}
   mainCamera: {fileID: 963194227}
   virtualCamera: {fileID: 1889694349}
@@ -4502,6 +4536,8 @@ MonoBehaviour:
   uiManager: {fileID: 1290189937}
   levelProgress: {fileID: 306350501}
   playerUI: {fileID: 1191278737}
+  panelManager: {fileID: 1290189938}
+  hudController: {fileID: 673842328}
   allResources:
   - {fileID: 11400000, guid: 469efbddbd517ed42bdf191c861c8b83, type: 2}
   - {fileID: 11400000, guid: 95abc160667e8d042817ea5dd9183253, type: 2}
@@ -4791,18 +4827,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5924863226297722986, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
   m_PrefabInstance: {fileID: 1824749529077763442}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1191278720
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1191278704}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 062c4a9d32693d8469a6488cfb266c52, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1191278721
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4911,6 +4935,18 @@ MonoBehaviour:
   screenOffset: {x: 0, y: 80}
   buildingPromptUI: {fileID: 1051989731}
   notificationUI: {fileID: 1950765573}
+--- !u!114 &1191278740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191278704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 062c4a9d32693d8469a6488cfb266c52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1216673022
 GameObject:
   m_ObjectHideFlags: 0
@@ -4922,6 +4958,7 @@ GameObject:
   - component: {fileID: 1216673023}
   - component: {fileID: 1216673025}
   - component: {fileID: 1216673024}
+  - component: {fileID: 1216673026}
   m_Layer: 5
   m_Name: LevelCompletePanel
   m_TagString: Untagged
@@ -4990,6 +5027,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1216673022}
   m_CullTransparentMesh: 1
+--- !u!114 &1216673026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216673022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f81941a73354908418c2ab66c243ca87, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextLevelButton: {fileID: 1811317537}
+  retryButton: {fileID: 661893822}
+  mainMenuButton: {fileID: 535226964}
 --- !u!1 &1252843053
 GameObject:
   m_ObjectHideFlags: 0
@@ -5338,6 +5390,7 @@ GameObject:
   - component: {fileID: 1290189934}
   - component: {fileID: 1290189933}
   - component: {fileID: 1290189937}
+  - component: {fileID: 1290189938}
   m_Layer: 5
   m_Name: GameUICanvas
   m_TagString: Untagged
@@ -5443,15 +5496,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1135424a5020944add4fa2bbb36e36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  woodText: {fileID: 766358996}
-  stoneText: {fileID: 935281365}
-  coinsText: {fileID: 1747926302}
-  milkText: {fileID: 545869183}
-  woolText: {fileID: 767281220}
-  inventory: {fileID: 1191278734}
+  panelManager: {fileID: 1290189938}
+  hudController: {fileID: 673842328}
+  nextLevelButton: {fileID: 1811317535}
+--- !u!114 &1290189938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1290189932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bdf3eaac10df1441b3e9397634d502a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   pauseMenuPanel: {fileID: 1022206699}
   levelCompletePanel: {fileID: 1216673022}
-  nextLevelButton: {fileID: 1811317535}
 --- !u!1 &1313763768
 GameObject:
   m_ObjectHideFlags: 0
@@ -7975,9 +8036,6 @@ PrefabInstance:
       addedObject: {fileID: 1191278721}
     - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1191278720}
-    - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1191278731}
     - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
       insertIndex: -1
@@ -7985,6 +8043,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1191278737}
+    - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1191278740}
   m_SourcePrefab: {fileID: 100100000, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

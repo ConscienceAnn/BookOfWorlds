@@ -29,8 +29,6 @@ public class ResourcePool : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[ResourcePool] Awake() for {gameObject.name}, resource: {resourceData.resourceName}, префабов: {prefabs.Length}");
-
         for (int i = 0; i < initialSize; i++)
         {
             GameObject obj = CreateNewObject();
@@ -41,13 +39,13 @@ public class ResourcePool : MonoBehaviour
 
     private void OnEnable()
     {
-        //  Подписываемся на событие очистки уровня
+        // Подписываемся на событие очистки уровня
         LevelGenerator.OnLevelCleared += ClearPool;
     }
 
     private void OnDisable()
     {
-        //  Отписываемся от события
+        // Отписываемся от события
         LevelGenerator.OnLevelCleared -= ClearPool;
     }
 
@@ -56,11 +54,10 @@ public class ResourcePool : MonoBehaviour
     private GameObject CreateNewObject()
     {
         GameObject selectedPrefab = prefabs[Random.Range(0, prefabs.Length)];
-        Debug.Log($"[ResourcePool] CreateNewObject() for {selectedPrefab?.name ?? "NULL"}");
 
         if (selectedPrefab == null)
         {
-            Debug.LogError($"[ResourcePool] selectedPrefab is NULL!");
+            Debug.LogError($"ResourcePool: selectedPrefab is NULL!");
             return null;
         }
 
@@ -76,17 +73,10 @@ public class ResourcePool : MonoBehaviour
 
         obj.SetActive(false);
 
-        Debug.Log($"[ResourcePool] Created object: {obj.name}, active: {obj.activeSelf}");
-
         VisualState vs = obj.GetComponent<VisualState>();
         if (vs != null)
         {
             vs.ForceRefresh();
-            Debug.Log($"[ResourcePool] VisualState.ForceRefresh() вызван для {obj.name}");
-        }
-        else
-        {
-            Debug.LogWarning($"[ResourcePool] VisualState NOT FOUND on {obj.name}!");
         }
 
         ResourceSource source = obj.GetComponent<ResourceSource>();
@@ -95,7 +85,6 @@ public class ResourcePool : MonoBehaviour
             source.SetData(resourceData);
             source.SetColored();
             source.Show();
-            Debug.Log($"[ResourcePool] ResourceSource настроен для {obj.name}");
         }
 
         return obj;
@@ -103,18 +92,14 @@ public class ResourcePool : MonoBehaviour
 
     public GameObject Get(Vector3 position, Quaternion rotation)
     {
-        Debug.Log($"[ResourcePool] Get() called, position: {position}");
-
         GameObject obj = null;
 
         if (pool.Count > 0)
         {
             obj = pool.Dequeue();
-            Debug.Log($"[ResourcePool] Object taken from pool: {obj?.name ?? "NULL"}");
         }
         else
         {
-            Debug.Log($"[ResourcePool] Pool is empty, creating new object");
             obj = CreateNewObject();
         }
 
@@ -129,16 +114,7 @@ public class ResourcePool : MonoBehaviour
             if (source != null)
             {
                 source.Show();
-                Debug.Log($"[ResourcePool] ResourceSource.Show() вызван для {obj.name}");
             }
-            else
-            {
-                Debug.LogWarning($"[ResourcePool] ResourceSource NOT on {obj.name}!");
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"[ResourcePool] Get() returned NULL!");
         }
 
         return obj;
@@ -148,12 +124,8 @@ public class ResourcePool : MonoBehaviour
     {
         if (obj == null) return;
 
-        Debug.Log($"[ResourcePool] Return() called for {obj.name}");
-
         obj.SetActive(false);
         pool.Enqueue(obj);
-
-        Debug.Log($"[ResourcePool] Object returned to pool, pool size: {pool.Count}");
     }
 
     /// <summary>
@@ -161,8 +133,6 @@ public class ResourcePool : MonoBehaviour
     /// </summary>
     public void ClearPool()
     {
-        Debug.Log($"[ResourcePool] ClearPool() called for {name}");
-
         foreach (var obj in pool)
         {
             if (obj != null)
@@ -171,7 +141,6 @@ public class ResourcePool : MonoBehaviour
             }
         }
         pool.Clear();
-        Debug.Log($"[ResourcePool] Пул {name} очищен, размер: {pool.Count}");
     }
 
     public int GetPoolSize()

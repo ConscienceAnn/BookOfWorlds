@@ -1,6 +1,8 @@
 using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using System.Collections;
 
 public class LevelGenerator : MonoBehaviour
 {
@@ -22,42 +24,31 @@ public class LevelGenerator : MonoBehaviour
 
     public List<BuildingController> GetBuildings() => spawnedBuildings;
 
-    public void GenerateLevel(LevelDataSO data)
+    public async UniTask GenerateLevelAsync(LevelDataSO data)
     {
-        ClearLevel();
+        // 1. Асинхронно очищаем уровень и ЖДЁМ завершения
+        await ClearLevelAsync();
 
         currentLevelData = data;
 
-        Debug.Log($"Генерируем уровень: {data.levelName}");
-
-        // 1. Ресурсы
+        // 2. Создаём объекты (уже после очистки)
         GenerateCollectableObjects(data.collectableObjectsPrefab);
-
-        // 2. Здания
         GenerateBuildings(data.buildingsPrefab);
 
-        // 3. Регистрируем здания
         if (gameSaveController != null)
         {
             gameSaveController.RefreshBuildingsList();
         }
 
-        // 4. Позиция игрока
         SetPlayerStartPosition(data.playerStartPosition);
 
-        // 5. Загружаем сохранение
         if (gameSaveController != null)
         {
             gameSaveController.LoadGame();
         }
 
-        // 6. Животные
         GenerateAnimals(data.animalsPrefab);
-
-        // 7. Зона продажи
         GenerateSellZone(data.sellZoneData);
-
-        Debug.Log($"Уровень {data.levelName} сгенерирован!");
     }
 
     private void GenerateCollectableObjects(GameObject prefab)
@@ -76,7 +67,6 @@ public class LevelGenerator : MonoBehaviour
         );
 
         spawnedObjects.Add(collectableObj);
-        Debug.Log($"  - Созданы ресурсы: {prefab.name}");
     }
 
     private void GenerateBuildings(GameObject prefab)
@@ -91,6 +81,7 @@ public class LevelGenerator : MonoBehaviour
         spawnedObjects.Add(buildingsObj);
 
         var buildings = buildingsObj.GetComponentsInChildren<BuildingController>();
+
         foreach (var building in buildings)
         {
             spawnedBuildings.Add(building);
@@ -99,11 +90,7 @@ public class LevelGenerator : MonoBehaviour
             {
                 gameSaveController.RegisterBuilding(building);
             }
-
-            Debug.Log($"  - Найдено здание: {building.GetBuildingName()}");
         }
-
-        Debug.Log($"  - Созданы здания: {prefab.name}");
     }
 
     private void GenerateAnimals(GameObject prefab)
@@ -122,7 +109,6 @@ public class LevelGenerator : MonoBehaviour
         );
 
         spawnedObjects.Add(animalsObj);
-        Debug.Log($"  - Созданы животные: {prefab.name}");
     }
 
     private void GenerateSellZone(GameObject sellZonePrefab)
@@ -135,7 +121,6 @@ public class LevelGenerator : MonoBehaviour
 
         GameObject sellZone = container.InstantiatePrefab(sellZonePrefab, sellZoneParent);
         spawnedObjects.Add(sellZone);
-        Debug.Log($"  - SellZone создана: {sellZonePrefab.name}");
     }
 
     private void SetPlayerStartPosition(Vector3 position)
@@ -143,20 +128,19 @@ public class LevelGenerator : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
-            Debug.Log($"  - Найден игрок: {player.name}, текущая позиция: {player.transform.position}");
             player.transform.position = position;
-            Debug.Log($"  - Игрок перемещён в {position}, новая позиция: {player.transform.position}");
         }
         else
         {
-            Debug.LogError($"  - Игрок НЕ НАЙДЕН по тегу 'Player'!");
+            Debug.LogError($"Игрок НЕ НАЙДЕН по тегу 'Player'!");
         }
     }
 
-    private void ClearLevel()
+    /// <summary>
+    /// АСИНХРОННАЯ ОЧИСТКА — ждёт фактического удаления объектов
+    /// </summary>
+    private async UniTask ClearLevelAsync()
     {
-        Debug.Log($"Очистка уровня: {spawnedObjects.Count} объектов");
-
         // УНИЧТОЖАЕМ ВИЗУАЛ ЗАВЕРШЕНИЯ
         LevelProgress levelProgress = FindObjectOfType<LevelProgress>();
         if (levelProgress != null)
@@ -185,10 +169,6 @@ public class LevelGenerator : MonoBehaviour
                 Destroy(resource);
             }
         }
-        if (resources.Length > 0)
-        {
-            Debug.Log($"  - Удалено ресурсов: {resources.Length}");
-        }
 
         // 3. Удаляем точки спавна
         ResourceSpawner[] spawners = FindObjectsOfType<ResourceSpawner>();
@@ -199,10 +179,6 @@ public class LevelGenerator : MonoBehaviour
                 Destroy(spawner.gameObject);
             }
         }
-        if (spawners.Length > 0)
-        {
-            Debug.Log($"  - Удалено спавнеров: {spawners.Length}");
-        }
 
         // 4. Очищаем родительские объекты
         ClearParentChildren(collectableParent);
@@ -210,11 +186,11 @@ public class LevelGenerator : MonoBehaviour
         ClearParentChildren(animalsParent);
         ClearParentChildren(sellZoneParent);
 
-        // 5. Оповещаем всех подписчиков, что уровень очищен
+        // 5. Оповещаем подписчиков
         OnLevelCleared?.Invoke();
-        Debug.Log("  - Отправлено событие OnLevelCleared");
 
-        Debug.Log("Уровень очищен");
+        // ===== ВАЖНО: ЖДЁМ 2 КАДРА, ЧТОБЫ UNITY УСПЕЛ УНИЧТОЖИТЬ ОБЪЕКТЫ =====
+        await UniTask.DelayFrame(2);
     }
 
     private void ClearParentChildren(Transform parent)

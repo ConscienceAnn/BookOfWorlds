@@ -36,7 +36,6 @@ public class ResourceFlyAnimation : MonoBehaviour
     {
         if (targetCanvas == null)
         {
-            Debug.LogWarning($"ResourceFlyAnimation: targetCanvas is NULL!");
             return;
         }
 
@@ -50,19 +49,16 @@ public class ResourceFlyAnimation : MonoBehaviour
         }
         catch (OperationCanceledException)
         {
-            Debug.Log($" Анимация полёта {resourceName} отменена");
+            // Анимация отменена
         }
     }
 
     private async UniTask PlayInternal(Vector3 worldStartPosition, string resourceName, CancellationToken token)
     {
-        Debug.Log($" [ResourceFlyAnimation] Начинаем полёт: {resourceName}");
-
         // 1. Получаем спрайт для ресурса
         Sprite iconSprite = GetResourceSprite(resourceName);
         if (iconSprite == null)
         {
-            Debug.LogWarning($" Нет спрайта для {resourceName}");
             return;
         }
 
@@ -87,7 +83,6 @@ public class ResourceFlyAnimation : MonoBehaviour
         RectTransform targetRect = GetTargetRect(resourceName);
         if (targetRect == null)
         {
-            Debug.LogWarning($" targetRect is NULL для {resourceName}");
             Destroy(iconObj);
             return;
         }
@@ -148,7 +143,6 @@ public class ResourceFlyAnimation : MonoBehaviour
 
         // 6. Удаляем иконку
         Destroy(iconObj);
-        Debug.Log($" [ResourceFlyAnimation] Полёт завершён: {resourceName}");
     }
 
     private Sprite GetResourceSprite(string resourceName)

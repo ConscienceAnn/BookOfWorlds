@@ -133,7 +133,6 @@ public class PlayerCollector : MonoBehaviour
         RotateToTarget(collectable.GetTransform());
 
         OnCollectStart?.Invoke(collectable);
-        Debug.Log($"Начинаем сбор: {collectable.GetResourceName()}");
 
         CollectAsync(collectable).Forget();
     }
@@ -162,7 +161,6 @@ public class PlayerCollector : MonoBehaviour
 
             if (collectable == null || !collectable.IsAvailable)
             {
-                Debug.Log("Ресурс пропал во время сбора");
                 FinishCollect();
                 return;
             }
@@ -182,16 +180,7 @@ public class PlayerCollector : MonoBehaviour
             if (success)
             {
                 OnCollectComplete?.Invoke(collectable);
-                Debug.Log($"Собран {collectable.GetResourceName()}");
             }
-            else
-            {
-                Debug.Log($"Не удалось собрать {collectable.GetResourceName()}");
-            }
-        }
-        else
-        {
-            Debug.Log("Ресурс недоступен для сбора");
         }
 
         FinishCollect();

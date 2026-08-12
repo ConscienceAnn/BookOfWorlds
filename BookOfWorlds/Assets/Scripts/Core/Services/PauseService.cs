@@ -18,6 +18,5 @@ public class PauseService
     {
         isPaused = !isPaused;
         Time.timeScale = isPaused ? 0f : 1f;
-        Debug.Log($" Пауза: {(isPaused ? "ВКЛ" : "ВЫКЛ")}");
     }
 }

@@ -20,41 +20,26 @@ public class TreeBehaviour : IResourceBehaviour
     {
         if (resource == null) return;
 
-        Debug.Log($"[TreeBehaviour] ====== COLLECTION START ======");
-
         resource.SetGray();
-        Debug.Log($"[TreeBehaviour] STEP 1: resource.SetGray() CALLED");
 
         await UniTask.Delay(50);
-        Debug.Log($"[TreeBehaviour] STEP 2: Gray color applied");
 
-        Debug.Log($"[TreeBehaviour] STEP 3: Shaking tree...");
         await ShakeTree(resource.transform, shakeDuration, shakeMagnitude);
-        Debug.Log($"[TreeBehaviour] STEP 3: Shake completed");
 
-        Debug.Log($"[TreeBehaviour] STEP 4: Creating particles...");
         Vector3 position = resource.transform.position + particleOffset;
         if (particleFactory != null)
         {
             particleFactory.CreateWoodParticles(position);
         }
-        Debug.Log($"[TreeBehaviour] STEP 4: Particles created");
 
         if (flyAnimation != null)
         {
-            Debug.Log($"[TreeBehaviour] STEP 5: Starting fly animation...");
             await flyAnimation.Play(position, resource.ResourceName);
-            Debug.Log($"[TreeBehaviour] STEP 5: Fly animation completed");
         }
 
-        Debug.Log($"[TreeBehaviour] STEP 7: Hiding resource");
         resource.Hide();
-        Debug.Log($"[TreeBehaviour] STEP 7: Resource hidden");
 
         resource.InvokeCollected();
-        Debug.Log($"[TreeBehaviour] STEP 8: InvokeCollected called");
-
-        Debug.Log($"[TreeBehaviour] ====== COLLECTION END ======");
     }
 
     public void OnRespawn(ResourceSource resource)
@@ -64,7 +49,6 @@ public class TreeBehaviour : IResourceBehaviour
             resource.SetColored();
             resource.Show();
         }
-        Debug.Log($"[TreeBehaviour] Resource respawned");
     }
 
     public void OnCollect(Transform target) { }

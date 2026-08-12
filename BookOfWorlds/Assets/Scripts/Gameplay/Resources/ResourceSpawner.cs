@@ -110,13 +110,11 @@ public class ResourceSpawner : MonoBehaviour
             {
                 var behaviour = new StoneBehaviour(particleFactory, flyAnimation);
                 source.SetBehaviour(behaviour);
-                Debug.Log($"Created StoneBehaviour for {obj.name}");
             }
             else
             {
                 var behaviour = new TreeBehaviour(particleFactory, flyAnimation);
                 source.SetBehaviour(behaviour);
-                Debug.Log($"Created TreeBehaviour for {obj.name}");
             }
 
             source.OnCollected += OnResourceCollected;
@@ -125,7 +123,6 @@ public class ResourceSpawner : MonoBehaviour
             if (spawnPoint != null && !occupiedPoints.ContainsKey(spawnPoint))
             {
                 occupiedPoints.Add(spawnPoint, source);
-                Debug.Log($"Point {spawnPoint.name} occupied");
             }
         }
         else
@@ -154,7 +151,6 @@ public class ResourceSpawner : MonoBehaviour
         if (occupiedPoint != null)
         {
             occupiedPoints.Remove(occupiedPoint);
-            Debug.Log($"Point {occupiedPoint.name} freed");
         }
 
         if (isStone)
@@ -172,7 +168,6 @@ public class ResourceSpawner : MonoBehaviour
             float respawnDelay = source.ResourceData?.respawnTime ?? 5f;
             CancelInvoke(nameof(RespawnResource));
             Invoke(nameof(RespawnResource), respawnDelay);
-            Debug.Log($"Respawn scheduled in {respawnDelay} sec at point {occupiedPoint.name}");
         }
     }
 
@@ -192,13 +187,11 @@ public class ResourceSpawner : MonoBehaviour
                     if (point != null)
                     {
                         SpawnResource(point.position, point.rotation, point);
-                        Debug.Log($"Resource respawned at free point {point.name}");
                         pendingRespawnPoint = null;
                         return;
                     }
                 }
 
-                Debug.LogWarning("No free points, retrying in 0.5 sec");
                 Invoke(nameof(RespawnResource), 0.5f);
                 return;
             }
@@ -208,7 +201,6 @@ public class ResourceSpawner : MonoBehaviour
                 pendingRespawnPoint.rotation,
                 pendingRespawnPoint
             );
-            Debug.Log($"Resource respawned at point {pendingRespawnPoint.name}");
             pendingRespawnPoint = null;
         }
         else
@@ -219,7 +211,6 @@ public class ResourceSpawner : MonoBehaviour
 
             if (freePoints.Count == 0)
             {
-                Debug.LogWarning("ResourceSpawner: no free points for respawn!");
                 return;
             }
 
@@ -227,7 +218,6 @@ public class ResourceSpawner : MonoBehaviour
             if (point != null)
             {
                 SpawnResource(point.position, point.rotation, point);
-                Debug.Log($"Resource respawned at free point {point.name}");
             }
         }
     }

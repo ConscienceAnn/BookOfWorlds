@@ -5,7 +5,6 @@ public class PlayerRunState : PlayerStateBase
     public override void Enter(PlayerController player)
     {
         player.SetAnimation("IsRunning", true);
-        Debug.Log(" Состояние: Run");
     }
 
     public override void Update(PlayerController player)

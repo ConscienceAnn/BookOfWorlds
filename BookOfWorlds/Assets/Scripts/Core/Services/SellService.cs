@@ -1,11 +1,10 @@
-
 using UnityEngine;
+
 public class SellService
 {
     private readonly IPlayerInventory inventory;
     private readonly ResourceDataSO[] allResources;
 
-    
     public SellService(IPlayerInventory inventory, ResourceDataSO[] allResources)
     {
         this.inventory = inventory;
@@ -17,7 +16,6 @@ public class SellService
         var items = inventory.GetAllItems();
         if (items.Count == 0)
         {
-            Debug.Log(" Инвентарь пуст! Нечего продавать.");
             return 0;
         }
 
@@ -27,7 +25,6 @@ public class SellService
         {
             int price = GetPrice(item.Key);
             totalCoins += price * item.Value;
-            Debug.Log($" Продано {item.Key} x{item.Value} по {price} монет");
         }
 
         inventory.ClearAll();
@@ -38,14 +35,12 @@ public class SellService
     {
         foreach (var data in allResources)
         {
-           
             if (string.Equals(data.resourceName, resourceName, System.StringComparison.OrdinalIgnoreCase))
             {
-                Debug.Log($" Найдена цена для {resourceName}: {data.basePrice}");
                 return data.basePrice;
             }
         }
-        Debug.LogWarning($" Цена не найдена для ресурса: {resourceName}");
+        Debug.LogWarning($"Цена не найдена для ресурса: {resourceName}");
         return 0;
     }
 }

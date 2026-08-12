@@ -19,41 +19,26 @@ public class StoneBehaviour : IResourceBehaviour
     {
         if (resource == null) return;
 
-        Debug.Log($"[StoneBehaviour] ====== COLLECTION START ======");
-
         resource.SetGray();
-        Debug.Log($"[StoneBehaviour] STEP 1: resource.SetGray() CALLED");
 
         await UniTask.Delay(50);
-        Debug.Log($"[StoneBehaviour] STEP 2: Gray color applied");
 
-        Debug.Log($"[StoneBehaviour] STEP 3: Shaking stone...");
         await ShakeStone(resource.transform, shakeDuration, shakeMagnitude);
-        Debug.Log($"[StoneBehaviour] STEP 3: Shake completed");
 
-        Debug.Log($"[StoneBehaviour] STEP 4: Creating particles...");
         Vector3 position = resource.transform.position + particleOffset;
         if (particleFactory != null)
         {
             particleFactory.CreateStoneParticles(position);
         }
-        Debug.Log($"[StoneBehaviour] STEP 4: Particles created");
 
         if (flyAnimation != null)
         {
-            Debug.Log($"[StoneBehaviour] STEP 5: Starting fly animation...");
             await flyAnimation.Play(position, resource.ResourceName);
-            Debug.Log($"[StoneBehaviour] STEP 5: Fly animation completed");
         }
 
-        Debug.Log($"[StoneBehaviour] STEP 6: Hiding resource");
         resource.Hide();
-        Debug.Log($"[StoneBehaviour] STEP 6: Resource hidden");
 
         resource.InvokeCollected();
-        Debug.Log($"[StoneBehaviour] STEP 7: InvokeCollected called");
-
-        Debug.Log($"[StoneBehaviour] ====== COLLECTION END ======");
     }
 
     public void OnRespawn(ResourceSource resource)
@@ -63,7 +48,6 @@ public class StoneBehaviour : IResourceBehaviour
             resource.SetColored();
             resource.Show();
         }
-        Debug.Log($"[StoneBehaviour] Resource respawned");
     }
 
     public void OnCollect(Transform target) { }

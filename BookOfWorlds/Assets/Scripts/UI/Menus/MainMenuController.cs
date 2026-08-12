@@ -37,7 +37,6 @@ public class MainMenuController : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         Time.timeScale = 1f;
-        Debug.Log("MainMenu: Курсор разблокирован");
 
         if (bookUICanvasGroup != null)
         {
@@ -53,7 +52,6 @@ public class MainMenuController : MonoBehaviour
 
         bool hasSave = SaveSystem.SaveExists();
         continueButton.interactable = hasSave;
-        Debug.Log($"Главное меню: {(hasSave ? "Есть сохранение" : "Нет сохранения")}");
 
         if (bookTransform != null)
         {
@@ -79,8 +77,6 @@ public class MainMenuController : MonoBehaviour
         float normalizedTime = (float)targetFrame / totalFrames;
         float targetTime = normalizedTime * animationLength;
 
-        Debug.Log($"Анимация: {animationLength} сек, остановка на {targetTime} сек (кадр {targetFrame}/{totalFrames})");
-
         Invoke(nameof(FreezeBookAnimation), targetTime);
     }
 
@@ -99,7 +95,6 @@ public class MainMenuController : MonoBehaviour
             startRotation = bookTransform.eulerAngles;
             moveProgress = 0f;
             isMoving = true;
-            Debug.Log("Начинаем плавное движение книги");
         }
     }
 
@@ -125,7 +120,6 @@ public class MainMenuController : MonoBehaviour
             {
                 isMoving = false;
                 ShowBookUI();
-                Debug.Log($"Книга перемещена в позицию {finalPosition}");
             }
         }
     }
@@ -163,7 +157,6 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("Новая игра");
         SaveSystem.DeleteSave();
 
-        // Разблокируем курсор перед переходом (на всякий случай)
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
@@ -187,7 +180,6 @@ public class MainMenuController : MonoBehaviour
             return;
         }
 
-        // Разблокируем курсор перед переходом (на всякий случай)
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
@@ -227,7 +219,6 @@ public class MainMenuController : MonoBehaviour
             // Когда окно получает фокус, снова показываем курсор
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            Debug.Log("MainMenu: Фокус получен, курсор разблокирован");
         }
     }
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using System.Collections;
 
 public class LevelManager : MonoBehaviour
 {
@@ -50,14 +51,13 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    public void LoadLevel(int levelIndex)
+    public async void LoadLevel(int levelIndex)
     {
         if (isLoadingLevel) return;
         isLoadingLevel = true;
 
         if (levelIndex >= levels.Count)
         {
-            Debug.Log("Все уровни пройдены!");
             ShowGameComplete();
             isLoadingLevel = false;
             return;
@@ -67,19 +67,20 @@ public class LevelManager : MonoBehaviour
         currentLevelData = levels[levelIndex];
         isLevelComplete = false;
 
-        // 1. Генерируем уровень
+        Debug.Log($"Загружается уровень {levelIndex + 1}: {currentLevelData.levelName}");
+
+        // 1. Генерируем уровень АСИНХРОННО и ЖДЁМ
         if (levelGenerator != null)
         {
-            levelGenerator.GenerateLevel(currentLevelData);
+            await levelGenerator.GenerateLevelAsync(currentLevelData);
         }
 
-        // 2. Загружаем сохранение или сбрасываем при ретрае
+        // 2. Теперь всё чисто, загружаем сохранение
         if (gameSaveController != null)
         {
             if (isRetry)
             {
                 gameSaveController.ClearLevelProgress();
-                Debug.Log($"Уровень {currentLevelData.levelName} сброшен (Retry)");
 
                 if (levelProgress != null)
                 {
@@ -93,22 +94,22 @@ public class LevelManager : MonoBehaviour
             }
         }
 
-        // 3. Закрываем все панели через UIManager
+        // 3. Закрываем все панели
         if (uiManager != null)
         {
             uiManager.CloseAllPanels();
         }
 
+        // 4. Обновляем прогресс
         if (levelProgress != null)
         {
             levelProgress.ForceUpdate();
         }
 
-        // 4. Сохраняем текущий уровень
+        // 5. Сохраняем текущий уровень
         SaveCurrentLevel();
 
         isLoadingLevel = false;
-        Debug.Log($"Загружен уровень {currentLevelIndex + 1}: {currentLevelData.levelName}");
     }
 
     public async void LoadNextLevel()
@@ -128,14 +129,13 @@ public class LevelManager : MonoBehaviour
         // Закрываем панель через UIManager
         if (uiManager != null)
         {
-            uiManager.HideLevelComplete();  // Используем метод вместо прямого доступа
+            uiManager.HideLevelComplete();
         }
 
         // Очищаем состояние игрока
         if (gameSaveController != null)
         {
             gameSaveController.ClearPlayerState();
-            Debug.Log("Игровое состояние очищено для нового уровня");
         }
 
         await UniTask.Delay(300);
@@ -145,7 +145,6 @@ public class LevelManager : MonoBehaviour
 
     public void RetryLevel()
     {
-        Debug.Log($"Перезапуск уровня {currentLevelData?.levelName}");
         isRetry = true;
 
         // Сбрасываем прогресс
@@ -185,7 +184,6 @@ public class LevelManager : MonoBehaviour
         if (gameSaveController != null)
         {
             gameSaveController.SaveGame();
-            Debug.Log("Прогресс сохранён");
         }
 
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
@@ -201,7 +199,6 @@ public class LevelManager : MonoBehaviour
         if (gameSaveController != null)
         {
             gameSaveController.SaveGame();
-            Debug.Log("Прогресс сохранён");
         }
 
         // ПОКАЗЫВАЕМ ПАНЕЛЬ ЧЕРЕЗ UIManager
@@ -239,10 +236,9 @@ public class LevelManager : MonoBehaviour
         }
 
         SaveSystem.Save(data);
-        Debug.Log($"Сохранён текущий уровень: {currentLevelIndex}");
     }
 
-    // <summary>
+    /// <summary>
     /// ПЕРЕХОД В ГЛАВНОЕ МЕНЮ БЕЗ СОХРАНЕНИЯ
     /// </summary>
     public void GoToMainMenuWithoutSave()
@@ -258,5 +254,46 @@ public class LevelManager : MonoBehaviour
         // НЕ СОХРАНЯЕМ ИГРУ!
         // Просто переходим в главное меню
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    private IEnumerator DelayedLoadComplete()
+    {
+        yield return null;  // Ждём 1 кадр
+
+        // 3. Загружаем сохранение или сбрасываем при ретрае
+        if (gameSaveController != null)
+        {
+            if (isRetry)
+            {
+                gameSaveController.ClearLevelProgress();
+
+                if (levelProgress != null)
+                {
+                    levelProgress.SetRetryMode(false);
+                }
+                isRetry = false;
+            }
+            else
+            {
+                gameSaveController.LoadGame();
+            }
+        }
+
+        // 4. Закрываем все панели
+        if (uiManager != null)
+        {
+            uiManager.CloseAllPanels();
+        }
+
+        // 5. Обновляем прогресс
+        if (levelProgress != null)
+        {
+            levelProgress.ForceUpdate();
+        }
+
+        // 6. Сохраняем текущий уровень
+        SaveCurrentLevel();
+
+        isLoadingLevel = false;
     }
 }

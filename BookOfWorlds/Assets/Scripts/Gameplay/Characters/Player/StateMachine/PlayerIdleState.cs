@@ -5,7 +5,6 @@ public class PlayerIdleState : PlayerStateBase
     public override void Enter(PlayerController player)
     {
         player.SetAnimation("IsRunning", false);
-        Debug.Log(" Состояние: Idle");
     }
 
     public override void Update(PlayerController player)

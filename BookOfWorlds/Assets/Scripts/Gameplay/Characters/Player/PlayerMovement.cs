@@ -42,7 +42,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void FixedUpdateMovement()
     {
-        //  Проверяем, не собирает ли игрок
+        // Проверяем, не собирает ли игрок
         if (playerController != null && playerController.IsCollecting)
         {
             // Если собирает — останавливаемся

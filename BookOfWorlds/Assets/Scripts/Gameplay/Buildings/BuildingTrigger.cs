@@ -9,7 +9,6 @@ public class BuildingTrigger : MonoBehaviour
     {
         buildingController = GetComponentInParent<BuildingController>();
         playerUI = FindObjectOfType<PlayerUI>();
-        Debug.Log($"BuildingTrigger.Awake(): buildingController = {(buildingController != null ? "НАЙДЕН" : "НЕ НАЙДЕН")}");
     }
 
     private void OnTriggerEnter(Collider other)
@@ -18,7 +17,6 @@ public class BuildingTrigger : MonoBehaviour
         {
             if (buildingController != null && buildingController.IsRestored())
             {
-                Debug.Log($"Здание уже восстановлено, триггер игнорируется");
                 return;
             }
 
@@ -50,5 +48,4 @@ public class BuildingTrigger : MonoBehaviour
             }
         }
     }
-
 }

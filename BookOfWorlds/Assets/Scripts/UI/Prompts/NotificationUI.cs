@@ -35,27 +35,20 @@ public class NotificationUI : MonoBehaviour
             return;
         }
 
-        Debug.Log($"NotificationUI.Show() called: {message}");
-
         if (parentCanvas != null && !parentCanvas.gameObject.activeSelf)
         {
             parentCanvas.gameObject.SetActive(true);
-            Debug.Log("NotificationUI: Canvas was disabled, enabled!");
         }
 
         if (!gameObject.activeSelf)
         {
             gameObject.SetActive(true);
-            Debug.Log("NotificationUI: Object was disabled, enabled!");
         }
 
         notificationText.text = message;
         notificationText.gameObject.SetActive(true);
 
         Canvas.ForceUpdateCanvases();
-
-        Debug.Log($"  - gameObject.activeSelf: {gameObject.activeSelf}");
-        Debug.Log($"  - notificationText.activeSelf: {notificationText.gameObject.activeSelf}");
 
         if (hideCoroutine != null)
         {

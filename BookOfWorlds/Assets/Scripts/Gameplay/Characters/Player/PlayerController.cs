@@ -3,7 +3,7 @@ using Zenject;
 
 public class PlayerController : MonoBehaviour
 {
-    [Inject] private PlayerInputHandler inputHandler;
+    [Inject] private PlayerInputHandlerMy inputHandler;
 
     private PlayerMovement movement;
     private PlayerCollector collector;
@@ -26,14 +26,14 @@ public class PlayerController : MonoBehaviour
         collector = GetComponent<PlayerCollector>();
         animator = GetComponent<Animator>();
 
-        //  Добавляем новую State Machine
+        // Добавляем новую State Machine
         StateMachine = GetComponent<PlayerStateMachine>();
         if (StateMachine == null)
         {
             StateMachine = gameObject.AddComponent<PlayerStateMachine>();
         }
 
-        //  Подписки на события сбора
+        // Подписки на события сбора
         if (collector != null)
         {
             collector.OnCollectStart += HandleCollectStart;
@@ -63,13 +63,11 @@ public class PlayerController : MonoBehaviour
     private void HandleCollectStart(ICollectable target)
     {
         OnCollectStart?.Invoke(target);
-        Debug.Log($" Событие: Начало сбора {target?.GetResourceName()}");
     }
 
     private void HandleCollectComplete(ICollectable target)
     {
         OnCollectComplete?.Invoke(target);
-        Debug.Log($" Событие: Завершение сбора {target?.GetResourceName()}");
     }
 
     private void OnEnable()

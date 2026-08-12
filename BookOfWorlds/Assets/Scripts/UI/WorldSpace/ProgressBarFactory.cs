@@ -1,9 +1,12 @@
 using UnityEngine;
+using Zenject;
 
 public class ProgressBarFactory : MonoBehaviour
 {
     [Header("Progress Bar Prefab")]
     [SerializeField] private GameObject progressBarPrefab;
+
+    [Inject] private DiContainer diContainer;
 
     /// <summary>
     /// Создаёт прогресс-бар над указанным объектом
@@ -22,16 +25,18 @@ public class ProgressBarFactory : MonoBehaviour
             return null;
         }
 
-        //  Создаём экземпляр префаба на корневом уровне сцены
-        GameObject progressBarObj = Instantiate(progressBarPrefab, target.position + offset, Quaternion.identity);
-
-        //  НЕ ДЕЛАЕМ ЕГО ДОЧЕРНИМ target!
-        // Просто размещаем в нужной позиции
+        // ===== ИСПОЛЬЗУЕМ DiContainer ДЛЯ СОЗДАНИЯ =====
+        GameObject progressBarObj = diContainer.InstantiatePrefab(
+            progressBarPrefab,
+            target.position + offset,
+            Quaternion.identity,
+            null  // parent = null (корневой уровень)
+        );
 
         ProgressBarUI progressBar = progressBarObj.GetComponent<ProgressBarUI>();
         if (progressBar != null)
         {
-            // Настраиваем фолловер на целевой объект
+            // Настраиваем фолловер
             WorldSpaceUIFollower follower = progressBarObj.GetComponent<WorldSpaceUIFollower>();
             if (follower != null)
             {
@@ -39,7 +44,6 @@ public class ProgressBarFactory : MonoBehaviour
                 follower.SetOffset(offset);
             }
 
-            Debug.Log($"ProgressBarFactory: создан ProgressBar для {target.name}");
             return progressBar;
         }
 

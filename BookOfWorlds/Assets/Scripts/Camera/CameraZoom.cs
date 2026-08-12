@@ -18,7 +18,7 @@ public class CameraZoom : MonoBehaviour
     [SerializeField] private float defaultHeight = 3f;  // Стандартная высота
 
     [Inject] private CinemachineVirtualCamera virtualCamera;
-    [Inject] private PlayerInputHandler inputHandler;
+    [Inject] private PlayerInputHandlerMy inputHandler;
 
     private CinemachineTransposer transposer;
     private float currentZoomDistance;
@@ -39,8 +39,6 @@ public class CameraZoom : MonoBehaviour
 
         if (transposer == null)
         {
-            Debug.Log("CameraZoom: Transposer not found, creating...");
-
             transposer = virtualCamera.AddCinemachineComponent<CinemachineTransposer>();
             transposer.m_BindingMode = CinemachineTransposer.BindingMode.LockToTarget;
             transposer.m_FollowOffset = new Vector3(0, defaultHeight, -defaultZoomDistance);
@@ -51,7 +49,6 @@ public class CameraZoom : MonoBehaviour
 
         if (transposer != null)
         {
-            
             currentZoomDistance = Mathf.Abs(transposer.m_FollowOffset.z);
             targetZoomDistance = currentZoomDistance;
             defaultZoomDistance = currentZoomDistance;
@@ -59,8 +56,6 @@ public class CameraZoom : MonoBehaviour
             currentHeight = transposer.m_FollowOffset.y;
             targetHeight = currentHeight;
             defaultHeight = currentHeight;
-
-            Debug.Log($"CameraZoom: Initialized with distance {currentZoomDistance}, height {currentHeight}");
         }
 
         if (inputHandler != null)
@@ -85,15 +80,11 @@ public class CameraZoom : MonoBehaviour
 
         if (Mathf.Abs(scrollValue) > 0.01f)
         {
-            
             targetZoomDistance -= scrollValue * zoomSpeed;
             targetZoomDistance = Mathf.Clamp(targetZoomDistance, minZoom, maxZoom);
 
-            
-            float zoomProgress = (targetZoomDistance - minZoom) / (maxZoom - minZoom); 
+            float zoomProgress = (targetZoomDistance - minZoom) / (maxZoom - minZoom);
             targetHeight = Mathf.Lerp(minHeight, maxHeight, zoomProgress);
-
-            Debug.Log($"Zoom target: distance={targetZoomDistance}, height={targetHeight} (scroll: {scrollValue})");
 
             if (!isZooming)
             {
@@ -122,13 +113,13 @@ public class CameraZoom : MonoBehaviour
             float t = elapsedTime / smoothingSpeed;
             float smoothedT = Mathf.SmoothStep(0f, 1f, t);
 
-            //  Плавно меняем дистанцию
+            // Плавно меняем дистанцию
             currentZoomDistance = Mathf.Lerp(startDistance, targetZoomDistance, smoothedT);
 
-            //  Плавно меняем высоту
+            // Плавно меняем высоту
             currentHeight = Mathf.Lerp(startHeight, targetHeight, smoothedT);
 
-            //  Применяем оба изменения
+            // Применяем оба изменения
             Vector3 offset = transposer.m_FollowOffset;
             offset.z = -currentZoomDistance;
             offset.y = currentHeight;
@@ -141,7 +132,6 @@ public class CameraZoom : MonoBehaviour
             await UniTask.Yield(this.GetCancellationTokenOnDestroy());
         }
 
-       
         currentZoomDistance = targetZoomDistance;
         currentHeight = targetHeight;
 
@@ -150,7 +140,6 @@ public class CameraZoom : MonoBehaviour
         finalOffset.y = currentHeight;
         transposer.m_FollowOffset = finalOffset;
 
-        Debug.Log($"Zoom finished: distance={currentZoomDistance}, height={currentHeight}");
         isZooming = false;
     }
 
@@ -171,6 +160,5 @@ public class CameraZoom : MonoBehaviour
         }
 
         isZooming = false;
-        Debug.Log($"Zoom reset: distance={defaultZoomDistance}, height={defaultHeight}");
     }
 }

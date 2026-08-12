@@ -7,7 +7,7 @@ using System.Text;
 public class BuildingController : MonoBehaviour, IInteractable
 {
     [Header("Building Data")]
-    [SerializeField] private BuildingDataSO buildingData; //  buildingId внутри
+    [SerializeField] private BuildingDataSO buildingData;
 
     [Header("Visuals")]
     [SerializeField] private GameObject ruinedVisual;
@@ -26,12 +26,7 @@ public class BuildingController : MonoBehaviour, IInteractable
     // ===== PUBLIC METHODS =====
     public string GetBuildingId() => buildingData?.buildingId ?? "unknown";
     public string GetBuildingName() => buildingData?.buildingName ?? name;
-    public bool IsRestored()
-    {
-        bool result = isRestored;
-        Debug.Log($" {GetBuildingName()}.IsRestored() = {result}, investedResources={GetInvestedString()}");
-        return result;
-    }
+    public bool IsRestored() => isRestored;
     public ResourceCost[] GetCosts() => buildingData?.costs;
 
     public int GetInvestedAmount(string resourceName)
@@ -76,7 +71,6 @@ public class BuildingController : MonoBehaviour, IInteractable
                 }
             }
         }
-        Debug.Log($"BuildingController {GetBuildingName()} Awake - словарь инициализирован");
     }
 
     private void Start()
@@ -85,15 +79,11 @@ public class BuildingController : MonoBehaviour, IInteractable
         {
             UpdateVisual(false);
         }
-
-        Debug.Log($"BuildingController {GetBuildingName()} инициализирован, restored={isRestored}, hasLoadedData={hasLoadedData}");
     }
 
     // ===== VISUAL =====
     private void UpdateVisual(bool restored)
     {
-        Debug.Log($"  - UpdateVisual({restored}) called for {GetBuildingName()}");
-
         isRestored = restored;
 
         if (ruinedVisual != null) ruinedVisual.SetActive(!restored);
@@ -118,7 +108,6 @@ public class BuildingController : MonoBehaviour, IInteractable
             foreach (var kvp in savedInvested)
             {
                 investedResources[kvp.Key] = kvp.Value;
-                Debug.Log($"  - Applied: {kvp.Key} = {kvp.Value}");
             }
         }
 
@@ -219,25 +208,20 @@ public class BuildingController : MonoBehaviour, IInteractable
     // ===== TRIGGER METHODS =====
     public void OnPlayerEnter()
     {
-        Debug.Log($"Игрок вошёл в зону {GetBuildingName()}");
+        // Игрок вошёл в зону
     }
 
     public void OnPlayerExit()
     {
-        Debug.Log($"Игрок вышел из зоны {GetBuildingName()}");
+        // Игрок вышел из зоны
     }
 
     // ===== RESTORE LOGIC =====
     public async UniTaskVoid TryRestore()
     {
-        Debug.Log($"========== [TryRestore] {GetBuildingName()} ==========");
-        Debug.Log($"  - isRestored: {isRestored}");
-        Debug.Log($"  - investedResources BEFORE: {GetInvestedString()}");
-
         if (isRestored)
         {
             playerUI?.ShowNotification($"{GetBuildingName()} уже восстановлено!", 2f);
-            Debug.Log($"  - Здание уже восстановлено");
             return;
         }
 
@@ -252,12 +236,9 @@ public class BuildingController : MonoBehaviour, IInteractable
             int invested = GetInvestedAmount(resourceName);
             int remaining = required - invested;
 
-            Debug.Log($"  - {resourceName}: invested={invested}, required={required}, remaining={remaining}");
-
             if (remaining <= 0) continue;
 
             int available = inventory.GetAmount(resourceName);
-            Debug.Log($"  - {resourceName}: available={available}, toTransfer={Mathf.Min(available, remaining)}");
 
             if (available > 0)
             {
@@ -266,7 +247,6 @@ public class BuildingController : MonoBehaviour, IInteractable
                 inventory.TrySpend(resourceName, toTransfer);
                 investedResources[resourceName] += toTransfer;
                 anyResourceAdded = true;
-                Debug.Log($"  - {resourceName}: transferred {toTransfer}, now {investedResources[resourceName]}");
             }
             else if (available == 0 && remaining > 0)
             {
@@ -274,23 +254,17 @@ public class BuildingController : MonoBehaviour, IInteractable
             }
         }
 
-        Debug.Log($"  - anyResourceAdded: {anyResourceAdded}");
-        Debug.Log($"  - anyResourceAvailable: {anyResourceAvailable}");
-        Debug.Log($"  - investedResources AFTER transfers: {GetInvestedString()}");
-
         if (!anyResourceAvailable)
         {
             string missingList = string.Join(", ", missingResources);
             string message = $"Нет ресурсов для восстановления {GetBuildingName()}! Нужно: {missingList}";
             playerUI?.ShowNotification(message, 2.5f);
-            Debug.Log($"  - {message}");
             return;
         }
 
         if (!anyResourceAdded)
         {
             playerUI?.ShowNotification($"Все ресурсы для {GetBuildingName()} уже внесены!", 2f);
-            Debug.Log($"  - Все ресурсы уже внесены");
             return;
         }
 
@@ -303,8 +277,6 @@ public class BuildingController : MonoBehaviour, IInteractable
                 break;
             }
         }
-
-        Debug.Log($"  - allComplete: {allComplete}");
 
         if (allComplete)
         {
@@ -353,9 +325,6 @@ public class BuildingController : MonoBehaviour, IInteractable
 
             playerUI?.ShowNotification($"Внесены ресурсы для {GetBuildingName()}", 1.5f);
         }
-
-        Debug.Log($"  - investedResources FINAL: {GetInvestedString()}");
-        Debug.Log($"========== [TryRestore] END ==========");
     }
 
     // ===== RESET =====
@@ -365,8 +334,6 @@ public class BuildingController : MonoBehaviour, IInteractable
     /// </summary>
     public void ResetBuilding()
     {
-        Debug.Log($" ResetBuilding() для {GetBuildingName()}");
-
         // 1. Сбрасываем флаги
         isRestored = false;
         hasLoadedData = false;
@@ -375,7 +342,6 @@ public class BuildingController : MonoBehaviour, IInteractable
         if (investedResources != null)
         {
             investedResources.Clear();
-            Debug.Log($"  - investedResources очищен");
         }
 
         // 3. Инициализируем словарь заново
@@ -386,7 +352,6 @@ public class BuildingController : MonoBehaviour, IInteractable
                 if (!investedResources.ContainsKey(cost.resourceName))
                 {
                     investedResources[cost.resourceName] = 0;
-                    Debug.Log($"  - {cost.resourceName}: 0");
                 }
             }
         }
@@ -399,13 +364,9 @@ public class BuildingController : MonoBehaviour, IInteractable
         if (trigger != null)
         {
             trigger.gameObject.SetActive(true);
-            Debug.Log($"  - Trigger включён");
         }
 
         // 6. Обновляем UI
         EventBus.BuildingProgressChanged(this);
-
-        Debug.Log($"ResetBuilding() завершён для {GetBuildingName()}, isRestored={isRestored}");
     }
-
 }

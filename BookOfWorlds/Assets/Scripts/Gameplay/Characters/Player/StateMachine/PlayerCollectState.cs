@@ -5,12 +5,11 @@ public class PlayerCollectState : PlayerStateBase
     public override void Enter(PlayerController player)
     {
         player.SetAnimation("IsCollecting", true);
-        Debug.Log(" Состояние: Collect");
     }
 
     public override void Update(PlayerController player)
     {
-        // Если сбор завершён  Idle или Run
+        // Если сбор завершён — Idle или Run
         if (!player.IsCollecting)
         {
             if (player.IsMoving)

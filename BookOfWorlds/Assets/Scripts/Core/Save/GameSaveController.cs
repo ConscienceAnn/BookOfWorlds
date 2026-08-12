@@ -17,20 +17,16 @@ public class GameSaveController : MonoBehaviour
 
     public void SaveGame()
     {
-        Debug.Log("========== СОХРАНЕНИЕ ==========");
-
         SaveData data = SaveSystem.Load() ?? new SaveData();
 
         // 1. Текущий уровень
         if (levelManager != null)
         {
             data.currentLevel = levelManager.CurrentLevelIndex;
-            Debug.Log($"  - Уровень: {data.currentLevel} ({currentLevelName})");
         }
 
         // 2. Монеты
         data.coins = uiManager?.GetCoins() ?? 0;
-        Debug.Log($"  - Монеты: {data.coins}");
 
         // 3. Ресурсы
         SaveResources(data);
@@ -48,14 +44,11 @@ public class GameSaveController : MonoBehaviour
                 if (!string.IsNullOrEmpty(nextLevelName) && !data.openedLevels.Contains(nextLevelName))
                 {
                     data.openedLevels.Add(nextLevelName);
-                    Debug.Log($"  - Открыт уровень: {nextLevelName}");
                 }
             }
         }
 
         SaveSystem.Save(data);
-        Debug.Log($"Сохранено: {data.resources.Count} ресурсов, {data.levelProgress.Count} уровней");
-        Debug.Log("========== СОХРАНЕНИЕ ЗАВЕРШЕНО ==========");
     }
 
     private void SaveResources(SaveData data)
@@ -73,7 +66,6 @@ public class GameSaveController : MonoBehaviour
                     resourceName = name,
                     amount = amount
                 });
-                Debug.Log($"  - {name}: {amount}");
             }
         }
     }
@@ -120,27 +112,20 @@ public class GameSaveController : MonoBehaviour
 
         bool allRestored = buildings.Count > 0 && buildings.All(b => b != null && b.IsRestored());
         levelProgressData.isCompleted = allRestored;
-
-        Debug.Log($"  - Прогресс уровня '{currentLevelName}': {levelProgressData.restoredBuildings.Count}/{buildings.Count} зданий");
     }
 
     // ===== ЗАГРУЗКА =====
 
     public void LoadGame()
     {
-        Debug.Log("========== ЗАГРУЗКА ==========");
-
         SaveData data = SaveSystem.Load();
         if (data == null)
         {
-            Debug.Log("  - Нет сохранения");
-            Debug.Log("========== ЗАГРУЗКА ЗАВЕРШЕНА ==========");
             return;
         }
 
         // 1. Загружаем монеты
         uiManager?.SetCoins(data.coins);
-        Debug.Log($"  - Монеты: {data.coins}");
 
         // 2. Загружаем ресурсы
         LoadResources(data);
@@ -154,8 +139,6 @@ public class GameSaveController : MonoBehaviour
         // 5. Обновляем UI
         uiManager?.ForceRefreshUI();
         levelProgress?.ForceUpdate();
-
-        Debug.Log("========== ЗАГРУЗКА ЗАВЕРШЕНА ==========");
     }
 
     private void LoadResources(SaveData data)
@@ -169,7 +152,6 @@ public class GameSaveController : MonoBehaviour
             foreach (var entry in data.resources)
             {
                 inventory.SetAmount(entry.resourceName, entry.amount);
-                Debug.Log($"  - {entry.resourceName}: {entry.amount}");
             }
         }
     }
@@ -181,7 +163,6 @@ public class GameSaveController : MonoBehaviour
         var levelProgressData = data.levelProgress.FirstOrDefault(p => p.levelName == currentLevelName);
         if (levelProgressData == null)
         {
-            Debug.Log($"  - Нет сохранённого прогресса для уровня '{currentLevelName}'");
             ResetAllBuildings();
             return;
         }
@@ -205,12 +186,6 @@ public class GameSaveController : MonoBehaviour
             var progress = progressMap.ContainsKey(id) ? progressMap[id] : null;
 
             building.SyncStateFromSave(isRestored, progress);
-            Debug.Log($"  - {id}: restored={isRestored}, progress={progress?.Count ?? 0} ресурсов");
-        }
-
-        if (levelProgressData.isCompleted)
-        {
-            Debug.Log($"  - Уровень '{currentLevelName}' уже был завершён!");
         }
     }
 
@@ -223,7 +198,6 @@ public class GameSaveController : MonoBehaviour
                 building.SyncStateFromSave(false, null);
             }
         }
-        Debug.Log("  - Все здания сброшены в разрушенное состояние");
     }
 
     // ===== ОЧИСТКА (ЕДИНЫЙ МЕТОД ДЛЯ ПЕРЕХОДА) =====
@@ -242,10 +216,26 @@ public class GameSaveController : MonoBehaviour
         ClearCoinsInSave();
         ClearResourcesInSave();
 
-        Debug.Log("Игровое состояние очищено для нового уровня");
+        ClearLevelProgressInSave();
     }
 
     // ===== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ОЧИСТКИ =====
+
+    /// <summary>
+    /// ОЧИЩАЕТ ПРОГРЕСС ТЕКУЩЕГО УРОВНЯ В СОХРАНЕНИИ
+    /// </summary>
+    private void ClearLevelProgressInSave()
+    {
+        SaveData data = SaveSystem.Load();
+        if (data != null)
+        {
+            // Удаляем прогресс текущего уровня
+            data.levelProgress.RemoveAll(p => p.levelName == currentLevelName);
+            // Также удаляем из openedLevels, чтобы уровень не считался открытым
+            data.openedLevels.Remove(currentLevelName);
+            SaveSystem.Save(data);
+        }
+    }
 
     private void ClearInventory()
     {
@@ -254,14 +244,12 @@ public class GameSaveController : MonoBehaviour
         {
             inventory.SetAmount(name, 0);
         }
-        Debug.Log("  - Инвентарь очищен");
         uiManager?.ForceRefreshUI();
     }
 
     private void ClearCoins()
     {
         uiManager?.SetCoins(0);
-        Debug.Log("  - Монеты обнулены");
     }
 
     private void ClearCoinsInSave()
@@ -269,7 +257,6 @@ public class GameSaveController : MonoBehaviour
         SaveData data = SaveSystem.Load() ?? new SaveData();
         data.coins = 0;
         SaveSystem.Save(data);
-        Debug.Log("  - Монеты очищены в сохранении");
     }
 
     private void ClearResourcesInSave()
@@ -277,7 +264,6 @@ public class GameSaveController : MonoBehaviour
         SaveData data = SaveSystem.Load() ?? new SaveData();
         data.resources = new List<ResourceEntry>();
         SaveSystem.Save(data);
-        Debug.Log("  - Ресурсы очищены в сохранении");
     }
 
     // ===== УПРАВЛЕНИЕ ЗДАНИЯМИ =====
@@ -286,7 +272,6 @@ public class GameSaveController : MonoBehaviour
     {
         buildings.Clear();
         buildings.AddRange(FindObjectsOfType<BuildingController>());
-        Debug.Log($"  - Найдено зданий: {buildings.Count}");
     }
 
     public void RegisterBuilding(BuildingController building)
@@ -302,13 +287,11 @@ public class GameSaveController : MonoBehaviour
         RefreshBuildingsList();
         uiManager?.ForceRefreshUI();
         levelProgress?.ForceUpdate();
-        Debug.Log("Все системы обновлены");
     }
 
     public void ResetProgress()
     {
         SaveSystem.DeleteSave();
-        Debug.Log("Прогресс сброшен");
 
         if (levelManager != null)
         {
@@ -321,19 +304,14 @@ public class GameSaveController : MonoBehaviour
     /// </summary>
     public void ClearLevelProgress()
     {
-        Debug.Log(" ClearLevelProgress() START");
-
         ClearInventory();
         if (uiManager != null) uiManager.SetCoins(0);
 
         RefreshBuildingsList();
-        Debug.Log($" Найдено зданий: {buildings.Count}");
 
         foreach (var building in buildings)
         {
-            Debug.Log($" Здание {building.GetBuildingName()}: IsRestored={building.IsRestored()}");
             building.ResetBuilding();
-            Debug.Log($" После сброса: IsRestored={building.IsRestored()}");
         }
 
         LevelProgress levelProgress = FindObjectOfType<LevelProgress>();
@@ -352,10 +330,6 @@ public class GameSaveController : MonoBehaviour
             data.coins = 0;
             data.resources = new List<ResourceEntry>();
             SaveSystem.Save(data);
-            Debug.Log("  - Сохранение очищено");
         }
-
-        Debug.Log(" ClearLevelProgress() END");
     }
-
 }
