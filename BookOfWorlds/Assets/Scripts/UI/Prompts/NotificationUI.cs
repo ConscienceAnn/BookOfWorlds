@@ -10,6 +10,8 @@ public class NotificationUI : MonoBehaviour
 
     private Coroutine hideCoroutine;
 
+    public bool IsActive => gameObject.activeSelf && notificationText != null && notificationText.gameObject.activeSelf;
+
     private void Awake()
     {
         if (parentCanvas == null)

@@ -17,7 +17,7 @@ public class BuildingController : MonoBehaviour, IInteractable
     [Inject] private IPlayerInventory inventory;
     [Inject] private LevelProgress levelProgress;
     [Inject] private GameSaveController gameSaveController;
-    [Inject] private PlayerUI playerUI;
+    [Inject] private PlayerUIMediator playerUIMediator;
 
     private bool isRestored = false;
     private bool hasLoadedData = false;
@@ -46,9 +46,9 @@ public class BuildingController : MonoBehaviour, IInteractable
 
     public void UpdateBuildingPrompt()
     {
-        if (playerUI != null)
+        if (playerUIMediator != null)
         {
-            playerUI.UpdateBuildingCost();
+            playerUIMediator?.UpdateBuildingCost();
         }
     }
 
@@ -125,9 +125,9 @@ public class BuildingController : MonoBehaviour, IInteractable
         }
         else
         {
-            if (playerUI != null)
+            if (playerUIMediator != null)
             {
-                playerUI.UpdateBuildingCostImmediate();
+                playerUIMediator?.UpdateBuildingCostImmediate();
             }
             EventBus.BuildingProgressChanged(this);
         }
@@ -143,9 +143,9 @@ public class BuildingController : MonoBehaviour, IInteractable
             trigger.gameObject.SetActive(false);
         }
 
-        if (playerUI != null)
+        if (playerUIMediator != null)
         {
-            playerUI.HideBuildingPrompt();
+            playerUIMediator?.HideBuildingPrompt();
         }
 
         EventBus.BuildingRestored(this);
@@ -221,7 +221,7 @@ public class BuildingController : MonoBehaviour, IInteractable
     {
         if (isRestored)
         {
-            playerUI?.ShowNotification($"{GetBuildingName()} уже восстановлено!", 2f);
+            playerUIMediator?.ShowNotification($"{GetBuildingName()} уже восстановлено!", 2f);
             return;
         }
 
@@ -258,13 +258,13 @@ public class BuildingController : MonoBehaviour, IInteractable
         {
             string missingList = string.Join(", ", missingResources);
             string message = $"Нет ресурсов для восстановления {GetBuildingName()}! Нужно: {missingList}";
-            playerUI?.ShowNotification(message, 2.5f);
+            playerUIMediator?.ShowNotification(message, 2.5f);
             return;
         }
 
         if (!anyResourceAdded)
         {
-            playerUI?.ShowNotification($"Все ресурсы для {GetBuildingName()} уже внесены!", 2f);
+            playerUIMediator?.ShowNotification($"Все ресурсы для {GetBuildingName()} уже внесены!", 2f);
             return;
         }
 
@@ -280,18 +280,18 @@ public class BuildingController : MonoBehaviour, IInteractable
 
         if (allComplete)
         {
-            if (playerUI != null)
+            if (playerUIMediator != null)
             {
-                playerUI.UpdateBuildingCost();
+                playerUIMediator?.UpdateBuildingCost();
             }
 
-            float animationDuration = playerUI != null ? playerUI.GetBuildingPromptAnimationDuration() : 0.5f;
+            float animationDuration = playerUIMediator != null ? playerUIMediator.GetBuildingPromptAnimationDuration() : 0.5f;
 
             await UniTask.Delay((int)(animationDuration * 1000) + 200);
 
-            if (playerUI != null)
+            if (playerUIMediator != null)
             {
-                playerUI.UpdateBuildingCostImmediate();
+                playerUIMediator?.UpdateBuildingCostImmediate();
             }
 
             await UniTask.Delay(500);
@@ -304,26 +304,26 @@ public class BuildingController : MonoBehaviour, IInteractable
                 trigger.gameObject.SetActive(false);
             }
 
-            if (playerUI != null)
+            if (playerUIMediator != null)
             {
-                playerUI.HideBuildingPrompt();
+                playerUIMediator?.HideBuildingPrompt();
             }
 
             EventBus.BuildingRestored(this);
 
-            playerUI?.ShowNotification($" {GetBuildingName()} восстановлено!", 2f);
+            playerUIMediator?.ShowNotification($" {GetBuildingName()} восстановлено!", 2f);
         }
         else
         {
-            if (playerUI != null)
+            if (playerUIMediator != null)
             {
-                playerUI.UpdateBuildingCost();
+                playerUIMediator?.UpdateBuildingCost();
             }
             EventBus.BuildingProgressChanged(this);
 
             await UniTask.Delay(300);
 
-            playerUI?.ShowNotification($"Внесены ресурсы для {GetBuildingName()}", 1.5f);
+            playerUIMediator?.ShowNotification($"Внесены ресурсы для {GetBuildingName()}", 1.5f);
         }
     }
 

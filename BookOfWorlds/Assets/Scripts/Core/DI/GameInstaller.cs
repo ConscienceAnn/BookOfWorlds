@@ -20,7 +20,9 @@ public class GameInstaller : MonoInstaller
     [Header("UI References")]
     [SerializeField] private UIManager uiManager;
     [SerializeField] private LevelProgress levelProgress;
-    [SerializeField] private PlayerUI playerUI;
+    [SerializeField] private PlayerUIMediator playerUIMediator;     
+    [SerializeField] private BuildingPromptController buildingPromptController;  
+    [SerializeField] private NotificationController notificationController;      
     [SerializeField] private PanelManager panelManager;
     [SerializeField] private HUDController hudController;
 
@@ -44,6 +46,8 @@ public class GameInstaller : MonoInstaller
 
     public override void InstallBindings()
     {
+        Debug.Log("=== GameInstaller: InstallBindings START ===");
+
         // ===== 1. PLAYER & INPUT =====
         Container.Bind<PlayerInput>()
             .FromInstance(playerInput)
@@ -90,6 +94,19 @@ public class GameInstaller : MonoInstaller
             .FromInstance(hudController)
             .AsSingle();
 
+        // ===== UI PROMPTS (НОВЫЕ) =====
+        Container.Bind<BuildingPromptController>()
+            .FromInstance(buildingPromptController)
+            .AsSingle();
+
+        Container.Bind<NotificationController>()
+            .FromInstance(notificationController)
+            .AsSingle();
+
+        Container.Bind<PlayerUIMediator>()           
+            .FromInstance(playerUIMediator)
+            .AsSingle();
+
         // ===== 3. INVENTORY =====
         Container.Bind<IPlayerInventory>()
             .To<PlayerInventory>()
@@ -119,9 +136,7 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
-        Container.Bind<PlayerUI>()
-            .FromInstance(playerUI)
-            .AsSingle();
+        // PlayerUIMediator уже забинжен выше
 
         Container.Bind<LevelProgress>()
            .FromInstance(levelProgress)
@@ -151,10 +166,13 @@ public class GameInstaller : MonoInstaller
         if (levelManager != null)
         {
             Container.Bind<LevelManager>().FromInstance(levelManager).AsSingle();
+            Debug.Log("LevelManager зарегистрирован в Zenject");
         }
         else
         {
             Debug.LogWarning("LevelManager не назначен в GameInstaller!");
         }
+
+        Debug.Log("=== GameInstaller: InstallBindings END ===");
     }
 }

@@ -4535,7 +4535,9 @@ MonoBehaviour:
   cameraZoom: {fileID: 963194230}
   uiManager: {fileID: 1290189937}
   levelProgress: {fileID: 306350501}
-  playerUI: {fileID: 1191278737}
+  playerUIMediator: {fileID: 1191278743}
+  buildingPromptController: {fileID: 1191278742}
+  notificationController: {fileID: 1191278741}
   panelManager: {fileID: 1290189938}
   hudController: {fileID: 673842328}
   allResources:
@@ -4919,22 +4921,6 @@ MonoBehaviour:
   - resourceName: "\u0428\u0435\u0440\u0441\u0442\u044C"
     maxCapacity: 5
     currentAmount: 0
---- !u!114 &1191278737
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1191278704}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2fb007a7d9abf9546b0b726ec7007c04, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  promptCanvas: {fileID: 938818919}
-  screenOffset: {x: 0, y: 80}
-  buildingPromptUI: {fileID: 1051989731}
-  notificationUI: {fileID: 1950765573}
 --- !u!114 &1191278740
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4947,6 +4933,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 062c4a9d32693d8469a6488cfb266c52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1191278741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191278704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b4c802da49e2ef4c936f479a4f47151, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  notificationUI: {fileID: 1950765573}
+--- !u!114 &1191278742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191278704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e87362425c306d548ab246349f0a7690, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  promptCanvas: {fileID: 938818919}
+  buildingPromptUI: {fileID: 1051989731}
+  uiFollower: {fileID: 0}
+  screenOffset: {x: 0, y: 80}
+  promptOffsetY: 2
+--- !u!114 &1191278743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191278704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c78631bdbd797f448ade93cd09c39ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingPrompt: {fileID: 1191278742}
+  notification: {fileID: 1191278741}
 --- !u!1 &1216673022
 GameObject:
   m_ObjectHideFlags: 0
@@ -8042,10 +8072,16 @@ PrefabInstance:
       addedObject: {fileID: 1191278734}
     - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1191278737}
+      addedObject: {fileID: 1191278740}
     - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1191278740}
+      addedObject: {fileID: 1191278743}
+    - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1191278742}
+    - targetCorrespondingSourceObject: {fileID: 6445362562743694032, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1191278741}
   m_SourcePrefab: {fileID: 100100000, guid: 435bfbbe71ef6064c95bfea40d84e58c, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

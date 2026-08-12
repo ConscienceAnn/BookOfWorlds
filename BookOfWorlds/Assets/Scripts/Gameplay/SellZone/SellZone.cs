@@ -11,7 +11,7 @@ public class SellZone : MonoBehaviour, IInteractable
     [Inject] private IPlayerInventory inventory;
     [Inject] private SellService sellService;
     [Inject] private UIManager uiManager;
-    [Inject] private PlayerUI playerUI;
+    [Inject] private PlayerUIMediator playerUIMediator;  
 
     private bool isPlayerNear = false;
     private bool isSelling = false;
@@ -28,7 +28,8 @@ public class SellZone : MonoBehaviour, IInteractable
         if (other.CompareTag("Player"))
         {
             isPlayerNear = true;
-            playerUI?.ShowNotification("Здесь можно продать ресурсы. Нажмите E для продажи", sellPromptDuration);
+            playerUIMediator?.ShowNotification("Здесь можно продать ресурсы. Нажмите E для продажи", sellPromptDuration);  
+            Debug.Log("Игрок вошёл в зону продажи");
         }
     }
 
@@ -37,6 +38,7 @@ public class SellZone : MonoBehaviour, IInteractable
         if (other.CompareTag("Player"))
         {
             isPlayerNear = false;
+            Debug.Log("Игрок вышел из зоны продажи");
         }
     }
 
@@ -62,7 +64,7 @@ public class SellZone : MonoBehaviour, IInteractable
         var items = inventory.GetAllItems();
         if (items.Count == 0)
         {
-            playerUI?.ShowNotification("Инвентарь пуст! Нечего продавать.", 2.5f);
+            playerUIMediator?.ShowNotification("Инвентарь пуст! Нечего продавать.", 2.5f);  
             isSelling = false;
             return;
         }
@@ -72,14 +74,16 @@ public class SellZone : MonoBehaviour, IInteractable
         if (coins > 0)
         {
             uiManager.AddCoins(coins);
-            playerUI?.ShowNotification($"Продано! Получено {coins} монет.", 2.5f);
+            playerUIMediator?.ShowNotification($"Продано! Получено {coins} монет.", 2.5f);  
+            Debug.Log($"SellZone: продано! {coins} монет");
 
             // Анимация монеты (вспышка или увеличение)
             StartCoroutine(CoinFlash());
         }
         else
         {
-            playerUI?.ShowNotification("Продажа не принесла монет.", 2.5f);
+            playerUIMediator?.ShowNotification("Продажа не принесла монет.", 2.5f);  
+            Debug.LogWarning("SellZone: продажа не принесла монет");
         }
 
         Invoke(nameof(ResetSellState), 0.5f);

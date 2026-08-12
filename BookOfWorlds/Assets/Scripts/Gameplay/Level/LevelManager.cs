@@ -14,7 +14,7 @@ public class LevelManager : MonoBehaviour
     [Header("Scene")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
 
-    [Inject] private PlayerUI playerUI;
+    [Inject] private PlayerUIMediator playerUIMediator;
     [Inject] private GameSaveController gameSaveController;
     [Inject] private UIManager uiManager;
 
@@ -116,13 +116,13 @@ public class LevelManager : MonoBehaviour
     {
         if (!isLevelComplete)
         {
-            playerUI?.ShowNotification("Восстановите все здания!", 2f);
+            playerUIMediator?.ShowNotification("Восстановите все здания!", 2f);
             return;
         }
 
         if (!HasNextLevel())
         {
-            playerUI?.ShowNotification("Это последний уровень!", 2f);
+            playerUIMediator?.ShowNotification("Это последний уровень!", 2f);
             return;
         }
 
@@ -215,7 +215,7 @@ public class LevelManager : MonoBehaviour
             uiManager.ShowLevelComplete(false);
         }
 
-        playerUI?.ShowNotification("Поздравляем! Игра пройдена!", 5f);
+        playerUIMediator?.ShowNotification("Поздравляем! Игра пройдена!", 5f);
     }
 
     private void LoadProgress()

@@ -17,7 +17,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private PauseService pauseService;
-    [Inject] private PlayerUI playerUI;
+    [Inject] private PlayerUIMediator playerUIMediator;  
 
     private bool isAvailable = true;
     private CancellationTokenSource cts;
@@ -46,13 +46,13 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
     {
         if (!isAvailable)
         {
-            playerUI?.ShowNotification($"Ресурс {GetResourceName()} ещё не восстановился!");
+            playerUIMediator?.ShowNotification($"Ресурс {GetResourceName()} ещё не восстановился!", 2f);  
             return;
         }
 
         if (!inventory.CanAdd(GetResourceName(), GetAmount()))
         {
-            playerUI?.ShowNotification($"Инвентарь для {GetResourceName()} полон!");
+            playerUIMediator?.ShowNotification($"Инвентарь для {GetResourceName()} полон!", 2f);  
             return;
         }
 
@@ -78,7 +78,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
         if (!isAvailable)
         {
-            playerUI?.ShowNotification($"Ресурс {data.resourceName} ещё не восстановился!", 2f);
+            playerUIMediator?.ShowNotification($"Ресурс {data.resourceName} ещё не восстановился!", 2f);  
             return false;
         }
 
@@ -88,9 +88,11 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
         if (!canAdd)
         {
-            playerUI?.ShowNotification($"Инвентарь для {data.resourceName} полон!", 2f);
+            playerUIMediator?.ShowNotification($"Инвентарь для {data.resourceName} полон!", 2f);  
             return false;
         }
+
+        Debug.Log($"[ResourceSource] Начинаем сбор {data.resourceName} (+{amountPerCollect})");
 
         inventory.TryAdd(data.resourceName, amountPerCollect);
 
@@ -106,6 +108,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
             RespawnAsync(cts.Token).Forget();
         }
 
+        Debug.Log($"[ResourceSource] Собран {data.resourceName} (+{amountPerCollect})");
         return true;
     }
 
@@ -133,6 +136,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         isAvailable = true;
         SetColored();
         gameObject.SetActive(true);
+        Debug.Log($"[ResourceSource] Show() вызван для {gameObject.name}, isAvailable={isAvailable}");
     }
 
     public void ResetState()
@@ -152,6 +156,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
     public void InvokeCollected()
     {
         OnCollected?.Invoke(this);
+        Debug.Log($"[ResourceSource] InvokeCollected() вызван для {gameObject.name}");
     }
 
     // ===== РЕСПАВН =====
@@ -178,6 +183,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         }
 
         Show();
+        Debug.Log($"[ResourceSource] Ресурс {data.resourceName} восстановился!");
     }
 
     // ===== UNITY EVENTS =====

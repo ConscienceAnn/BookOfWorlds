@@ -15,7 +15,7 @@ public class PlayerCollector : MonoBehaviour
     public event System.Action<ICollectable> OnCollectComplete;
 
     [Inject] private IPlayerInventory inventory;
-    [Inject] private PlayerUI playerUI;
+    [Inject] private PlayerUIMediator playerUIMediator;
 
     public bool IsCollecting => isCollecting;
 
@@ -23,7 +23,7 @@ public class PlayerCollector : MonoBehaviour
     {
         if (isCollecting)
         {
-            playerUI?.ShowNotification("Уже собираем ресурс...", 1.5f);
+            playerUIMediator?.ShowNotification("Уже собираем ресурс...", 1.5f);
             return;
         }
 
@@ -32,7 +32,7 @@ public class PlayerCollector : MonoBehaviour
         if (unavailableAnimal != null)
         {
             string message = $"{unavailableAnimal.GetAnimalName()} ещё не готова дать {unavailableAnimal.GetResourceName()}!";
-            playerUI?.ShowNotification(message, 2f);
+            playerUIMediator?.ShowNotification(message, 2f);
             return;
         }
 
@@ -123,7 +123,7 @@ public class PlayerCollector : MonoBehaviour
 
         if (!inventory.CanAdd(collectable.GetResourceName(), collectable.GetAmount()))
         {
-            playerUI?.ShowNotification($"Инвентарь для {collectable.GetResourceName()} полон!");
+            playerUIMediator?.ShowNotification($"Инвентарь для {collectable.GetResourceName()} полон!");
             return;
         }
 

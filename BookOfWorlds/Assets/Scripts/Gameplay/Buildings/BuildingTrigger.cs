@@ -1,14 +1,15 @@
 using UnityEngine;
+using Zenject;
 
 public class BuildingTrigger : MonoBehaviour
 {
     private BuildingController buildingController;
-    private PlayerUI playerUI;
+    [Inject] private PlayerUIMediator playerUIMediator;
 
     private void Awake()
     {
         buildingController = GetComponentInParent<BuildingController>();
-        playerUI = FindObjectOfType<PlayerUI>();
+        
     }
 
     private void OnTriggerEnter(Collider other)
@@ -22,10 +23,10 @@ public class BuildingTrigger : MonoBehaviour
 
             buildingController?.OnPlayerEnter();
 
-            if (playerUI != null)
+            if (playerUIMediator != null)
             {
-                playerUI.SetPlayerNearBuilding(true, buildingController);
-                playerUI.ShowBuildingPrompt(buildingController);
+                playerUIMediator.SetPlayerNearBuilding(true, buildingController);
+                playerUIMediator.ShowBuildingPrompt(buildingController);
             }
         }
     }
@@ -41,10 +42,10 @@ public class BuildingTrigger : MonoBehaviour
 
             buildingController?.OnPlayerExit();
 
-            if (playerUI != null)
+            if (playerUIMediator != null)
             {
-                playerUI.SetPlayerNearBuilding(false);
-                playerUI.HideBuildingPrompt();
+                playerUIMediator.SetPlayerNearBuilding(false);
+                playerUIMediator.HideBuildingPrompt();
             }
         }
     }

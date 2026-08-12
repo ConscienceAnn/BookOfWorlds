@@ -1,199 +1,199 @@
-using UnityEngine;
-using TMPro;
-using System.Collections;
+//using UnityEngine;
+//using TMPro;
+//using System.Collections;
 
-public class PlayerUI : MonoBehaviour
-{
-    [Header("UI References")]
-    [SerializeField] private Canvas promptCanvas;
-    [SerializeField] private Vector2 screenOffset = new Vector2(0, 80);
+//public class PlayerUI : MonoBehaviour
+//{
+//    [Header("UI References")]
+//    [SerializeField] private Canvas promptCanvas;
+//    [SerializeField] private Vector2 screenOffset = new Vector2(0, 80);
 
-    [Header("Building Prompt")]
-    [SerializeField] private BuildingPromptUI buildingPromptUI;
+//    [Header("Building Prompt")]
+//    [SerializeField] private BuildingPromptUI buildingPromptUI;
 
-    [Header("Notification")]
-    [SerializeField] private NotificationUI notificationUI;
+//    [Header("Notification")]
+//    [SerializeField] private NotificationUI notificationUI;
 
-    private Camera mainCamera;
-    private RectTransform canvasRect;
+//    private Camera mainCamera;
+//    private RectTransform canvasRect;
 
-    private BuildingController currentBuilding;
-    private bool isPlayerNearBuilding = false;
-    private Coroutine showPromptCoroutine;
+//    private BuildingController currentBuilding;
+//    private bool isPlayerNearBuilding = false;
+//    private Coroutine showPromptCoroutine;
 
-    private void Start()
-    {
-        mainCamera = Camera.main;
-        canvasRect = promptCanvas.GetComponent<RectTransform>();
+//    private void Start()
+//    {
+//        mainCamera = Camera.main;
+//        canvasRect = promptCanvas.GetComponent<RectTransform>();
 
-        if (promptCanvas != null)
-            promptCanvas.gameObject.SetActive(false);
+//        if (promptCanvas != null)
+//            promptCanvas.gameObject.SetActive(false);
 
-        EventBus.OnBuildingProgressChanged += OnBuildingProgressChanged;
-        EventBus.OnBuildingRestored += OnBuildingRestored;
-    }
+//        EventBus.OnBuildingProgressChanged += OnBuildingProgressChanged;
+//        EventBus.OnBuildingRestored += OnBuildingRestored;
+//    }
 
-    private void OnDestroy()
-    {
-        EventBus.OnBuildingProgressChanged -= OnBuildingProgressChanged;
-        EventBus.OnBuildingRestored -= OnBuildingRestored;
-    }
+//    private void OnDestroy()
+//    {
+//        EventBus.OnBuildingProgressChanged -= OnBuildingProgressChanged;
+//        EventBus.OnBuildingRestored -= OnBuildingRestored;
+//    }
 
-    private void Update()
-    {
-        if (promptCanvas == null || !promptCanvas.gameObject.activeSelf) return;
-        if (mainCamera == null) return;
+//    private void Update()
+//    {
+//        if (promptCanvas == null || !promptCanvas.gameObject.activeSelf) return;
+//        if (mainCamera == null) return;
 
-        Vector3 worldPosition = transform.position;
-        worldPosition.y += 2f;
+//        Vector3 worldPosition = transform.position;
+//        worldPosition.y += 2f;
 
-        Vector3 screenPosition = mainCamera.WorldToScreenPoint(worldPosition);
+//        Vector3 screenPosition = mainCamera.WorldToScreenPoint(worldPosition);
 
-        if (screenPosition.z < 0)
-        {
-            promptCanvas.gameObject.SetActive(false);
-            return;
-        }
+//        if (screenPosition.z < 0)
+//        {
+//            promptCanvas.gameObject.SetActive(false);
+//            return;
+//        }
 
-        screenPosition += (Vector3)screenOffset;
-        canvasRect.position = screenPosition;
-    }
+//        screenPosition += (Vector3)screenOffset;
+//        canvasRect.position = screenPosition;
+//    }
 
-    public void ShowBuildingPrompt(BuildingController building)
-    {
-        currentBuilding = building;
-        isPlayerNearBuilding = true;
+//    public void ShowBuildingPrompt(BuildingController building)
+//    {
+//        currentBuilding = building;
+//        isPlayerNearBuilding = true;
 
-        // —крываем уведомление, если оно висит
-        HideNotification();
+//        // —крываем уведомление, если оно висит
+//        HideNotification();
 
-        if (showPromptCoroutine != null)
-        {
-            StopCoroutine(showPromptCoroutine);
-            showPromptCoroutine = null;
-        }
+//        if (showPromptCoroutine != null)
+//        {
+//            StopCoroutine(showPromptCoroutine);
+//            showPromptCoroutine = null;
+//        }
 
-        promptCanvas.gameObject.SetActive(true);
-        buildingPromptUI?.Show(building);
-    }
+//        promptCanvas.gameObject.SetActive(true);
+//        buildingPromptUI?.Show(building);
+//    }
 
-    public void HideBuildingPrompt()
-    {
-        isPlayerNearBuilding = false;
-        currentBuilding = null;
+//    public void HideBuildingPrompt()
+//    {
+//        isPlayerNearBuilding = false;
+//        currentBuilding = null;
 
-        if (showPromptCoroutine != null)
-        {
-            StopCoroutine(showPromptCoroutine);
-            showPromptCoroutine = null;
-        }
+//        if (showPromptCoroutine != null)
+//        {
+//            StopCoroutine(showPromptCoroutine);
+//            showPromptCoroutine = null;
+//        }
 
-        buildingPromptUI?.Hide();
-        promptCanvas.gameObject.SetActive(false);
-    }
+//        buildingPromptUI?.Hide();
+//        promptCanvas.gameObject.SetActive(false);
+//    }
 
-    /// <summary>
-    /// ѕринудительно скрыть уведомление
-    /// </summary>
-    public void HideNotification()
-    {
-        if (notificationUI != null)
-        {
-            notificationUI.Hide();
-        }
-    }
+//    /// <summary>
+//    /// ѕринудительно скрыть уведомление
+//    /// </summary>
+//    public void HideNotification()
+//    {
+//        if (notificationUI != null)
+//        {
+//            notificationUI.Hide();
+//        }
+//    }
 
-    public void UpdateBuildingCost()
-    {
-        buildingPromptUI?.UpdateCostText();
-    }
+//    public void UpdateBuildingCost()
+//    {
+//        buildingPromptUI?.UpdateCostText();
+//    }
 
-    public void UpdateBuildingCostImmediate()
-    {
-        buildingPromptUI?.UpdateCostTextImmediate();
-    }
+//    public void UpdateBuildingCostImmediate()
+//    {
+//        buildingPromptUI?.UpdateCostTextImmediate();
+//    }
 
-    public float GetBuildingPromptAnimationDuration()
-    {
-        return buildingPromptUI != null ? buildingPromptUI.AnimationDuration : 0.5f;
-    }
+//    public float GetBuildingPromptAnimationDuration()
+//    {
+//        return buildingPromptUI != null ? buildingPromptUI.AnimationDuration : 0.5f;
+//    }
 
-    public void ShowNotification(string message, float duration = 2f)
-    {
-        bool wasBuildingPromptVisible = promptCanvas != null && promptCanvas.gameObject.activeSelf;
+//    public void ShowNotification(string message, float duration = 2f)
+//    {
+//        bool wasBuildingPromptVisible = promptCanvas != null && promptCanvas.gameObject.activeSelf;
 
-        if (wasBuildingPromptVisible)
-        {
-            buildingPromptUI?.Hide();
-            promptCanvas.gameObject.SetActive(false);
-        }
+//        if (wasBuildingPromptVisible)
+//        {
+//            buildingPromptUI?.Hide();
+//            promptCanvas.gameObject.SetActive(false);
+//        }
 
-        notificationUI?.Show(message, duration);
+//        notificationUI?.Show(message, duration);
 
-        if (wasBuildingPromptVisible && currentBuilding != null)
-        {
-            if (showPromptCoroutine != null)
-            {
-                StopCoroutine(showPromptCoroutine);
-            }
-            showPromptCoroutine = StartCoroutine(ShowBuildingPromptAfter(duration + 0.1f));
-        }
-    }
+//        if (wasBuildingPromptVisible && currentBuilding != null)
+//        {
+//            if (showPromptCoroutine != null)
+//            {
+//                StopCoroutine(showPromptCoroutine);
+//            }
+//            showPromptCoroutine = StartCoroutine(ShowBuildingPromptAfter(duration + 0.1f));
+//        }
+//    }
 
-    private IEnumerator ShowBuildingPromptAfter(float delay)
-    {
-        yield return new WaitForSeconds(delay);
+//    private IEnumerator ShowBuildingPromptAfter(float delay)
+//    {
+//        yield return new WaitForSeconds(delay);
 
-        showPromptCoroutine = null;
+//        showPromptCoroutine = null;
 
-        if (isPlayerNearBuilding && currentBuilding != null && !currentBuilding.IsRestored())
-        {
-            promptCanvas.gameObject.SetActive(true);
-            buildingPromptUI?.Show(currentBuilding);
-        }
-    }
+//        if (isPlayerNearBuilding && currentBuilding != null && !currentBuilding.IsRestored())
+//        {
+//            promptCanvas.gameObject.SetActive(true);
+//            buildingPromptUI?.Show(currentBuilding);
+//        }
+//    }
 
-    private void OnBuildingProgressChanged(BuildingController building)
-    {
-        if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
-        {
-            buildingPromptUI.UpdateCostText();
-        }
-    }
+//    private void OnBuildingProgressChanged(BuildingController building)
+//    {
+//        if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
+//        {
+//            buildingPromptUI.UpdateCostText();
+//        }
+//    }
 
-    private void OnBuildingRestored(BuildingController building)
-    {
-        if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
-        {
-            isPlayerNearBuilding = false;
-            currentBuilding = null;
+//    private void OnBuildingRestored(BuildingController building)
+//    {
+//        if (buildingPromptUI != null && buildingPromptUI.IsShowingBuilding(building))
+//        {
+//            isPlayerNearBuilding = false;
+//            currentBuilding = null;
 
-            if (showPromptCoroutine != null)
-            {
-                StopCoroutine(showPromptCoroutine);
-                showPromptCoroutine = null;
-            }
+//            if (showPromptCoroutine != null)
+//            {
+//                StopCoroutine(showPromptCoroutine);
+//                showPromptCoroutine = null;
+//            }
 
-            // —крываем уведомление при восстановлении здани€
-            HideNotification();
+//            // —крываем уведомление при восстановлении здани€
+//            HideNotification();
 
-            buildingPromptUI.Hide();
-            promptCanvas.gameObject.SetActive(false);
-        }
-    }
+//            buildingPromptUI.Hide();
+//            promptCanvas.gameObject.SetActive(false);
+//        }
+//    }
 
-    public void SetPlayerNearBuilding(bool isNear, BuildingController building = null)
-    {
-        isPlayerNearBuilding = isNear;
-        if (isNear)
-        {
-            currentBuilding = building;
-        }
-        else if (!isNear && currentBuilding == building)
-        {
-            currentBuilding = null;
-            // ѕри выходе из зоны скрываем уведомление
-            HideNotification();
-        }
-    }
-}
+//    public void SetPlayerNearBuilding(bool isNear, BuildingController building = null)
+//    {
+//        isPlayerNearBuilding = isNear;
+//        if (isNear)
+//        {
+//            currentBuilding = building;
+//        }
+//        else if (!isNear && currentBuilding == building)
+//        {
+//            currentBuilding = null;
+//            // ѕри выходе из зоны скрываем уведомление
+//            HideNotification();
+//        }
+//    }
+//}
