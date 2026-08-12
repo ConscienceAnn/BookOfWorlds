@@ -6,7 +6,7 @@ public class GroundAligner : MonoBehaviour
     [SerializeField] private float raycastDistance = 2f;
     [SerializeField] private float groundOffset = 0f;
     [SerializeField] private LayerMask groundLayer = -1;
-    [SerializeField] private float smoothSpeed = 8f; 
+    [SerializeField] private float smoothSpeed = 8f;
 
     private float targetY;
 

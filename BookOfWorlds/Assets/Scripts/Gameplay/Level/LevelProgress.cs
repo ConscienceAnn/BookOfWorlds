@@ -32,6 +32,11 @@ public class LevelProgress : MonoBehaviour
     [Inject] private UIManager uiManager;
     [Inject] private LevelManager levelManager;
 
+    // ===== КАМЕРА ЧЕРЕЗ DI =====
+    [InjectOptional] private Camera mainCamera;
+    [Inject] private CinemachineBrain cinemachineBrain;
+    [Inject] private CinemachineVirtualCamera[] virtualCameras;
+
     public event System.Action OnLevelComplete;
 
     private BuildingController[] buildings;
@@ -39,13 +44,10 @@ public class LevelProgress : MonoBehaviour
     private int lastProgress = -1;
     private bool isLevelComplete = false;
     private GameObject visualInstance;
-    private Camera mainCamera;
     private Vector3 originalPosition;
     private Quaternion originalRotation;
     private bool isCameraAnimating = false;
     private bool isFinalCameraActive = false;
-    private CinemachineBrain cinemachineBrain;
-    private CinemachineVirtualCamera[] virtualCameras;
     private bool isRetry = false;
 
     public void SetRetryMode(bool value)
@@ -63,18 +65,14 @@ public class LevelProgress : MonoBehaviour
         EventBus.OnBuildingRestored += OnBuildingRestored;
         EventBus.OnBuildingProgressChanged += OnBuildingProgressChanged;
 
-        // ===== ПОДПИСКА НА ОЧИСТКУ УРОВНЯ =====
         LevelGenerator.OnLevelCleared += OnLevelCleared;
 
-        mainCamera = Camera.main;
+        // Сохраняем позицию камеры
         if (mainCamera != null)
         {
             originalPosition = mainCamera.transform.position;
             originalRotation = mainCamera.transform.rotation;
         }
-
-        cinemachineBrain = FindObjectOfType<CinemachineBrain>();
-        virtualCameras = FindObjectsOfType<CinemachineVirtualCamera>();
 
         if (finalCamera != null)
         {
@@ -86,8 +84,6 @@ public class LevelProgress : MonoBehaviour
     {
         EventBus.OnBuildingRestored -= OnBuildingRestored;
         EventBus.OnBuildingProgressChanged -= OnBuildingProgressChanged;
-
-        // ===== ОТПИСКА =====
         LevelGenerator.OnLevelCleared -= OnLevelCleared;
     }
 
@@ -130,45 +126,32 @@ public class LevelProgress : MonoBehaviour
         if (progressInt >= 100 && !isLevelComplete)
         {
             isLevelComplete = true;
-            Debug.Log("УРОВЕНЬ ЗАВЕРШЁН!");
             ShowCompleteAsync().Forget();
         }
     }
 
     public void ForceUpdate()
     {
-        if (isRetry)
-        {
-            return;
-        }
+        if (isRetry) return;
 
         lastProgress = -1;
         isLevelComplete = false;
-
         FindBuildings();
         UpdateProgress();
     }
 
-    // ===== COMPLETE UI (PUBLIC) =====
+    // ===== COMPLETE UI =====
 
-    /// <summary>
-    /// ПОКАЗЫВАЕТ ВИЗУАЛ + ФИНАЛЬНУЮ КАМЕРУ + ПАНЕЛЬ
-    /// </summary>
     private async UniTaskVoid ShowCompleteAsync()
     {
-        // 1. Визуал
         if (levelCompleteVisualPrefab != null)
         {
             visualInstance = Instantiate(levelCompleteVisualPrefab, Vector3.zero, Quaternion.identity);
         }
 
-        // 2. Анимация камеры
         await AnimateCameraToFinalPositionAsync();
 
-        // 3. Пауза
         await UniTask.Delay((int)(pauseAfterCamera * 1000));
-
-        // 4. Панель
         await UniTask.Delay((int)(showPanelDelay * 1000));
 
         if (uiManager != null)
@@ -176,31 +159,22 @@ public class LevelProgress : MonoBehaviour
             bool hasNextLevel = levelManager != null && levelManager.HasNextLevel();
             uiManager.ShowLevelComplete(hasNextLevel);
         }
-        else
+        else if (levelCompletePanel != null)
         {
-            // Fallback
-            if (levelCompletePanel != null)
-            {
-                levelCompletePanel.SetActive(true);
-            }
+            levelCompletePanel.SetActive(true);
         }
 
         OnLevelComplete?.Invoke();
     }
 
-    /// <summary>
-    /// СКРЫВАЕТ ВСЁ: визуал, панель, возвращает камеру
-    /// </summary>
     public void HideComplete()
     {
-        // 1. Уничтожаем визуал
         if (visualInstance != null)
         {
             Destroy(visualInstance);
             visualInstance = null;
         }
 
-        // 2. Скрываем панель через UIManager
         if (uiManager != null)
         {
             uiManager.HideLevelComplete();
@@ -210,27 +184,19 @@ public class LevelProgress : MonoBehaviour
             levelCompletePanel.SetActive(false);
         }
 
-        // 3. Возвращаем камеру
         ReturnToGameCamera();
     }
 
-    /// <summary>
-    /// ПОЛНЫЙ СБРОС СОСТОЯНИЯ (для перезапуска уровня)
-    /// </summary>
     public void ResetState()
     {
-        // 1. Сбрасываем флаги
         isLevelComplete = false;
         lastProgress = -1;
         isRetry = false;
-        // 2. Очищаем список зданий
         buildings = null;
         totalBuildings = 0;
 
-        // 3. Скрываем всё
         HideComplete();
 
-        // 4. Сбрасываем UI
         if (progressSlider != null)
             progressSlider.value = 0;
 
@@ -238,16 +204,13 @@ public class LevelProgress : MonoBehaviour
             progressText.text = $"{prefix}0{suffix}";
     }
 
-    // ===== CAMERA (PRIVATE) =====
+    // ===== CAMERA =====
 
     private async UniTask AnimateCameraToFinalPositionAsync()
     {
-        if (mainCamera == null || finalCamera == null)
-        {
-            return;
-        }
-
+        if (mainCamera == null || finalCamera == null) return;
         if (isCameraAnimating) return;
+
         isCameraAnimating = true;
 
         // Отключаем Cinemachine
@@ -291,10 +254,7 @@ public class LevelProgress : MonoBehaviour
 
     public void ReturnToGameCamera()
     {
-        if (!isFinalCameraActive)
-        {
-            return;
-        }
+        if (!isFinalCameraActive) return;
 
         if (finalCamera != null)
             finalCamera.enabled = false;
@@ -333,6 +293,7 @@ public class LevelProgress : MonoBehaviour
     // ===== PUBLIC GETTERS =====
 
     public float GetProgress() => totalBuildings > 0 ? (float)GetRestoredCount() / totalBuildings : 0f;
+
     public int GetRestoredCount()
     {
         int count = 0;
@@ -346,6 +307,7 @@ public class LevelProgress : MonoBehaviour
         }
         return count;
     }
+
     public int GetTotalCount() => totalBuildings;
     public bool IsLevelComplete => isLevelComplete;
 

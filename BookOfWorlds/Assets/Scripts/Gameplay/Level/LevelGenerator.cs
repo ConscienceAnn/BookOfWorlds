@@ -2,11 +2,9 @@ using UnityEngine;
 using Zenject;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using System.Collections;
 
 public class LevelGenerator : MonoBehaviour
 {
-    // СОБЫТИЕ — оповещает об очистке уровня
     public static event System.Action OnLevelCleared;
 
     [Header("Parents")]
@@ -18,6 +16,10 @@ public class LevelGenerator : MonoBehaviour
     [Inject] private DiContainer container;
     [Inject] private GameSaveController gameSaveController;
 
+    // ===== ЧЕРЕЗ DI =====
+    [Inject] private LevelProgress levelProgress;
+    [Inject] private PlayerController player;
+
     private LevelDataSO currentLevelData;
     private List<GameObject> spawnedObjects = new List<GameObject>();
     private List<BuildingController> spawnedBuildings = new List<BuildingController>();
@@ -26,12 +28,10 @@ public class LevelGenerator : MonoBehaviour
 
     public async UniTask GenerateLevelAsync(LevelDataSO data)
     {
-        // 1. Асинхронно очищаем уровень и ЖДЁМ завершения
         await ClearLevelAsync();
 
         currentLevelData = data;
 
-        // 2. Создаём объекты (уже после очистки)
         GenerateCollectableObjects(data.collectableObjectsPrefab);
         GenerateBuildings(data.buildingsPrefab);
 
@@ -125,31 +125,26 @@ public class LevelGenerator : MonoBehaviour
 
     private void SetPlayerStartPosition(Vector3 position)
     {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        // ===== ИСПОЛЬЗУЕМ INJECTED PLAYER =====
         if (player != null)
         {
             player.transform.position = position;
         }
         else
         {
-            Debug.LogError($"Игрок НЕ НАЙДЕН по тегу 'Player'!");
+            Debug.LogError("Player не найден в LevelGenerator!");
         }
     }
 
-    /// <summary>
-    /// АСИНХРОННАЯ ОЧИСТКА — ждёт фактического удаления объектов
-    /// </summary>
     private async UniTask ClearLevelAsync()
     {
-        // УНИЧТОЖАЕМ ВИЗУАЛ ЗАВЕРШЕНИЯ
-        LevelProgress levelProgress = FindObjectOfType<LevelProgress>();
+        // ===== ИСПОЛЬЗУЕМ INJECTED LEVELPROGRESS =====
         if (levelProgress != null)
         {
             levelProgress.ReturnToGameCamera();
             levelProgress.HideComplete();
         }
 
-        // 1. Удаляем все созданные объекты LevelGenerator
         foreach (var obj in spawnedObjects)
         {
             if (obj != null)
@@ -160,7 +155,6 @@ public class LevelGenerator : MonoBehaviour
         spawnedObjects.Clear();
         spawnedBuildings.Clear();
 
-        // 2. Удаляем ресурсы по тегу
         GameObject[] resources = GameObject.FindGameObjectsWithTag("Collectable");
         foreach (var resource in resources)
         {
@@ -170,26 +164,23 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
-        // 3. Удаляем точки спавна
         ResourceSpawner[] spawners = FindObjectsOfType<ResourceSpawner>();
         foreach (var spawner in spawners)
         {
             if (spawner != null)
             {
+                spawner.ClearAllResources();
                 Destroy(spawner.gameObject);
             }
         }
 
-        // 4. Очищаем родительские объекты
         ClearParentChildren(collectableParent);
         ClearParentChildren(buildingsParent);
         ClearParentChildren(animalsParent);
         ClearParentChildren(sellZoneParent);
 
-        // 5. Оповещаем подписчиков
         OnLevelCleared?.Invoke();
 
-        // ===== ВАЖНО: ЖДЁМ 2 КАДРА, ЧТОБЫ UNITY УСПЕЛ УНИЧТОЖИТЬ ОБЪЕКТЫ =====
         await UniTask.DelayFrame(2);
     }
 

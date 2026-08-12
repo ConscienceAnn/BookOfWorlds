@@ -10,19 +10,22 @@ public class GameInstaller : MonoInstaller
     [SerializeField] private PlayerInput playerInput;
     [SerializeField] private PlayerInputHandlerMy playerInputHandlerMy;
     [SerializeField] private PlayerInventory playerInventory;
+    [SerializeField] private PlayerCollector playerCollector;
 
     [Header("Camera References")]
     [SerializeField] private Camera mainCamera;
     [SerializeField] private CinemachineVirtualCamera virtualCamera;
     [SerializeField] private CameraFollow cameraFollow;
     [SerializeField] private CameraZoom cameraZoom;
+    [SerializeField] private CinemachineBrain cinemachineBrain;
+    [SerializeField] private CinemachineVirtualCamera[] virtualCameras;
 
     [Header("UI References")]
     [SerializeField] private UIManager uiManager;
     [SerializeField] private LevelProgress levelProgress;
-    [SerializeField] private PlayerUIMediator playerUIMediator;     
-    [SerializeField] private BuildingPromptController buildingPromptController;  
-    [SerializeField] private NotificationController notificationController;      
+    [SerializeField] private PlayerUIMediator playerUIMediator;
+    [SerializeField] private BuildingPromptController buildingPromptController;
+    [SerializeField] private NotificationController notificationController;
     [SerializeField] private PanelManager panelManager;
     [SerializeField] private HUDController hudController;
 
@@ -44,6 +47,9 @@ public class GameInstaller : MonoInstaller
     [Header("Levels")]
     [SerializeField] private LevelManager levelManager;
 
+    [Header("Debug")]
+    [SerializeField] private DebugHotkeyHandler debugHotkeyHandler;
+
     public override void InstallBindings()
     {
         Debug.Log("=== GameInstaller: InstallBindings START ===");
@@ -60,6 +66,10 @@ public class GameInstaller : MonoInstaller
 
         Container.Bind<PlayerController>()
             .FromInstance(player)
+            .AsSingle();
+
+        Container.Bind<PlayerCollector>()
+            .FromInstance(playerCollector)
             .AsSingle();
 
         // ===== 2. CAMERA =====
@@ -81,7 +91,15 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
-        // ===== UI =====
+        Container.Bind<CinemachineBrain>()
+            .FromInstance(cinemachineBrain)
+            .AsSingle();
+
+        Container.Bind<CinemachineVirtualCamera[]>()
+            .FromInstance(virtualCameras)
+            .AsSingle();
+
+        // ===== 3. UI =====
         Container.Bind<UIManager>()
             .FromInstance(uiManager)
             .AsSingle();
@@ -94,7 +112,7 @@ public class GameInstaller : MonoInstaller
             .FromInstance(hudController)
             .AsSingle();
 
-        // ===== UI PROMPTS (НОВЫЕ) =====
+        // ===== 4. UI PROMPTS =====
         Container.Bind<BuildingPromptController>()
             .FromInstance(buildingPromptController)
             .AsSingle();
@@ -103,27 +121,27 @@ public class GameInstaller : MonoInstaller
             .FromInstance(notificationController)
             .AsSingle();
 
-        Container.Bind<PlayerUIMediator>()           
+        Container.Bind<PlayerUIMediator>()
             .FromInstance(playerUIMediator)
             .AsSingle();
 
-        // ===== 3. INVENTORY =====
+        // ===== 5. INVENTORY =====
         Container.Bind<IPlayerInventory>()
             .To<PlayerInventory>()
             .FromInstance(playerInventory)
             .AsSingle();
 
-        // ===== 4. RESOURCES DATA =====
+        // ===== 6. RESOURCES DATA =====
         Container.Bind<ResourceDataSO[]>()
             .FromInstance(allResources)
             .AsSingle();
 
-        // ===== 5. BUILDINGS DATA =====
+        // ===== 7. BUILDINGS DATA =====
         Container.Bind<BuildingDataSO[]>()
             .FromInstance(allBuildings)
             .AsSingle();
 
-        // ===== 6. SERVICES =====
+        // ===== 8. SERVICES =====
         Container.Bind<SellService>()
             .AsSingle()
             .NonLazy();
@@ -136,19 +154,12 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
-        // PlayerUIMediator уже забинжен выше
-
-        Container.Bind<LevelProgress>()
-           .FromInstance(levelProgress)
-           .AsSingle();
-
-        Container.Bind<GameSaveController>()
-           .FromInstance(gameSaveController)
-           .AsSingle()
-           .NonLazy();
-
+        // ===== 9. RESOURCE SYSTEM =====
         Container.Bind<ResourceFactory>()
             .FromInstance(resourceFactory)
+            .AsSingle();
+
+        Container.Bind<ResourceBehaviourFactory>()  
             .AsSingle();
 
         Container.Bind<ParticleFactory>()
@@ -163,14 +174,28 @@ public class GameInstaller : MonoInstaller
             .FromInstance(progressBarFactory)
             .AsSingle();
 
-        if (levelManager != null)
+        // ===== 10. LEVEL & SAVE =====
+        Container.Bind<LevelProgress>()
+            .FromInstance(levelProgress)
+            .AsSingle();
+
+        Container.Bind<LevelManager>()
+            .FromInstance(levelManager)
+            .AsSingle();
+
+        Container.Bind<GameSaveController>()
+            .FromInstance(gameSaveController)
+            .AsSingle()
+            .NonLazy();
+
+
+        if (debugHotkeyHandler != null)
         {
-            Container.Bind<LevelManager>().FromInstance(levelManager).AsSingle();
-            Debug.Log("LevelManager зарегистрирован в Zenject");
-        }
-        else
-        {
-            Debug.LogWarning("LevelManager не назначен в GameInstaller!");
+            Container.Bind<DebugHotkeyHandler>()
+                .FromInstance(debugHotkeyHandler)
+                .AsSingle()
+                .NonLazy();
+            Debug.Log("DebugHotkeyHandler зарегистрирован в Zenject");
         }
 
         Debug.Log("=== GameInstaller: InstallBindings END ===");

@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 using Zenject;
 
 public class ResourceSpawner : MonoBehaviour
@@ -8,7 +7,7 @@ public class ResourceSpawner : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private ResourceFactory resourceFactory;
     [SerializeField] private List<Transform> spawnPoints;
-    [SerializeField] private bool isStone = false;
+    [SerializeField] public ResourceType resourceType = ResourceType.Wood;
 
     [Header("Rotation")]
     [SerializeField] private Vector3 fixedRotation = new Vector3(-90f, 0f, 0f);
@@ -17,13 +16,33 @@ public class ResourceSpawner : MonoBehaviour
 
     [Inject] private ParticleFactory particleFactory;
     [Inject] private ResourceFlyAnimation flyAnimation;
+    [Inject] private ResourceBehaviourFactory behaviourFactory;
 
     private List<ResourceSource> activeResources = new List<ResourceSource>();
     private Dictionary<Transform, ResourceSource> occupiedPoints = new Dictionary<Transform, ResourceSource>();
     private Transform pendingRespawnPoint = null;
+    private List<Transform> freePointsCache = new List<Transform>();
+
+    public ResourceType ResourceType => resourceType;
 
     private void Start()
     {
+        // Проверяем дублирование
+        var allSpawners = FindObjectsOfType<ResourceSpawner>();
+        int sameTypeCount = 0;
+        foreach (var s in allSpawners)
+        {
+            if (s != null && s.resourceType == resourceType)
+            {
+                sameTypeCount++;
+            }
+        }
+
+        if (sameTypeCount > 1)
+        {
+            Debug.LogWarning($"[ResourceSpawner] ВНИМАНИЕ! Найдено {sameTypeCount} спавнеров с resourceType={resourceType}! Это может вызывать дублирование!");
+        }
+
         if (resourceFactory == null)
         {
             Debug.LogError("ResourceSpawner: resourceFactory is NULL!");
@@ -32,7 +51,7 @@ public class ResourceSpawner : MonoBehaviour
 
         if (spawnPoints == null || spawnPoints.Count == 0)
         {
-            Debug.LogError($"ResourceSpawner: spawnPoints is empty! (isStone: {isStone})");
+            Debug.LogError($"ResourceSpawner: spawnPoints is empty! (resourceType: {resourceType})");
             return;
         }
 
@@ -44,51 +63,66 @@ public class ResourceSpawner : MonoBehaviour
         ClearAllResources();
         occupiedPoints.Clear();
 
+        int spawnedCount = 0;
         foreach (var point in spawnPoints)
         {
             if (point != null)
             {
                 SpawnResource(point.position, point.rotation, point);
+                spawnedCount++;
             }
         }
     }
 
-    private void ClearAllResources()
+    public void ClearAllResources()
     {
         foreach (var source in activeResources)
         {
             if (source != null)
             {
                 source.OnCollected -= OnResourceCollected;
-                if (isStone)
-                    resourceFactory?.ReturnStone(source.gameObject);
-                else
-                    resourceFactory?.ReturnWood(source.gameObject);
+                ReturnResourceToPool(source.gameObject);
             }
         }
         activeResources.Clear();
+        occupiedPoints.Clear();
+        pendingRespawnPoint = null;
+
+        CancelInvoke(nameof(RespawnResource));
+    }
+
+    private void ReturnResourceToPool(GameObject obj)
+    {
+        if (obj == null || resourceFactory == null) return;
+
+        switch (resourceType)
+        {
+            case ResourceType.Wood:
+                resourceFactory.ReturnWood(obj);
+                break;
+            case ResourceType.Stone:
+                resourceFactory.ReturnStone(obj);
+                break;
+            default:
+                Debug.LogWarning($"Неизвестный тип ресурса: {resourceType}, уничтожаем объект");
+                Destroy(obj);
+                break;
+        }
     }
 
     private void SpawnResource(Vector3 position, Quaternion rotation, Transform spawnPoint = null)
     {
         if (resourceFactory == null) return;
 
-        GameObject obj;
-        if (isStone)
-        {
-            obj = resourceFactory.CreateStone(position, rotation);
-        }
-        else
-        {
-            obj = resourceFactory.CreateWood(position, rotation);
-        }
-
+        // ===== СОЗДАЁМ РЕСУРС ПО ТИПУ =====
+        GameObject obj = CreateResourceByType(position, rotation);
         if (obj == null)
         {
-            Debug.LogError("ResourceSpawner: failed to create resource!");
+            Debug.LogError($"ResourceSpawner: failed to create resource of type {resourceType}!");
             return;
         }
 
+        // Настройка поворота
         if (useFixedRotation)
         {
             float randomY = randomYRotation ? Random.Range(0f, 360f) : 0f;
@@ -106,15 +140,15 @@ public class ResourceSpawner : MonoBehaviour
         ResourceSource source = obj.GetComponent<ResourceSource>();
         if (source != null)
         {
-            if (isStone)
+            // ===== СОЗДАЁМ BEHAVIOUR ЧЕРЕЗ ФАБРИКУ =====
+            IResourceBehaviour behaviour = behaviourFactory.Create(resourceType, particleFactory, flyAnimation);
+            if (behaviour != null)
             {
-                var behaviour = new StoneBehaviour(particleFactory, flyAnimation);
                 source.SetBehaviour(behaviour);
             }
             else
             {
-                var behaviour = new TreeBehaviour(particleFactory, flyAnimation);
-                source.SetBehaviour(behaviour);
+                Debug.LogWarning($"Behaviour для {resourceType} не найден!");
             }
 
             source.OnCollected += OnResourceCollected;
@@ -128,6 +162,20 @@ public class ResourceSpawner : MonoBehaviour
         else
         {
             Debug.LogWarning($"ResourceSpawner: ResourceSource not found on {obj.name}");
+        }
+    }
+
+    private GameObject CreateResourceByType(Vector3 position, Quaternion rotation)
+    {
+        switch (resourceType)
+        {
+            case ResourceType.Wood:
+                return resourceFactory.CreateWood(position, rotation);
+            case ResourceType.Stone:
+                return resourceFactory.CreateStone(position, rotation);
+            default:
+                Debug.LogWarning($"Неизвестный тип ресурса: {resourceType}");
+                return null;
         }
     }
 
@@ -153,14 +201,7 @@ public class ResourceSpawner : MonoBehaviour
             occupiedPoints.Remove(occupiedPoint);
         }
 
-        if (isStone)
-        {
-            resourceFactory?.ReturnStone(source.gameObject);
-        }
-        else
-        {
-            resourceFactory?.ReturnWood(source.gameObject);
-        }
+        ReturnResourceToPool(source.gameObject);
 
         if (occupiedPoint != null)
         {
@@ -173,20 +214,26 @@ public class ResourceSpawner : MonoBehaviour
 
     private void RespawnResource()
     {
+        freePointsCache.Clear();
+
         if (pendingRespawnPoint != null)
         {
             if (IsPositionOccupied(pendingRespawnPoint.position))
             {
-                List<Transform> freePoints = spawnPoints
-                    .Where(p => p != null && !occupiedPoints.ContainsKey(p))
-                    .ToList();
-
-                if (freePoints.Count > 0)
+                foreach (var spawnPoint in spawnPoints)
                 {
-                    var point = freePoints[Random.Range(0, freePoints.Count)];
-                    if (point != null)
+                    if (spawnPoint != null && !occupiedPoints.ContainsKey(spawnPoint))
                     {
-                        SpawnResource(point.position, point.rotation, point);
+                        freePointsCache.Add(spawnPoint);
+                    }
+                }
+
+                if (freePointsCache.Count > 0)
+                {
+                    var selectedPoint = freePointsCache[Random.Range(0, freePointsCache.Count)];
+                    if (selectedPoint != null)
+                    {
+                        SpawnResource(selectedPoint.position, selectedPoint.rotation, selectedPoint);
                         pendingRespawnPoint = null;
                         return;
                     }
@@ -205,19 +252,23 @@ public class ResourceSpawner : MonoBehaviour
         }
         else
         {
-            List<Transform> freePoints = spawnPoints
-                .Where(p => p != null && !occupiedPoints.ContainsKey(p))
-                .ToList();
+            foreach (var freePoint in spawnPoints)
+            {
+                if (freePoint != null && !occupiedPoints.ContainsKey(freePoint))
+                {
+                    freePointsCache.Add(freePoint);
+                }
+            }
 
-            if (freePoints.Count == 0)
+            if (freePointsCache.Count == 0)
             {
                 return;
             }
 
-            var point = freePoints[Random.Range(0, freePoints.Count)];
-            if (point != null)
+            var chosenPoint = freePointsCache[Random.Range(0, freePointsCache.Count)];
+            if (chosenPoint != null)
             {
-                SpawnResource(point.position, point.rotation, point);
+                SpawnResource(chosenPoint.position, chosenPoint.rotation, chosenPoint);
             }
         }
     }

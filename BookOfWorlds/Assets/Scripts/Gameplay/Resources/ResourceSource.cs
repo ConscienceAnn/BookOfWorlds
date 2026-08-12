@@ -3,9 +3,6 @@ using Zenject;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 
-/// <summary>
-/// Управляет состоянием ресурса: доступность, инвентарь, визуал
-/// </summary>
 public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 {
     [Header("Resource Data")]
@@ -17,7 +14,10 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
     [Inject] private IPlayerInventory inventory;
     [Inject] private PauseService pauseService;
-    [Inject] private PlayerUIMediator playerUIMediator;  
+    [Inject] private PlayerUIMediator playerUIMediator;
+
+    // ===== ЧЕРЕЗ DI =====
+    [Inject] private PlayerCollector playerCollector;
 
     private bool isAvailable = true;
     private CancellationTokenSource cts;
@@ -25,13 +25,11 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
     public event System.Action<ResourceSource> OnCollected;
 
-    // ===== ПУБЛИЧНЫЕ СВОЙСТВА =====
     public bool IsAvailable => isAvailable;
     public string ResourceName => data?.resourceName ?? "Unknown";
     public ResourceDataSO ResourceData => data;
     public int AmountPerCollect => amountPerCollect;
 
-    // ===== РЕАЛИЗАЦИЯ ICollectable =====
     public string GetResourceName() => data?.resourceName ?? "Unknown";
     public int GetAmount() => amountPerCollect;
     public Transform GetTransform() => transform;
@@ -41,25 +39,24 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         return PerformCollect();
     }
 
-    // ===== РЕАЛИЗАЦИЯ IInteractable =====
     public void Interact()
     {
         if (!isAvailable)
         {
-            playerUIMediator?.ShowNotification($"Ресурс {GetResourceName()} ещё не восстановился!", 2f);  
+            playerUIMediator?.ShowNotification($"Ресурс {GetResourceName()} ещё не восстановился!", 2f);
             return;
         }
 
         if (!inventory.CanAdd(GetResourceName(), GetAmount()))
         {
-            playerUIMediator?.ShowNotification($"Инвентарь для {GetResourceName()} полон!", 2f);  
+            playerUIMediator?.ShowNotification($"Инвентарь для {GetResourceName()} полон!", 2f);
             return;
         }
 
-        PlayerCollector collector = FindObjectOfType<PlayerCollector>();
-        if (collector != null)
+        // ===== ИСПОЛЬЗУЕМ INJECTED COLLECTOR =====
+        if (playerCollector != null)
         {
-            collector.StartCollect(this);
+            playerCollector.StartCollect(this);
         }
         else
         {
@@ -67,7 +64,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         }
     }
 
-    // ===== ОСНОВНАЯ ЛОГИКА =====
     private bool PerformCollect()
     {
         if (data == null)
@@ -78,7 +74,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
         if (!isAvailable)
         {
-            playerUIMediator?.ShowNotification($"Ресурс {data.resourceName} ещё не восстановился!", 2f);  
+            playerUIMediator?.ShowNotification($"Ресурс {data.resourceName} ещё не восстановился!", 2f);
             return false;
         }
 
@@ -88,11 +84,9 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
         if (!canAdd)
         {
-            playerUIMediator?.ShowNotification($"Инвентарь для {data.resourceName} полон!", 2f);  
+            playerUIMediator?.ShowNotification($"Инвентарь для {data.resourceName} полон!", 2f);
             return false;
         }
-
-        Debug.Log($"[ResourceSource] Начинаем сбор {data.resourceName} (+{amountPerCollect})");
 
         inventory.TryAdd(data.resourceName, amountPerCollect);
 
@@ -108,11 +102,9 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
             RespawnAsync(cts.Token).Forget();
         }
 
-        Debug.Log($"[ResourceSource] Собран {data.resourceName} (+{amountPerCollect})");
         return true;
     }
 
-    // ===== УПРАВЛЕНИЕ ВИЗУАЛОМ =====
     public void SetGray()
     {
         visualState?.SetGray();
@@ -123,7 +115,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         visualState?.SetColored();
     }
 
-    // ===== УПРАВЛЕНИЕ СОСТОЯНИЕМ =====
     public void Hide()
     {
         isAvailable = false;
@@ -136,7 +127,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         isAvailable = true;
         SetColored();
         gameObject.SetActive(true);
-        Debug.Log($"[ResourceSource] Show() вызван для {gameObject.name}, isAvailable={isAvailable}");
     }
 
     public void ResetState()
@@ -146,20 +136,16 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         gameObject.SetActive(true);
     }
 
-    // ===== ПОВЕДЕНИЕ =====
     public void SetBehaviour(IResourceBehaviour newBehaviour)
     {
         behaviour = newBehaviour;
     }
 
-    // ===== ВЫЗОВ СОБЫТИЯ (из TreeBehaviour/StoneBehaviour) =====
     public void InvokeCollected()
     {
         OnCollected?.Invoke(this);
-        Debug.Log($"[ResourceSource] InvokeCollected() вызван для {gameObject.name}");
     }
 
-    // ===== РЕСПАВН =====
     private async UniTaskVoid RespawnAsync(CancellationToken token)
     {
         if (data == null) return;
@@ -183,10 +169,8 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         }
 
         Show();
-        Debug.Log($"[ResourceSource] Ресурс {data.resourceName} восстановился!");
     }
 
-    // ===== UNITY EVENTS =====
     private void Awake()
     {
         if (visualState == null)
@@ -210,7 +194,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         cts?.Dispose();
     }
 
-    // ===== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =====
     public void SetData(ResourceDataSO newData)
     {
         data = newData;

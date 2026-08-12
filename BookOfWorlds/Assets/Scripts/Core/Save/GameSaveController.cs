@@ -314,7 +314,7 @@ public class GameSaveController : MonoBehaviour
             building.ResetBuilding();
         }
 
-        LevelProgress levelProgress = FindObjectOfType<LevelProgress>();
+        
         if (levelProgress != null)
         {
             levelProgress.ResetState();

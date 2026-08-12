@@ -1349,6 +1349,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 545869181}
   m_CullTransparentMesh: 1
+--- !u!1 &557931965
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 557931966}
+  - component: {fileID: 557931967}
+  m_Layer: 0
+  m_Name: DebugHotkeyHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &557931966
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 557931965}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2093104002}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &557931967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 557931965}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f01379901c62634c81ea86e588179fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  restartHoldDuration: 1
+  enableDebugLogs: 1
 --- !u!1 &630237277
 GameObject:
   m_ObjectHideFlags: 0
@@ -4529,10 +4575,14 @@ MonoBehaviour:
   playerInput: {fileID: 1191278725}
   playerInputHandlerMy: {fileID: 1191278740}
   playerInventory: {fileID: 1191278734}
+  playerCollector: {fileID: 1191278723}
   mainCamera: {fileID: 963194227}
   virtualCamera: {fileID: 1889694349}
   cameraFollow: {fileID: 963194231}
   cameraZoom: {fileID: 963194230}
+  cinemachineBrain: {fileID: 963194229}
+  virtualCameras:
+  - {fileID: 1889694349}
   uiManager: {fileID: 1290189937}
   levelProgress: {fileID: 306350501}
   playerUIMediator: {fileID: 1191278743}
@@ -4551,12 +4601,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 11397ba806da2e04c8fa862efaf9e2f6, type: 2}
   - {fileID: 11400000, guid: 68dd2cabc0524a34f9e2b0d0e65dc07d, type: 2}
   - {fileID: 11400000, guid: 4f28e938933f7cc488df501232486c14, type: 2}
+  - {fileID: 11400000, guid: 4acb5e3c73895f049841bde52125604b, type: 2}
   resourceFactory: {fileID: 0}
   gameSaveController: {fileID: 68391214}
   particleFactory: {fileID: 258569787}
   flyAnimation: {fileID: 1960038410}
   progressBarFactory: {fileID: 1983769733}
   levelManager: {fileID: 742215756}
+  debugHotkeyHandler: {fileID: 557931967}
 --- !u!4 &1140513144
 Transform:
   m_ObjectHideFlags: 0
@@ -7748,6 +7800,7 @@ Transform:
   - {fileID: 1960038411}
   - {fileID: 742215754}
   - {fileID: 1983769732}
+  - {fileID: 557931966}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2105307414

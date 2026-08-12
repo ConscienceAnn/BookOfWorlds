@@ -361,12 +361,10 @@ MonoBehaviour:
   - {fileID: 7503573890708436003}
   - {fileID: 8589285430396851262}
   - {fileID: 8841308401072134057}
-  isStone: 0
+  resourceType: 0
   fixedRotation: {x: -90, y: 0, z: 0}
   useFixedRotation: 1
   randomYRotation: 1
-  particleFactory: {fileID: 0}
-  flyAnimation: {fileID: 0}
 --- !u!1 &3060760398260596395
 GameObject:
   m_ObjectHideFlags: 0
@@ -692,12 +690,10 @@ MonoBehaviour:
   - {fileID: 565226725343477559}
   - {fileID: 8144136443030380514}
   - {fileID: 7554894170646724174}
-  isStone: 1
+  resourceType: 1
   fixedRotation: {x: -90, y: 0, z: 0}
   useFixedRotation: 1
   randomYRotation: 1
-  particleFactory: {fileID: 0}
-  flyAnimation: {fileID: 0}
 --- !u!1 &6251952334237204221
 GameObject:
   m_ObjectHideFlags: 0
