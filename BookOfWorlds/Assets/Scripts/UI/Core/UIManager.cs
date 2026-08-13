@@ -21,7 +21,7 @@ public class UIManager : MonoBehaviour
 
     private void Start()
     {
-        // ===== ÏÎÄÏÈÑÊÀ ÍÀ ÂÂÎÄ =====
+      
         if (playerInputHandlerMy != null)
         {
             playerInputHandlerMy.OnPauseInput += OnPauseButtonClick;
@@ -40,7 +40,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // ===== HUD API =====
+  
 
     public void AddCoins(int amount)
     {
@@ -63,7 +63,6 @@ public class UIManager : MonoBehaviour
         hudController?.ForceRefresh();
     }
 
-    // ===== PANEL API =====
 
     public void ShowLevelComplete(bool hasNextLevel)
     {
@@ -136,7 +135,6 @@ public class UIManager : MonoBehaviour
 
     public bool IsAnyPanelOpen() => panelManager != null && panelManager.IsAnyPanelOpen;
 
-    // ===== BUTTON HANDLERS =====
 
     public void OnResumeButtonClick()
     {

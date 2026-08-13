@@ -13,8 +13,6 @@ public class ResourcePool : MonoBehaviour
 
     private Queue<GameObject> pool = new Queue<GameObject>();
 
-    // ===== UNITY LIFECYCLE =====
-
     private void Awake()
     {
         if (resourceData == null)
@@ -32,8 +30,11 @@ public class ResourcePool : MonoBehaviour
         for (int i = 0; i < initialSize; i++)
         {
             GameObject obj = CreateNewObject();
-            obj.SetActive(false);
-            pool.Enqueue(obj);
+            if (obj != null)
+            {
+                obj.SetActive(false);
+                pool.Enqueue(obj);
+            }
         }
     }
 
@@ -45,20 +46,21 @@ public class ResourcePool : MonoBehaviour
     private void OnDisable()
     {
         LevelGenerator.OnLevelCleared -= ClearPool;
-        // При отключении пула очищаем
-        ClearPool();
     }
 
     private void OnApplicationQuit()
     {
-        // При выходе из игры принудительно очищаем пул
         ClearPool();
     }
 
-    // ===== POOL METHODS =====
-
     private GameObject CreateNewObject()
     {
+        if (prefabs == null || prefabs.Length == 0)
+        {
+            Debug.LogError($"ResourcePool: prefabs array is empty!");
+            return null;
+        }
+
         GameObject selectedPrefab = prefabs[Random.Range(0, prefabs.Length)];
 
         if (selectedPrefab == null)
@@ -77,6 +79,12 @@ public class ResourcePool : MonoBehaviour
             obj = Instantiate(selectedPrefab);
         }
 
+        if (obj == null)
+        {
+            Debug.LogError($"[ResourcePool] InstantiatePrefab вернул NULL!");
+            return null;
+        }
+
         obj.SetActive(false);
 
         VisualState vs = obj.GetComponent<VisualState>();
@@ -92,6 +100,10 @@ public class ResourcePool : MonoBehaviour
             source.SetColored();
             source.Show();
             source.ApplyCurrentMultiplier();
+        }
+        else
+        {
+            Debug.LogWarning($"[ResourcePool] ResourceSource НЕ НАЙДЕН на {obj.name}!");
         }
 
         return obj;
@@ -114,7 +126,6 @@ public class ResourcePool : MonoBehaviour
         {
             obj.transform.position = position;
             obj.transform.rotation = rotation;
-
             obj.SetActive(true);
 
             ResourceSource source = obj.GetComponent<ResourceSource>();
@@ -122,7 +133,10 @@ public class ResourcePool : MonoBehaviour
             {
                 source.Show();
                 source.ApplyCurrentMultiplier();
-                Debug.Log($"[ResourcePool] {resourceData?.resourceName ?? "Resource"} получен из пула с множителем {RespawnSettings.Multiplier}x");
+            }
+            else
+            {
+                Debug.LogWarning($"[ResourcePool] ResourceSource не найден на {obj.name}!");
             }
         }
 
@@ -145,8 +159,6 @@ public class ResourcePool : MonoBehaviour
 
     public void ClearPool()
     {
-        // При очистке пула мы УНИЧТОЖАЕМ объекты, а не возвращаем в пул
-        // Поэтому НЕ нужно вызывать ReturnToPool() — объекты всё равно удаляются
         foreach (var obj in pool)
         {
             if (obj != null)
@@ -156,17 +168,14 @@ public class ResourcePool : MonoBehaviour
         }
         pool.Clear();
 
-        // Также удаляем все активные объекты
         ResourceSource[] activeSources = FindObjectsOfType<ResourceSource>();
         foreach (var source in activeSources)
         {
-            if (source != null && source.gameObject != null)
+            if (source != null && source.ResourceData == resourceData && source.gameObject != null)
             {
                 Destroy(source.gameObject);
             }
         }
-
-        Debug.Log($"[ResourcePool] Пул очищен для {resourceData?.resourceName ?? "Unknown"}");
     }
 
     public int GetPoolSize()

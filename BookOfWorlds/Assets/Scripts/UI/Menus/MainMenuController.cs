@@ -33,7 +33,7 @@ public class MainMenuController : MonoBehaviour
 
     private void Start()
     {
-        // ===== ВАЖНО: РАЗБЛОКИРУЕМ КУРСОР В ГЛАВНОМ МЕНЮ =====
+        
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         Time.timeScale = 1f;
@@ -211,12 +211,12 @@ public class MainMenuController : MonoBehaviour
         }
     }
 
-    // ===== ДОПОЛНИТЕЛЬНО: Принудительный сброс курсора при активации =====
+
     private void OnApplicationFocus(bool hasFocus)
     {
         if (hasFocus)
         {
-            // Когда окно получает фокус, снова показываем курсор
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }

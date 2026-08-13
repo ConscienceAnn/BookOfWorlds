@@ -16,7 +16,7 @@ public class HUDController : MonoBehaviour
     [SerializeField] private TMP_Text coinsText;
 
     [Inject] private IPlayerInventory inventory;
-    [Inject] private UIManager uiManager;  // Для монет
+    [Inject] private UIManager uiManager;  
 
     private void Start()
     {

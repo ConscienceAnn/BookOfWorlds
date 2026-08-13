@@ -12,5 +12,12 @@ public interface IPlayerInventory
     void ClearAll();
     void SetAmount(string resourceName, int amount);
 
+
+    /// <summary>
+    /// Принудительно обновляет максимальную ёмкость всех слотов.
+    /// Вызывается после применения улучшения "Вместимость".
+    /// </summary>
+    void ForceRefreshCapacities();
+
     event Action OnInventoryChanged;
 }

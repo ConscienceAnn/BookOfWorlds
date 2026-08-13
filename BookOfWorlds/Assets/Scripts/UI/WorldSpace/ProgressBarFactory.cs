@@ -25,18 +25,18 @@ public class ProgressBarFactory : MonoBehaviour
             return null;
         }
 
-        // ===== ИСПОЛЬЗУЕМ DiContainer ДЛЯ СОЗДАНИЯ =====
+
         GameObject progressBarObj = diContainer.InstantiatePrefab(
             progressBarPrefab,
             target.position + offset,
             Quaternion.identity,
-            null  // parent = null (корневой уровень)
+            null  
         );
 
         ProgressBarUI progressBar = progressBarObj.GetComponent<ProgressBarUI>();
         if (progressBar != null)
         {
-            // Настраиваем фолловер
+
             WorldSpaceUIFollower follower = progressBarObj.GetComponent<WorldSpaceUIFollower>();
             if (follower != null)
             {

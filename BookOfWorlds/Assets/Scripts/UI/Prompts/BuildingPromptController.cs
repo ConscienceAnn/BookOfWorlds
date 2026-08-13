@@ -19,7 +19,7 @@ public class BuildingPromptController : MonoBehaviour
     [Inject] private Camera mainCamera;
 
     private BuildingController currentBuilding;
-    // isPlayerNearBuilding удалён, так как не используется в этом классе
+
 
     private void Start()
     {

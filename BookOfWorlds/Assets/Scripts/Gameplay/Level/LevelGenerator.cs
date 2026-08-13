@@ -24,15 +24,12 @@ public class LevelGenerator : MonoBehaviour
 
     public List<BuildingController> GetBuildings() => spawnedBuildings;
 
-    // ===== LIFECYCLE =====
 
     private void OnApplicationQuit()
     {
-        Debug.Log("[LevelGenerator] OnApplicationQuit — принудительная очистка");
         ClearLevelImmediate();
     }
 
-    // ===== PUBLIC METHODS =====
 
     public async UniTask GenerateLevelAsync(LevelDataSO data)
     {
@@ -59,7 +56,6 @@ public class LevelGenerator : MonoBehaviour
         GenerateSellZone(data.sellZoneData);
     }
 
-    // ===== GENERATION METHODS =====
 
     private void GenerateCollectableObjects(GameObject prefab)
     {
@@ -147,14 +143,38 @@ public class LevelGenerator : MonoBehaviour
 
     // ===== CLEAR METHODS =====
 
+    /// <summary>
+    /// Асинхронная очистка уровня для нормального игрового процесса.
+    /// Использует Destroy() для безопасного удаления в конце кадра.
+    /// </summary>
     private async UniTask ClearLevelAsync()
     {
+        await ClearLevelInternal(false);
+    }
+
+    /// <summary>
+    /// Мгновенная очистка уровня для выхода из игры.
+    /// Использует DestroyImmediate() для гарантированного удаления.
+    /// </summary>
+    private void ClearLevelImmediate()
+    {
+        ClearLevelInternal(true).Forget();
+    }
+
+    /// <summary>
+    /// Внутренний метод очистки уровня.
+    /// </summary>
+
+    private async UniTask ClearLevelInternal(bool immediate)
+    {
+        // 1. Скрываем визуал завершения уровня
         if (levelProgress != null)
         {
             levelProgress.ReturnToGameCamera();
             levelProgress.HideComplete();
         }
 
+        // 2. Очищаем все пулы ресурсов
         ResourcePool[] allPools = FindObjectsOfType<ResourcePool>(true);
         foreach (var pool in allPools)
         {
@@ -164,67 +184,62 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
+        // 3. Удаляем спавнеры ресурсов
         ResourceSpawner[] spawners = FindObjectsOfType<ResourceSpawner>();
         foreach (var spawner in spawners)
         {
             if (spawner != null)
             {
                 spawner.ClearAllResources();
-                Destroy(spawner.gameObject);
+
+                if (immediate)
+                    DestroyImmediate(spawner.gameObject);
+                else
+                    Destroy(spawner.gameObject);
             }
         }
 
+        // 4. Удаляем все созданные LevelGenerator объекты
         foreach (var obj in spawnedObjects)
         {
             if (obj != null)
             {
-                Destroy(obj);
+                if (immediate)
+                    DestroyImmediate(obj);
+                else
+                    Destroy(obj);
             }
         }
         spawnedObjects.Clear();
         spawnedBuildings.Clear();
 
-        ClearParentChildren(collectableParent);
-        ClearParentChildren(buildingsParent);
-        ClearParentChildren(animalsParent);
-        ClearParentChildren(sellZoneParent);
+        // 5. Очищаем родительские папки
+        if (immediate)
+        {
+            ClearParentChildrenImmediate(collectableParent);
+            ClearParentChildrenImmediate(buildingsParent);
+            ClearParentChildrenImmediate(animalsParent);
+            ClearParentChildrenImmediate(sellZoneParent);
+        }
+        else
+        {
+            ClearParentChildren(collectableParent);
+            ClearParentChildren(buildingsParent);
+            ClearParentChildren(animalsParent);
+            ClearParentChildren(sellZoneParent);
+        }
 
+        // 6. Оповещаем подписчиков об очистке
         OnLevelCleared?.Invoke();
 
-        await UniTask.DelayFrame(2);
+        // 7. Ждём 2 кадра для завершения удаления (только в обычном режиме)
+        if (!immediate)
+        {
+            await UniTask.DelayFrame(2);
+        }
     }
 
-    private void ClearLevelImmediate()
-    {
-        // Очищаем родительские папки
-        ClearParentChildrenImmediate(collectableParent);
-        ClearParentChildrenImmediate(buildingsParent);
-        ClearParentChildrenImmediate(animalsParent);
-        ClearParentChildrenImmediate(sellZoneParent);
-
-        // Удаляем все созданные объекты
-        foreach (var obj in spawnedObjects)
-        {
-            if (obj != null)
-            {
-                DestroyImmediate(obj);
-            }
-        }
-        spawnedObjects.Clear();
-        spawnedBuildings.Clear();
-
-        // Очищаем пулы
-        ResourcePool[] pools = FindObjectsOfType<ResourcePool>(true);
-        foreach (var pool in pools)
-        {
-            if (pool != null)
-            {
-                pool.ClearPool();
-            }
-        }
-
-        Debug.Log("[LevelGenerator] Принудительная очистка завершена");
-    }
+    // ===== HELPER METHODS =====
 
     private void ClearParentChildren(Transform parent)
     {

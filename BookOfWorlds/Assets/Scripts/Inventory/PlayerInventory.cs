@@ -32,14 +32,13 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
 
         foreach (var slot in resourceSlots)
         {
-            if (slot.currentAmount > slot.currentMaxCapacity)
+            if (slot != null && slot.currentAmount > slot.currentMaxCapacity)
             {
                 slot.currentAmount = slot.currentMaxCapacity;
             }
         }
 
         OnInventoryChanged?.Invoke();
-        Debug.Log("[PlayerInventory] Принудительное обновление ёмкостей выполнено");
     }
 
     private void UpdateAllCapacities()
@@ -50,8 +49,6 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
         {
             slot.currentMaxCapacity = Mathf.RoundToInt(slot.baseMaxCapacity * multiplier);
         }
-
-        Debug.Log($"[PlayerInventory] Ёмкость обновлена с множителем {multiplier}x");
     }
 
     private void UpdateSlotCapacity(string resourceName)
@@ -109,13 +106,11 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
 
         if (slot.currentAmount + amount > slot.currentMaxCapacity)
         {
-            Debug.Log($"[PlayerInventory] НЕЛЬЗЯ добавить {resourceName} ({amount}): полон! ({slot.currentAmount}/{slot.currentMaxCapacity})");
             return false;
         }
 
         slot.currentAmount += amount;
         OnInventoryChanged?.Invoke();
-        Debug.Log($"[PlayerInventory] ДОБАВЛЕН {resourceName} (+{amount}) - {slot.currentAmount}/{slot.currentMaxCapacity}");
         return true;
     }
 
@@ -132,13 +127,11 @@ public class PlayerInventory : MonoBehaviour, IPlayerInventory
 
         if (slot.currentAmount < amount)
         {
-            Debug.Log($"[PlayerInventory] НЕДОСТАТОЧНО {resourceName}! Есть {slot.currentAmount}, нужно {amount}");
             return false;
         }
 
         slot.currentAmount -= amount;
         OnInventoryChanged?.Invoke();
-        Debug.Log($"[PlayerInventory] ПОТРАЧЕН {resourceName} (-{amount}) - {slot.currentAmount}/{slot.currentMaxCapacity}");
         return true;
     }
 

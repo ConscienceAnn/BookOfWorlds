@@ -9,7 +9,7 @@ public class GameSaveController : MonoBehaviour
     [Inject] private UIManager uiManager;
     [Inject] private LevelProgress levelProgress;
     [Inject] private LevelManager levelManager;
-    [Inject] private UpgradeManager upgradeManager;  
+    [Inject] private UpgradeManager upgradeManager;
 
     private List<BuildingController> buildings = new List<BuildingController>();
     private string currentLevelName => levelManager?.CurrentLevelData?.levelName ?? "Unknown";
@@ -140,8 +140,6 @@ public class GameSaveController : MonoBehaviour
                 level = kvp.Value
             });
         }
-
-        Debug.Log($"Сохранено {data.upgrades.Count} улучшений");
     }
 
     // ===== ЗАГРУЗКА =====
@@ -235,7 +233,6 @@ public class GameSaveController : MonoBehaviour
 
         if (data.upgrades == null || data.upgrades.Count == 0)
         {
-            Debug.Log("Нет сохранённых улучшений");
             return;
         }
 
@@ -243,7 +240,6 @@ public class GameSaveController : MonoBehaviour
         foreach (var entry in data.upgrades)
         {
             upgrades[entry.upgradeId] = entry.level;
-            Debug.Log($"  - Загружено улучшение {entry.upgradeId}: уровень {entry.level}");
         }
 
         upgradeManager.LoadUpgrades(upgrades);
@@ -364,14 +360,13 @@ public class GameSaveController : MonoBehaviour
         uiManager?.ForceRefreshUI();
         levelProgress?.ForceUpdate();
 
-
         SaveData data = SaveSystem.Load();
         if (data != null)
         {
             data.levelProgress.RemoveAll(p => p.levelName == currentLevelName);
             data.coins = 0;
             data.resources = new List<ResourceEntry>();
-            data.upgrades = new List<UpgradeSaveEntry>();  
+            data.upgrades = new List<UpgradeSaveEntry>();
             SaveSystem.Save(data);
         }
     }

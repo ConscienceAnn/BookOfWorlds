@@ -3,7 +3,6 @@ using Zenject;
 
 /// <summary>
 /// Обработчик дебаг-хоткеев.
-/// Можно удалить после финальной сборки.
 /// </summary>
 public class DebugHotkeyHandler : MonoBehaviour
 {

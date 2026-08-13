@@ -175,7 +175,7 @@ public class LevelManager : MonoBehaviour
     {
         Debug.Log("Возврат в главное меню");
 
-        // Закрываем все панели
+   
         if (uiManager != null)
         {
             uiManager.CloseAllPanels();
@@ -201,7 +201,7 @@ public class LevelManager : MonoBehaviour
             gameSaveController.SaveGame();
         }
 
-        // ПОКАЗЫВАЕМ ПАНЕЛЬ ЧЕРЕЗ UIManager
+     
         if (uiManager != null)
         {
             uiManager.ShowLevelComplete(HasNextLevel());
@@ -251,8 +251,7 @@ public class LevelManager : MonoBehaviour
             uiManager.CloseAllPanels();
         }
 
-        // НЕ СОХРАНЯЕМ ИГРУ!
-        // Просто переходим в главное меню
+       
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
     }
 

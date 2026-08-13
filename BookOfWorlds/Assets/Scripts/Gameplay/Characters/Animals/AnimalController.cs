@@ -17,7 +17,7 @@ public class AnimalController : MonoBehaviour, ICollectable
     [SerializeField] private AnimalMover animalMover;
 
     [Inject] private IPlayerInventory inventory;
-    [Inject] private PlayerUIMediator playerUIMediator;  
+    [Inject] private PlayerUIMediator playerUIMediator;
     [Inject] private ProgressBarFactory progressBarFactory;
 
     private bool isAvailable = true;
@@ -44,11 +44,10 @@ public class AnimalController : MonoBehaviour, ICollectable
 
     private void Start()
     {
-        // Убираем дублирование создания прогресс-бара (было два раза)
+        
         if (progressBar == null && progressBarFactory != null)
         {
             progressBar = progressBarFactory.CreateProgressBar(transform, GetProgressBarOffset());
-            Debug.Log($"ProgressBar создан для {animalData?.animalName}");
         }
 
         if (animator == null)
@@ -60,7 +59,6 @@ public class AnimalController : MonoBehaviour, ICollectable
         if (animalData != null && progressBar != null)
         {
             behaviour = AnimalBehaviourFactory.Create(animalData, progressBar);
-            Debug.Log($"Behaviour создан для {animalData.animalName} типа {animalData.animalType}");
         }
 
         if (animalMover != null)
@@ -68,10 +66,8 @@ public class AnimalController : MonoBehaviour, ICollectable
             animalMover.SetStartPosition(transform.position);
             bool canMove = animalData != null && animalData.canMove;
             animalMover.IsEnabled = canMove;
-            Debug.Log($"AnimalMover для {animalData?.animalName}: enabled={canMove}");
         }
 
-        // Подписываемся на событие респавна
         if (behaviour is AnimalBehaviourBase animalBehaviour)
         {
             animalBehaviour.OnAnimalRespawned += OnRespawned;
@@ -126,13 +122,13 @@ public class AnimalController : MonoBehaviour, ICollectable
     {
         if (!isAvailable)
         {
-            playerUIMediator?.ShowNotification($"{animalData.animalName} ещё не готова!", 2f);  
+            playerUIMediator?.ShowNotification($"{animalData.animalName} ещё не готова!", 2f);
             return;
         }
 
         if (!inventory.CanAdd(GetResourceName(), GetAmount()))
         {
-            playerUIMediator?.ShowNotification($"Нет места для {GetResourceName()}!", 2f); 
+            playerUIMediator?.ShowNotification($"Нет места для {GetResourceName()}!", 2f);
             return;
         }
 
@@ -140,7 +136,6 @@ public class AnimalController : MonoBehaviour, ICollectable
         if (animalMover != null && animalMover.IsEnabled)
         {
             animalMover.Pause();
-            Debug.Log($"{animalData.animalName}: движение остановлено для сбора");
         }
 
         inventory.TryAdd(GetResourceName(), GetAmount());
@@ -154,12 +149,9 @@ public class AnimalController : MonoBehaviour, ICollectable
         if (behaviour != null)
         {
             behaviour.OnCollect(transform);
-            Debug.Log($"Behaviour.OnCollect() вызван для {animalData?.animalName}");
         }
 
         PlayCollectAnimation();
-
-        Debug.Log($"Собрано {GetResourceName()} (+{GetAmount()}) от {animalData.animalName}");
     }
 
     private void OnRespawned()

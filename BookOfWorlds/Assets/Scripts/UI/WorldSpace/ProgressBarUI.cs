@@ -104,7 +104,7 @@ public class ProgressBarUI : MonoBehaviour
         }
     }
 
-    // ДОБАВЛЕНО: метод для получения текущего прогресса
+    
     public float GetProgress()
     {
         return progressSlider != null ? progressSlider.value : 0f;

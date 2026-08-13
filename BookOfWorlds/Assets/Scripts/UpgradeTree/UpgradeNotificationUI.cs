@@ -33,8 +33,7 @@ public class UpgradeNotificationUI : MonoBehaviour
     /// <summary>
     /// Показать уведомление
     /// </summary>
-    /// <param name="message">Текст уведомления</param>
-    /// <param name="isError">true = ошибка (красный), false = успех (зелёный)</param>
+
     public void ShowNotification(string message, bool isError = false)
     {
         if (!gameObject.activeSelf)
@@ -45,7 +44,7 @@ public class UpgradeNotificationUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Показать уведомление с произвольным цветом
+    /// Показать уведомление 
     /// </summary>
     public void ShowNotification(string message, Color color)
     {

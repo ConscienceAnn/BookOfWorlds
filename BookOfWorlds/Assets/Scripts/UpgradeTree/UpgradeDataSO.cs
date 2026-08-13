@@ -9,7 +9,7 @@ public class UpgradeDataSO : ScriptableObject
     public string description;        // "Ресурсы восстанавливаются быстрее"
     public Sprite icon;
 
-    public UpgradeLevel[] levels;     // Уровни (до 4-5)
+    public UpgradeLevel[] levels;     // Уровни 
 }
 
 [Serializable]

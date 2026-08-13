@@ -100,8 +100,6 @@ public class UpgradeManager : MonoBehaviour
         OnUpgradesChanged?.Invoke();
 
         OnUpgradeNotification?.Invoke($"{data2.upgradeName} улучшено до уровня {newLevel}!", false);
-
-        Debug.Log($"Улучшение {upgradeId} повышено до уровня {newLevel}");
     }
 
     public void LoadUpgrades(Dictionary<string, int> savedUpgrades)
@@ -116,7 +114,6 @@ public class UpgradeManager : MonoBehaviour
         }
 
         OnUpgradesChanged?.Invoke();
-        Debug.Log($"Загружено {currentLevels.Count} улучшений");
     }
 
     public Dictionary<string, int> GetUpgradesForSave()
@@ -154,25 +151,18 @@ public class UpgradeManager : MonoBehaviour
         // Защита от нулевого значения
         multiplier = Mathf.Max(0.1f, multiplier);
 
-        Debug.Log($"Скорость респавна: {multiplier}x");
-
         // Сохраняем множитель в глобальных настройках
         RespawnSettings.Multiplier = multiplier;
     }
 
     private void ApplyInventoryCapacity(float multiplier)
     {
-        Debug.Log($"Вместимость инвентаря: {multiplier}x");
-
-        if (inventory is PlayerInventory playerInventory)
-        {
-            playerInventory.ForceRefreshCapacities();
-        }
+        inventory?.ForceRefreshCapacities();
     }
 
     private void ApplySellBonus(float bonusPercent)
     {
-        Debug.Log($"Бонус к продаже: +{bonusPercent * 100}%");
+        // Бонус применяется в SellService
     }
 
     private UpgradeDataSO GetUpgradeData(string upgradeId)

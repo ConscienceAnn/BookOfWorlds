@@ -21,8 +21,6 @@ public abstract class AnimalBehaviourBase : IResourceBehaviour
         float multiplier = Mathf.Max(0.1f, RespawnSettings.Multiplier);
         this.currentCooldownTime = cooldownTime / multiplier;
 
-        Debug.Log($"[AnimalBehaviour] Создан, время: {currentCooldownTime:F2} сек (множитель: {multiplier}x)");
-
         EventBus.OnRespawnMultiplierChanged += OnRespawnMultiplierChanged;
     }
 

@@ -132,9 +132,7 @@ public class AnimalMover : MonoBehaviour
 
         isPaused = false;
 
-        // ===== ВАЖНО: ПРИНУДИТЕЛЬНО ЗАПУСКАЕМ ДВИЖЕНИЕ =====
-        // Вместо того чтобы ждать, пока истечёт idleTimer,
-        // сразу начинаем двигаться
+        
         isMoving = true;
         SetAnimatorBool(true);
         SetRandomTarget();

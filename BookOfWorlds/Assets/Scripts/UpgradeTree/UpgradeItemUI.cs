@@ -70,13 +70,12 @@ public class UpgradeItemUI : MonoBehaviour
             progressSlider.value = currentLevel;
         }
 
-        // ===== КНОПКА: ВСЕГДА АКТИВНА (КРОМЕ MAX) =====
+
         if (upgradeButton != null)
         {
             // Кнопка НЕАКТИВНА только если MAX уровень
             upgradeButton.interactable = !isMaxLevel;
 
-            // Текст кнопки
             TMP_Text buttonText = upgradeButton.GetComponentInChildren<TMP_Text>();
             if (buttonText != null)
             {
@@ -101,8 +100,7 @@ public class UpgradeItemUI : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(upgradeId) && upgradeManager != null)
         {
-            // Клик ВСЕГДА вызывает ApplyUpgrade,
-            // а там уже будет проверка на монеты и уведомление
+            
             upgradeManager.ApplyUpgrade(upgradeId);
         }
     }

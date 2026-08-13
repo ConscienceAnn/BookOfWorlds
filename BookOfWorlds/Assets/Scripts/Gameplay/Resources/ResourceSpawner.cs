@@ -1,13 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Zenject;
+using Cysharp.Threading.Tasks;
 
 public class ResourceSpawner : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private ResourceFactory resourceFactory;
     [SerializeField] private List<Transform> spawnPoints;
-    [SerializeField] public ResourceType resourceType = ResourceType.Wood;
+    [SerializeField] private string resourceTypeName = "Wood";
+    [SerializeField] private float checkRadius = 1f;
 
     [Header("Rotation")]
     [SerializeField] private Vector3 fixedRotation = new Vector3(-90f, 0f, 0f);
@@ -18,39 +20,21 @@ public class ResourceSpawner : MonoBehaviour
     [Inject] private ResourceFlyAnimation flyAnimation;
     [Inject] private ResourceBehaviourFactory behaviourFactory;
 
-    private List<ResourceSource> activeResources = new List<ResourceSource>();
-    private Dictionary<Transform, ResourceSource> occupiedPoints = new Dictionary<Transform, ResourceSource>();
-    private Transform pendingRespawnPoint = null;
-    private List<Transform> freePointsCache = new List<Transform>();
-
-    public ResourceType ResourceType => resourceType;
+    private Dictionary<Transform, ResourceSource> spawnPointToResource = new Dictionary<Transform, ResourceSource>();
+    private Queue<Transform> respawnQueue = new Queue<Transform>();
+    private bool isRespawning = false;
 
     private void Start()
     {
-        var allSpawners = FindObjectsOfType<ResourceSpawner>();
-        int sameTypeCount = 0;
-        foreach (var s in allSpawners)
-        {
-            if (s != null && s.resourceType == resourceType)
-            {
-                sameTypeCount++;
-            }
-        }
-
-        if (sameTypeCount > 1)
-        {
-            Debug.LogWarning($"[ResourceSpawner] ВНИМАНИЕ! Найдено {sameTypeCount} спавнеров с resourceType={resourceType}! Это может вызывать дублирование!");
-        }
-
         if (resourceFactory == null)
         {
-            Debug.LogError("ResourceSpawner: resourceFactory is NULL!");
+            Debug.LogError("ResourceManager: resourceFactory is NULL!");
             return;
         }
 
         if (spawnPoints == null || spawnPoints.Count == 0)
         {
-            Debug.LogError($"ResourceSpawner: spawnPoints is empty! (resourceType: {resourceType})");
+            Debug.LogError($"ResourceManager: spawnPoints is empty!");
             return;
         }
 
@@ -60,123 +44,104 @@ public class ResourceSpawner : MonoBehaviour
     public void SpawnAllResources()
     {
         ClearAllResources();
-        occupiedPoints.Clear();
+        spawnPointToResource.Clear();
+        respawnQueue.Clear();
 
-        int spawnedCount = 0;
         foreach (var point in spawnPoints)
         {
             if (point != null)
             {
-                SpawnResource(point.position, point.rotation, point);
-                spawnedCount++;
+                SpawnResourceAtPoint(point);
             }
         }
-
-        Debug.Log($"[ResourceSpawner] Создано {spawnedCount} ресурсов типа {resourceType}");
     }
 
     public void ClearAllResources()
     {
-        foreach (var source in activeResources)
+        foreach (var kvp in spawnPointToResource)
         {
-            if (source != null)
+            if (kvp.Value != null)
             {
-                source.OnCollected -= OnResourceCollected;
-                ReturnResourceToPool(source.gameObject);
+                kvp.Value.OnCollected -= OnResourceCollected;
+                ReturnResourceToPool(kvp.Value.gameObject);
             }
         }
-        activeResources.Clear();
-        occupiedPoints.Clear();
-        pendingRespawnPoint = null;
-
-        CancelInvoke(nameof(RespawnResource));
+        spawnPointToResource.Clear();
+        respawnQueue.Clear();
+        isRespawning = false;
+        CancelInvoke(nameof(ProcessRespawnQueue));
     }
 
     private void ReturnResourceToPool(GameObject obj)
     {
         if (obj == null || resourceFactory == null) return;
 
-        switch (resourceType)
+        switch (resourceTypeName)
         {
-            case ResourceType.Wood:
-                resourceFactory.ReturnWood(obj);
-                break;
-            case ResourceType.Stone:
-                resourceFactory.ReturnStone(obj);
-                break;
-            default:
-                Debug.LogWarning($"Неизвестный тип ресурса: {resourceType}, уничтожаем объект");
-                Destroy(obj);
-                break;
+            case "Wood": resourceFactory.ReturnWood(obj); break;
+            case "Stone": resourceFactory.ReturnStone(obj); break;
+            default: Destroy(obj); break;
         }
     }
 
-    private void SpawnResource(Vector3 position, Quaternion rotation, Transform spawnPoint = null)
+    private void SpawnResourceAtPoint(Transform spawnPoint)
     {
-        if (resourceFactory == null) return;
-
-        GameObject obj = CreateResourceByType(position, rotation);
-        if (obj == null)
+        if (spawnPoint == null) return;
+        if (spawnPointToResource.ContainsKey(spawnPoint))
         {
-            Debug.LogError($"ResourceSpawner: failed to create resource of type {resourceType}!");
             return;
         }
 
-        if (useFixedRotation)
+        GameObject obj = CreateResourceByType(spawnPoint.position, spawnPoint.rotation);
+        if (obj == null)
         {
-            float randomY = randomYRotation ? Random.Range(0f, 360f) : 0f;
-            obj.transform.rotation = Quaternion.Euler(
-                fixedRotation.x,
-                randomY,
-                fixedRotation.z
-            );
+            Debug.LogError($"Не удалось создать ресурс типа {resourceTypeName}!");
+            return;
         }
-        else
-        {
-            obj.transform.rotation = rotation;
-        }
+
+        ApplyRotation(obj);
 
         ResourceSource source = obj.GetComponent<ResourceSource>();
         if (source != null)
         {
-            // Применяем текущий множитель респавна
             source.ApplyCurrentMultiplier();
 
-            IResourceBehaviour behaviour = behaviourFactory.Create(resourceType, particleFactory, flyAnimation);
-            if (behaviour != null)
-            {
-                source.SetBehaviour(behaviour);
-            }
+            ResourceType type = GetResourceType();
+            IResourceBehaviour behaviour = behaviourFactory.Create(type, particleFactory, flyAnimation);
+            if (behaviour != null) source.SetBehaviour(behaviour);
 
             source.OnCollected += OnResourceCollected;
-            activeResources.Add(source);
 
-            if (spawnPoint != null && !occupiedPoints.ContainsKey(spawnPoint))
-            {
-                occupiedPoints.Add(spawnPoint, source);
-            }
-
-            float multiplier = RespawnSettings.Multiplier;
-            float respawnTime = source.ResourceData?.respawnTime ?? 7f;
-            Debug.Log($"[ResourceSpawner] Создан {resourceType} с множителем {multiplier}x (время респавна: {respawnTime / multiplier:F2} сек)");
-        }
-        else
-        {
-            Debug.LogWarning($"ResourceSpawner: ResourceSource not found on {obj.name}");
+            spawnPointToResource.Add(spawnPoint, source);
         }
     }
 
     private GameObject CreateResourceByType(Vector3 position, Quaternion rotation)
     {
-        switch (resourceType)
+        switch (resourceTypeName)
         {
-            case ResourceType.Wood:
-                return resourceFactory.CreateWood(position, rotation);
-            case ResourceType.Stone:
-                return resourceFactory.CreateStone(position, rotation);
-            default:
-                Debug.LogWarning($"Неизвестный тип ресурса: {resourceType}");
-                return null;
+            case "Wood": return resourceFactory.CreateWood(position, rotation);
+            case "Stone": return resourceFactory.CreateStone(position, rotation);
+            default: return null;
+        }
+    }
+
+    private void ApplyRotation(GameObject obj)
+    {
+        if (useFixedRotation)
+        {
+            float randomY = randomYRotation ? Random.Range(0f, 360f) : 0f;
+            obj.transform.rotation = Quaternion.Euler(fixedRotation.x, randomY, fixedRotation.z);
+        }
+    }
+
+    private ResourceType GetResourceType()
+    {
+        switch (resourceTypeName)
+        {
+            case "Wood": return ResourceType.Wood;
+            case "Stone": return ResourceType.Stone;
+            default: return ResourceType.Wood;
         }
     }
 
@@ -184,105 +149,78 @@ public class ResourceSpawner : MonoBehaviour
     {
         if (source == null) return;
 
-        source.OnCollected -= OnResourceCollected;
-        activeResources.Remove(source);
-
-        Transform occupiedPoint = null;
-        foreach (var kvp in occupiedPoints)
+        Transform spawnPoint = null;
+        foreach (var kvp in spawnPointToResource)
         {
             if (kvp.Value == source)
             {
-                occupiedPoint = kvp.Key;
+                spawnPoint = kvp.Key;
                 break;
             }
         }
 
-        if (occupiedPoint != null)
+        if (spawnPoint == null)
         {
-            occupiedPoints.Remove(occupiedPoint);
+            return;
         }
 
+        source.OnCollected -= OnResourceCollected;
+        spawnPointToResource.Remove(spawnPoint);
         ReturnResourceToPool(source.gameObject);
 
-        if (occupiedPoint != null)
+        respawnQueue.Enqueue(spawnPoint);
+
+        if (!isRespawning)
         {
-            pendingRespawnPoint = occupiedPoint;
-            // Используем актуальное время респавна с учетом множителя
-            float baseRespawnTime = source.ResourceData?.respawnTime ?? 7f;
-            float multiplier = RespawnSettings.Multiplier;
-            float respawnDelay = baseRespawnTime / multiplier;
-
-            Debug.Log($"[ResourceSpawner] Ресурс собран, респавн через {respawnDelay:F2} сек (база: {baseRespawnTime:F2} сек, множитель: {multiplier}x)");
-
-            CancelInvoke(nameof(RespawnResource));
-            Invoke(nameof(RespawnResource), respawnDelay);
+            ProcessRespawnQueueAsync().Forget();
         }
     }
 
-    private void RespawnResource()
+    private async UniTaskVoid ProcessRespawnQueueAsync()
     {
-        freePointsCache.Clear();
+        if (isRespawning) return;
+        isRespawning = true;
 
-        if (pendingRespawnPoint != null)
+        while (respawnQueue.Count > 0)
         {
-            if (IsPositionOccupied(pendingRespawnPoint.position))
+            Transform point = respawnQueue.Dequeue();
+
+            if (point == null) continue;
+            if (spawnPointToResource.ContainsKey(point))
             {
-                foreach (var spawnPoint in spawnPoints)
-                {
-                    if (spawnPoint != null && !occupiedPoints.ContainsKey(spawnPoint))
-                    {
-                        freePointsCache.Add(spawnPoint);
-                    }
-                }
-
-                if (freePointsCache.Count > 0)
-                {
-                    var selectedPoint = freePointsCache[Random.Range(0, freePointsCache.Count)];
-                    if (selectedPoint != null)
-                    {
-                        SpawnResource(selectedPoint.position, selectedPoint.rotation, selectedPoint);
-                        pendingRespawnPoint = null;
-                        return;
-                    }
-                }
-
-                Invoke(nameof(RespawnResource), 0.5f);
-                return;
+                continue;
             }
 
-            SpawnResource(
-                pendingRespawnPoint.position,
-                pendingRespawnPoint.rotation,
-                pendingRespawnPoint
-            );
-            pendingRespawnPoint = null;
+            // ===== ПРОВЕРКА С МАЛЕНЬКИМ РАДИУСОМ =====
+            if (IsPositionOccupied(point.position))
+            {
+                respawnQueue.Enqueue(point);
+                await UniTask.Delay(500);
+                continue;
+            }
+
+            float respawnDelay = GetRespawnDelay();
+
+            await UniTask.Delay((int)(respawnDelay * 1000));
+
+            SpawnResourceAtPoint(point);
         }
-        else
-        {
-            foreach (var freePoint in spawnPoints)
-            {
-                if (freePoint != null && !occupiedPoints.ContainsKey(freePoint))
-                {
-                    freePointsCache.Add(freePoint);
-                }
-            }
 
-            if (freePointsCache.Count == 0)
-            {
-                return;
-            }
-
-            var chosenPoint = freePointsCache[Random.Range(0, freePointsCache.Count)];
-            if (chosenPoint != null)
-            {
-                SpawnResource(chosenPoint.position, chosenPoint.rotation, chosenPoint);
-            }
-        }
+        isRespawning = false;
     }
 
+    private float GetRespawnDelay()
+    {
+        float baseTime = 7f;
+        float multiplier = RespawnSettings.Multiplier;
+        return Mathf.Max(0.1f, baseTime / multiplier);
+    }
+
+    // ===== УМЕНЬШЕННЫЙ РАДИУС ПРОВЕРКИ =====
     private bool IsPositionOccupied(Vector3 position)
     {
-        Collider[] colliders = Physics.OverlapSphere(position, 4f);
+        // Проверяем только прямое попадание на точку
+        Collider[] colliders = Physics.OverlapSphere(position, checkRadius);
         foreach (var collider in colliders)
         {
             if (collider.CompareTag("Player"))
@@ -293,8 +231,32 @@ public class ResourceSpawner : MonoBehaviour
         return false;
     }
 
-    public int GetActiveResourceCount()
+    private void ProcessRespawnQueue()
     {
-        return activeResources.Count;
+        if (respawnQueue.Count == 0) return;
+
+        Transform point = respawnQueue.Dequeue();
+        if (point == null || spawnPointToResource.ContainsKey(point))
+        {
+            ProcessRespawnQueue();
+            return;
+        }
+
+        if (IsPositionOccupied(point.position))
+        {
+            respawnQueue.Enqueue(point);
+            Invoke(nameof(ProcessRespawnQueue), 0.5f);
+            return;
+        }
+
+        SpawnResourceAtPoint(point);
+
+        if (respawnQueue.Count > 0)
+        {
+            Invoke(nameof(ProcessRespawnQueue), 0.5f);
+        }
     }
+
+    public int GetActiveResourceCount() => spawnPointToResource.Count;
+    public int GetQueueCount() => respawnQueue.Count;
 }

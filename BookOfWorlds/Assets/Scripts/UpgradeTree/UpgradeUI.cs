@@ -103,10 +103,6 @@ public class UpgradeUI : MonoBehaviour
         {
             upgradeNotification.ShowNotification(message, isError);
         }
-        else
-        {
-            Debug.Log($"[UpgradeUI] Уведомление: {message} (isError={isError})");
-        }
     }
 
     public void Show()

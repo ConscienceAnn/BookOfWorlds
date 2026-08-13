@@ -125,7 +125,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         isAvailable = true;
         SetColored();
         gameObject.SetActive(true);
-        Debug.Log($"[ResourceSource] {data?.resourceName ?? "Unknown"} восстановился!");
     }
 
     public void ResetState()
@@ -157,18 +156,11 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         float remainingTime = data.respawnTime / multiplier;
         currentRespawnDuration = remainingTime;
 
-        Debug.Log($"[ResourceSource] === РЕСПАВН СТАРТ ===");
-        Debug.Log($"[ResourceSource]   - Ресурс: {data.resourceName}");
-        Debug.Log($"[ResourceSource]   - Базовое время: {data.respawnTime:F2} сек");
-        Debug.Log($"[ResourceSource]   - Итоговое время: {remainingTime:F2} сек (x{multiplier})");
-        Debug.Log($"[ResourceSource]   - Начало: {System.DateTime.Now:HH:mm:ss.fff}");
-
         while (remainingTime > 0)
         {
             if (token.IsCancellationRequested)
             {
                 isRespawning = false;
-                Debug.Log($"[ResourceSource] {data.resourceName}: респавн отменён");
                 return;
             }
 
@@ -185,10 +177,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
             await UniTask.Yield(token);
         }
 
-        Debug.Log($"[ResourceSource] === РЕСПАВН ЗАВЕРШЁН ===");
-        Debug.Log($"[ResourceSource]   - Ресурс: {data.resourceName}");
-        Debug.Log($"[ResourceSource]   - Завершение: {System.DateTime.Now:HH:mm:ss.fff}");
-
         isRespawning = false;
         Show();
     }
@@ -204,7 +192,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         if (!isRespawning)
         {
             currentRespawnDuration = data.respawnTime / multiplier;
-            Debug.Log($"[ResourceSource] {data.resourceName}: время обновлено для будущего -> {currentRespawnDuration:F2} сек (x{multiplier})");
             return;
         }
 
@@ -214,12 +201,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         float newTotalTime = baseRespawnTime / multiplier;
         float newRemaining = newTotalTime - baseElapsed;
         currentRespawnDuration = Mathf.Max(0.05f, newRemaining);
-
-        Debug.Log($"[ResourceSource] {data.resourceName}: время скорректировано!");
-        Debug.Log($"[ResourceSource]   - Базовое время: {baseRespawnTime:F2} сек");
-        Debug.Log($"[ResourceSource]   - Прошло: {baseElapsed:F2} сек");
-        Debug.Log($"[ResourceSource]   - Новое полное: {newTotalTime:F2} сек");
-        Debug.Log($"[ResourceSource]   - Осталось: {currentRespawnDuration:F2} сек (x{multiplier})");
     }
 
     // ===== UNITY LIFECYCLE =====
@@ -278,7 +259,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         if (data != null)
         {
             currentRespawnDuration = data.respawnTime / multiplier;
-            Debug.Log($"[ResourceSource] {data.resourceName}: применён множитель {multiplier}x, время респавна: {currentRespawnDuration:F2} сек");
         }
     }
 

@@ -13,7 +13,6 @@ public static class RespawnSettings
             float newValue = Mathf.Max(0.1f, value);
             if (Mathf.Approximately(_multiplier, newValue)) return;
             _multiplier = newValue;
-            Debug.Log($"[RespawnSettings] Множитель обновлён: {_multiplier}x");
             EventBus.RespawnMultiplierChanged();
         }
     }
