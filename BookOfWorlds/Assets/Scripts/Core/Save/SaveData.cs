@@ -13,6 +13,8 @@ public class SaveData
 
     // ===== ÄÀÍÍÛÅ ÇÄÀÍÈÉ (ïî óğîâíÿì) =====
     public List<LevelProgressData> levelProgress = new List<LevelProgressData>();
+
+    public List<UpgradeSaveEntry> upgrades = new List<UpgradeSaveEntry>();
 }
 
 [System.Serializable]
@@ -37,4 +39,11 @@ public class BuildingProgressEntry
     public string buildingId;
     public string resourceName;
     public int investedAmount;
+}
+
+[System.Serializable]
+public class UpgradeSaveEntry
+{
+    public string upgradeId;
+    public int level;
 }

@@ -4,18 +4,22 @@ using Zenject;
 
 public class PlayerInputHandlerMy : MonoBehaviour
 {
+    // ===== —Œ¡€“»ﬂ =====
     public event System.Action<Vector2> OnMovementInput;
     public event System.Action<float> OnZoomInput;
     public event System.Action OnResetZoomInput;
     public event System.Action OnPauseInput;
     public event System.Action OnCollectInput;
+    public event System.Action OnUpgradeInput;  
 
+    // ===== INPUT ACTIONS =====
     private PlayerInput playerInput;
     private InputAction moveAction;
     private InputAction zoomAction;
     private InputAction resetZoomAction;
     private InputAction pauseAction;
     private InputAction collectAction;
+    private InputAction upgradeAction;  
 
     private bool isInputEnabled = true;
 
@@ -38,6 +42,7 @@ public class PlayerInputHandlerMy : MonoBehaviour
         resetZoomAction = playerActionMap.FindAction("ResetZoom");
         pauseAction = playerActionMap.FindAction("Pause");
         collectAction = playerActionMap.FindAction("Collect");
+        upgradeAction = playerActionMap.FindAction("Upgrade");  
 
         if (moveAction != null)
         {
@@ -65,6 +70,20 @@ public class PlayerInputHandlerMy : MonoBehaviour
             collectAction.performed += OnCollectPerformed;
             collectAction.canceled += OnCollectCanceled;
         }
+
+        if (upgradeAction != null)  
+        {
+            upgradeAction.performed += OnUpgradePerformed;
+        }
+    }
+
+    // ===== Œ¡–¿¡Œ“◊» » =====
+
+    private void OnUpgradePerformed(InputAction.CallbackContext context)
+    {
+        if (!isInputEnabled) return;
+        OnUpgradeInput?.Invoke();
+        Debug.Log("[PlayerInputHandler] Õ‡Ê‡Ú‡ ÍÎ‡‚Ë¯‡ ÛÎÛ˜¯ÂÌËÈ (U)");
     }
 
     private void OnMovePerformed(InputAction.CallbackContext context)
@@ -150,6 +169,10 @@ public class PlayerInputHandlerMy : MonoBehaviour
         {
             collectAction.performed -= OnCollectPerformed;
             collectAction.canceled -= OnCollectCanceled;
+        }
+        if (upgradeAction != null)  
+        {
+            upgradeAction.performed -= OnUpgradePerformed;
         }
     }
 

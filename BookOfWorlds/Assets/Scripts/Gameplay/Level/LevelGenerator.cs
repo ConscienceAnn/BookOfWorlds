@@ -15,8 +15,6 @@ public class LevelGenerator : MonoBehaviour
 
     [Inject] private DiContainer container;
     [Inject] private GameSaveController gameSaveController;
-
-    // ===== ЧЕРЕЗ DI =====
     [Inject] private LevelProgress levelProgress;
     [Inject] private PlayerController player;
 
@@ -25,6 +23,16 @@ public class LevelGenerator : MonoBehaviour
     private List<BuildingController> spawnedBuildings = new List<BuildingController>();
 
     public List<BuildingController> GetBuildings() => spawnedBuildings;
+
+    // ===== LIFECYCLE =====
+
+    private void OnApplicationQuit()
+    {
+        Debug.Log("[LevelGenerator] OnApplicationQuit — принудительная очистка");
+        ClearLevelImmediate();
+    }
+
+    // ===== PUBLIC METHODS =====
 
     public async UniTask GenerateLevelAsync(LevelDataSO data)
     {
@@ -50,6 +58,8 @@ public class LevelGenerator : MonoBehaviour
         GenerateAnimals(data.animalsPrefab);
         GenerateSellZone(data.sellZoneData);
     }
+
+    // ===== GENERATION METHODS =====
 
     private void GenerateCollectableObjects(GameObject prefab)
     {
@@ -125,7 +135,6 @@ public class LevelGenerator : MonoBehaviour
 
     private void SetPlayerStartPosition(Vector3 position)
     {
-        // ===== ИСПОЛЬЗУЕМ INJECTED PLAYER =====
         if (player != null)
         {
             player.transform.position = position;
@@ -136,31 +145,22 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
+    // ===== CLEAR METHODS =====
+
     private async UniTask ClearLevelAsync()
     {
-        // ===== ИСПОЛЬЗУЕМ INJECTED LEVELPROGRESS =====
         if (levelProgress != null)
         {
             levelProgress.ReturnToGameCamera();
             levelProgress.HideComplete();
         }
 
-        foreach (var obj in spawnedObjects)
+        ResourcePool[] allPools = FindObjectsOfType<ResourcePool>(true);
+        foreach (var pool in allPools)
         {
-            if (obj != null)
+            if (pool != null)
             {
-                Destroy(obj);
-            }
-        }
-        spawnedObjects.Clear();
-        spawnedBuildings.Clear();
-
-        GameObject[] resources = GameObject.FindGameObjectsWithTag("Collectable");
-        foreach (var resource in resources)
-        {
-            if (resource != null)
-            {
-                Destroy(resource);
+                pool.ClearPool();
             }
         }
 
@@ -174,6 +174,16 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
+        foreach (var obj in spawnedObjects)
+        {
+            if (obj != null)
+            {
+                Destroy(obj);
+            }
+        }
+        spawnedObjects.Clear();
+        spawnedBuildings.Clear();
+
         ClearParentChildren(collectableParent);
         ClearParentChildren(buildingsParent);
         ClearParentChildren(animalsParent);
@@ -182,6 +192,38 @@ public class LevelGenerator : MonoBehaviour
         OnLevelCleared?.Invoke();
 
         await UniTask.DelayFrame(2);
+    }
+
+    private void ClearLevelImmediate()
+    {
+        // Очищаем родительские папки
+        ClearParentChildrenImmediate(collectableParent);
+        ClearParentChildrenImmediate(buildingsParent);
+        ClearParentChildrenImmediate(animalsParent);
+        ClearParentChildrenImmediate(sellZoneParent);
+
+        // Удаляем все созданные объекты
+        foreach (var obj in spawnedObjects)
+        {
+            if (obj != null)
+            {
+                DestroyImmediate(obj);
+            }
+        }
+        spawnedObjects.Clear();
+        spawnedBuildings.Clear();
+
+        // Очищаем пулы
+        ResourcePool[] pools = FindObjectsOfType<ResourcePool>(true);
+        foreach (var pool in pools)
+        {
+            if (pool != null)
+            {
+                pool.ClearPool();
+            }
+        }
+
+        Debug.Log("[LevelGenerator] Принудительная очистка завершена");
     }
 
     private void ClearParentChildren(Transform parent)
@@ -194,6 +236,20 @@ public class LevelGenerator : MonoBehaviour
             if (child != null)
             {
                 Destroy(child.gameObject);
+            }
+        }
+    }
+
+    private void ClearParentChildrenImmediate(Transform parent)
+    {
+        if (parent == null) return;
+
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            Transform child = parent.GetChild(i);
+            if (child != null)
+            {
+                DestroyImmediate(child.gameObject);
             }
         }
     }

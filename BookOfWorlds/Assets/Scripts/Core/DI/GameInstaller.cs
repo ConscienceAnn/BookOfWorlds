@@ -50,6 +50,9 @@ public class GameInstaller : MonoInstaller
     [Header("Debug")]
     [SerializeField] private DebugHotkeyHandler debugHotkeyHandler;
 
+    [Header("Upgrades")]
+    [SerializeField] private UpgradeManager upgradeManager;
+
     public override void InstallBindings()
     {
         Debug.Log("=== GameInstaller: InstallBindings START ===");
@@ -141,6 +144,13 @@ public class GameInstaller : MonoInstaller
             .FromInstance(allBuildings)
             .AsSingle();
 
+        // ===== UPGRADES =====
+        Container.Bind<UpgradeManager>()
+            .FromInstance(upgradeManager)
+            .AsSingle()
+            .NonLazy();
+
+
         // ===== 8. SERVICES =====
         Container.Bind<SellService>()
             .AsSingle()
@@ -188,7 +198,7 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
-
+       
         if (debugHotkeyHandler != null)
         {
             Container.Bind<DebugHotkeyHandler>()

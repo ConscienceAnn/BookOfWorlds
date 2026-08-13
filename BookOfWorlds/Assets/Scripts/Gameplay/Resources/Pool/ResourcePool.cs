@@ -39,14 +39,20 @@ public class ResourcePool : MonoBehaviour
 
     private void OnEnable()
     {
-        // Подписываемся на событие очистки уровня
         LevelGenerator.OnLevelCleared += ClearPool;
     }
 
     private void OnDisable()
     {
-        // Отписываемся от события
         LevelGenerator.OnLevelCleared -= ClearPool;
+        // При отключении пула очищаем
+        ClearPool();
+    }
+
+    private void OnApplicationQuit()
+    {
+        // При выходе из игры принудительно очищаем пул
+        ClearPool();
     }
 
     // ===== POOL METHODS =====
@@ -85,6 +91,7 @@ public class ResourcePool : MonoBehaviour
             source.SetData(resourceData);
             source.SetColored();
             source.Show();
+            source.ApplyCurrentMultiplier();
         }
 
         return obj;
@@ -114,6 +121,8 @@ public class ResourcePool : MonoBehaviour
             if (source != null)
             {
                 source.Show();
+                source.ApplyCurrentMultiplier();
+                Debug.Log($"[ResourcePool] {resourceData?.resourceName ?? "Resource"} получен из пула с множителем {RespawnSettings.Multiplier}x");
             }
         }
 
@@ -124,15 +133,20 @@ public class ResourcePool : MonoBehaviour
     {
         if (obj == null) return;
 
+        ResourceSource source = obj.GetComponent<ResourceSource>();
+        if (source != null)
+        {
+            source.ReturnToPool();
+        }
+
         obj.SetActive(false);
         pool.Enqueue(obj);
     }
 
-    /// <summary>
-    /// Очищает пул — вызывается автоматически при очистке уровня
-    /// </summary>
     public void ClearPool()
     {
+        // При очистке пула мы УНИЧТОЖАЕМ объекты, а не возвращаем в пул
+        // Поэтому НЕ нужно вызывать ReturnToPool() — объекты всё равно удаляются
         foreach (var obj in pool)
         {
             if (obj != null)
@@ -141,6 +155,18 @@ public class ResourcePool : MonoBehaviour
             }
         }
         pool.Clear();
+
+        // Также удаляем все активные объекты
+        ResourceSource[] activeSources = FindObjectsOfType<ResourceSource>();
+        foreach (var source in activeSources)
+        {
+            if (source != null && source.gameObject != null)
+            {
+                Destroy(source.gameObject);
+            }
+        }
+
+        Debug.Log($"[ResourcePool] Пул очищен для {resourceData?.resourceName ?? "Unknown"}");
     }
 
     public int GetPoolSize()

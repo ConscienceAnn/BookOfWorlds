@@ -9,6 +9,7 @@ public class GameSaveController : MonoBehaviour
     [Inject] private UIManager uiManager;
     [Inject] private LevelProgress levelProgress;
     [Inject] private LevelManager levelManager;
+    [Inject] private UpgradeManager upgradeManager;  
 
     private List<BuildingController> buildings = new List<BuildingController>();
     private string currentLevelName => levelManager?.CurrentLevelData?.levelName ?? "Unknown";
@@ -47,6 +48,9 @@ public class GameSaveController : MonoBehaviour
                 }
             }
         }
+
+        // ===== 6. СОХРАНЯЕМ УЛУЧШЕНИЯ =====
+        SaveUpgrades(data);
 
         SaveSystem.Save(data);
     }
@@ -114,6 +118,32 @@ public class GameSaveController : MonoBehaviour
         levelProgressData.isCompleted = allRestored;
     }
 
+    /// <summary>
+    /// СОХРАНЯЕТ УЛУЧШЕНИЯ
+    /// </summary>
+    private void SaveUpgrades(SaveData data)
+    {
+        if (upgradeManager == null)
+        {
+            Debug.LogWarning("UpgradeManager не найден, улучшения не сохранены");
+            return;
+        }
+
+        data.upgrades = new List<UpgradeSaveEntry>();
+        var upgrades = upgradeManager.GetUpgradesForSave();
+
+        foreach (var kvp in upgrades)
+        {
+            data.upgrades.Add(new UpgradeSaveEntry
+            {
+                upgradeId = kvp.Key,
+                level = kvp.Value
+            });
+        }
+
+        Debug.Log($"Сохранено {data.upgrades.Count} улучшений");
+    }
+
     // ===== ЗАГРУЗКА =====
 
     public void LoadGame()
@@ -136,7 +166,10 @@ public class GameSaveController : MonoBehaviour
         // 4. Загружаем прогресс зданий
         LoadCurrentLevelProgress(data);
 
-        // 5. Обновляем UI
+        // ===== 5. ЗАГРУЖАЕМ УЛУЧШЕНИЯ =====
+        LoadUpgrades(data);
+
+        // 6. Обновляем UI
         uiManager?.ForceRefreshUI();
         levelProgress?.ForceUpdate();
     }
@@ -189,6 +222,33 @@ public class GameSaveController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// ЗАГРУЖАЕТ УЛУЧШЕНИЯ
+    /// </summary>
+    private void LoadUpgrades(SaveData data)
+    {
+        if (upgradeManager == null)
+        {
+            Debug.LogWarning("UpgradeManager не найден, улучшения не загружены");
+            return;
+        }
+
+        if (data.upgrades == null || data.upgrades.Count == 0)
+        {
+            Debug.Log("Нет сохранённых улучшений");
+            return;
+        }
+
+        var upgrades = new Dictionary<string, int>();
+        foreach (var entry in data.upgrades)
+        {
+            upgrades[entry.upgradeId] = entry.level;
+            Debug.Log($"  - Загружено улучшение {entry.upgradeId}: уровень {entry.level}");
+        }
+
+        upgradeManager.LoadUpgrades(upgrades);
+    }
+
     private void ResetAllBuildings()
     {
         foreach (var building in buildings)
@@ -200,38 +260,23 @@ public class GameSaveController : MonoBehaviour
         }
     }
 
-    // ===== ОЧИСТКА (ЕДИНЫЙ МЕТОД ДЛЯ ПЕРЕХОДА) =====
+    // ===== ОЧИСТКА =====
 
-    /// <summary>
-    /// Очищает состояние игрока для нового уровня (монеты + инвентарь)
-    /// Вызывается при переходе между уровнями
-    /// </summary>
     public void ClearPlayerState()
     {
-        // Очищаем в игре
         ClearInventory();
         ClearCoins();
-
-        // Очищаем в сохранении
         ClearCoinsInSave();
         ClearResourcesInSave();
-
         ClearLevelProgressInSave();
     }
 
-    // ===== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ОЧИСТКИ =====
-
-    /// <summary>
-    /// ОЧИЩАЕТ ПРОГРЕСС ТЕКУЩЕГО УРОВНЯ В СОХРАНЕНИИ
-    /// </summary>
     private void ClearLevelProgressInSave()
     {
         SaveData data = SaveSystem.Load();
         if (data != null)
         {
-            // Удаляем прогресс текущего уровня
             data.levelProgress.RemoveAll(p => p.levelName == currentLevelName);
-            // Также удаляем из openedLevels, чтобы уровень не считался открытым
             data.openedLevels.Remove(currentLevelName);
             SaveSystem.Save(data);
         }
@@ -299,9 +344,6 @@ public class GameSaveController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// СБРАСЫВАЕТ ПРОГРЕСС ТОЛЬКО ДЛЯ ТЕКУЩЕГО УРОВНЯ (при перезапуске)
-    /// </summary>
     public void ClearLevelProgress()
     {
         ClearInventory();
@@ -314,7 +356,6 @@ public class GameSaveController : MonoBehaviour
             building.ResetBuilding();
         }
 
-        
         if (levelProgress != null)
         {
             levelProgress.ResetState();
@@ -323,12 +364,14 @@ public class GameSaveController : MonoBehaviour
         uiManager?.ForceRefreshUI();
         levelProgress?.ForceUpdate();
 
+
         SaveData data = SaveSystem.Load();
         if (data != null)
         {
             data.levelProgress.RemoveAll(p => p.levelName == currentLevelName);
             data.coins = 0;
             data.resources = new List<ResourceEntry>();
+            data.upgrades = new List<UpgradeSaveEntry>();  
             SaveSystem.Save(data);
         }
     }

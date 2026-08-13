@@ -15,13 +15,16 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
     [Inject] private IPlayerInventory inventory;
     [Inject] private PauseService pauseService;
     [Inject] private PlayerUIMediator playerUIMediator;
-
-    // ===== ЧЕРЕЗ DI =====
+    [Inject] private UpgradeManager upgradeManager;
     [Inject] private PlayerCollector playerCollector;
 
     private bool isAvailable = true;
     private CancellationTokenSource cts;
     private IResourceBehaviour behaviour;
+
+    // ===== ДЛЯ РЕСПАВНА =====
+    private float currentRespawnDuration;
+    private bool isRespawning = false;
 
     public event System.Action<ResourceSource> OnCollected;
 
@@ -53,7 +56,6 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
             return;
         }
 
-        // ===== ИСПОЛЬЗУЕМ INJECTED COLLECTOR =====
         if (playerCollector != null)
         {
             playerCollector.StartCollect(this);
@@ -78,11 +80,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
             return false;
         }
 
-        int currentAmount = inventory.GetAmount(data.resourceName);
-        int maxCapacity = inventory.GetMax(data.resourceName);
-        bool canAdd = inventory.CanAdd(data.resourceName, amountPerCollect);
-
-        if (!canAdd)
+        if (!inventory.CanAdd(data.resourceName, amountPerCollect))
         {
             playerUIMediator?.ShowNotification($"Инвентарь для {data.resourceName} полон!", 2f);
             return false;
@@ -127,6 +125,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         isAvailable = true;
         SetColored();
         gameObject.SetActive(true);
+        Debug.Log($"[ResourceSource] {data?.resourceName ?? "Unknown"} восстановился!");
     }
 
     public void ResetState()
@@ -146,17 +145,32 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         OnCollected?.Invoke(this);
     }
 
+    // ===== РЕСПАВН С УЧЁТОМ УЛУЧШЕНИЙ =====
+
     private async UniTaskVoid RespawnAsync(CancellationToken token)
     {
         if (data == null) return;
 
-        float elapsed = 0f;
-        float duration = data.respawnTime;
+        isRespawning = true;
 
-        while (elapsed < duration)
+        float multiplier = RespawnSettings.Multiplier;
+        float remainingTime = data.respawnTime / multiplier;
+        currentRespawnDuration = remainingTime;
+
+        Debug.Log($"[ResourceSource] === РЕСПАВН СТАРТ ===");
+        Debug.Log($"[ResourceSource]   - Ресурс: {data.resourceName}");
+        Debug.Log($"[ResourceSource]   - Базовое время: {data.respawnTime:F2} сек");
+        Debug.Log($"[ResourceSource]   - Итоговое время: {remainingTime:F2} сек (x{multiplier})");
+        Debug.Log($"[ResourceSource]   - Начало: {System.DateTime.Now:HH:mm:ss.fff}");
+
+        while (remainingTime > 0)
         {
             if (token.IsCancellationRequested)
+            {
+                isRespawning = false;
+                Debug.Log($"[ResourceSource] {data.resourceName}: респавн отменён");
                 return;
+            }
 
             if (pauseService != null && pauseService.IsPaused)
             {
@@ -164,12 +178,51 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
                 continue;
             }
 
-            elapsed += Time.unscaledDeltaTime;
+            float delta = Time.unscaledDeltaTime;
+            remainingTime -= delta;
+            currentRespawnDuration = remainingTime;
+
             await UniTask.Yield(token);
         }
 
+        Debug.Log($"[ResourceSource] === РЕСПАВН ЗАВЕРШЁН ===");
+        Debug.Log($"[ResourceSource]   - Ресурс: {data.resourceName}");
+        Debug.Log($"[ResourceSource]   - Завершение: {System.DateTime.Now:HH:mm:ss.fff}");
+
+        isRespawning = false;
         Show();
     }
+
+    // ===== ОБНОВЛЕНИЕ ВРЕМЕНИ РЕСПАВНА ПРИ УЛУЧШЕНИИ =====
+
+    private void OnRespawnMultiplierChanged()
+    {
+        if (data == null) return;
+
+        float multiplier = RespawnSettings.Multiplier;
+
+        if (!isRespawning)
+        {
+            currentRespawnDuration = data.respawnTime / multiplier;
+            Debug.Log($"[ResourceSource] {data.resourceName}: время обновлено для будущего -> {currentRespawnDuration:F2} сек (x{multiplier})");
+            return;
+        }
+
+        // Ресурс на респавне - корректируем оставшееся время
+        float baseRespawnTime = data.respawnTime;
+        float baseElapsed = baseRespawnTime - currentRespawnDuration;
+        float newTotalTime = baseRespawnTime / multiplier;
+        float newRemaining = newTotalTime - baseElapsed;
+        currentRespawnDuration = Mathf.Max(0.05f, newRemaining);
+
+        Debug.Log($"[ResourceSource] {data.resourceName}: время скорректировано!");
+        Debug.Log($"[ResourceSource]   - Базовое время: {baseRespawnTime:F2} сек");
+        Debug.Log($"[ResourceSource]   - Прошло: {baseElapsed:F2} сек");
+        Debug.Log($"[ResourceSource]   - Новое полное: {newTotalTime:F2} сек");
+        Debug.Log($"[ResourceSource]   - Осталось: {currentRespawnDuration:F2} сек (x{multiplier})");
+    }
+
+    // ===== UNITY LIFECYCLE =====
 
     private void Awake()
     {
@@ -181,6 +234,10 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
                 visualState = GetComponentInChildren<VisualState>();
             }
         }
+
+        cts = new CancellationTokenSource();
+
+        EventBus.OnRespawnMultiplierChanged += OnRespawnMultiplierChanged;
     }
 
     private void Start()
@@ -190,9 +247,12 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
 
     private void OnDestroy()
     {
+        EventBus.OnRespawnMultiplierChanged -= OnRespawnMultiplierChanged;
         cts?.Cancel();
         cts?.Dispose();
     }
+
+    // ===== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =====
 
     public void SetData(ResourceDataSO newData)
     {
@@ -210,5 +270,27 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
         {
             data.respawnTime = time;
         }
+    }
+
+    public void ApplyCurrentMultiplier()
+    {
+        float multiplier = RespawnSettings.Multiplier;
+        if (data != null)
+        {
+            currentRespawnDuration = data.respawnTime / multiplier;
+            Debug.Log($"[ResourceSource] {data.resourceName}: применён множитель {multiplier}x, время респавна: {currentRespawnDuration:F2} сек");
+        }
+    }
+
+    public void ReturnToPool()
+    {
+        // Отписываемся от событий перед возвратом в пул
+        EventBus.OnRespawnMultiplierChanged -= OnRespawnMultiplierChanged;
+
+        // Сбрасываем состояние
+        isAvailable = true;
+        isRespawning = false;
+        SetColored();
+        gameObject.SetActive(false);
     }
 }

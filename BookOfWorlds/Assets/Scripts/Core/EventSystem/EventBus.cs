@@ -6,6 +6,7 @@ public static class EventBus
     public static event Action<int> OnCoinsChanged;
     public static event Action<BuildingController> OnBuildingRestored;
     public static event Action<BuildingController> OnBuildingProgressChanged;
+    public static event Action OnRespawnMultiplierChanged;
 
     public static void ResourceCollected(string resourceName, int amount)
     {
@@ -25,5 +26,10 @@ public static class EventBus
     public static void BuildingProgressChanged(BuildingController building)
     {
         OnBuildingProgressChanged?.Invoke(building);
+    }
+
+    public static void RespawnMultiplierChanged()
+    {
+        OnRespawnMultiplierChanged?.Invoke();
     }
 }

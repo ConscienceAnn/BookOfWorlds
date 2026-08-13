@@ -32,7 +32,6 @@ public class ProgressBarUI : MonoBehaviour
         }
         SetProgress(0f);
 
-        // Подписываемся на события PanelManager
         if (panelManager != null)
         {
             panelManager.OnPanelsOpened += OnPanelsOpened;
@@ -103,6 +102,12 @@ public class ProgressBarUI : MonoBehaviour
         {
             progressSlider.value = Mathf.Clamp01(progress);
         }
+    }
+
+    // ДОБАВЛЕНО: метод для получения текущего прогресса
+    public float GetProgress()
+    {
+        return progressSlider != null ? progressSlider.value : 0f;
     }
 
     public void Hide()

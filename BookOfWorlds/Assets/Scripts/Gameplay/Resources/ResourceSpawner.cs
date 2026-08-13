@@ -27,7 +27,6 @@ public class ResourceSpawner : MonoBehaviour
 
     private void Start()
     {
-        // Проверяем дублирование
         var allSpawners = FindObjectsOfType<ResourceSpawner>();
         int sameTypeCount = 0;
         foreach (var s in allSpawners)
@@ -72,6 +71,8 @@ public class ResourceSpawner : MonoBehaviour
                 spawnedCount++;
             }
         }
+
+        Debug.Log($"[ResourceSpawner] Создано {spawnedCount} ресурсов типа {resourceType}");
     }
 
     public void ClearAllResources()
@@ -114,7 +115,6 @@ public class ResourceSpawner : MonoBehaviour
     {
         if (resourceFactory == null) return;
 
-        // ===== СОЗДАЁМ РЕСУРС ПО ТИПУ =====
         GameObject obj = CreateResourceByType(position, rotation);
         if (obj == null)
         {
@@ -122,7 +122,6 @@ public class ResourceSpawner : MonoBehaviour
             return;
         }
 
-        // Настройка поворота
         if (useFixedRotation)
         {
             float randomY = randomYRotation ? Random.Range(0f, 360f) : 0f;
@@ -140,15 +139,13 @@ public class ResourceSpawner : MonoBehaviour
         ResourceSource source = obj.GetComponent<ResourceSource>();
         if (source != null)
         {
-            // ===== СОЗДАЁМ BEHAVIOUR ЧЕРЕЗ ФАБРИКУ =====
+            // Применяем текущий множитель респавна
+            source.ApplyCurrentMultiplier();
+
             IResourceBehaviour behaviour = behaviourFactory.Create(resourceType, particleFactory, flyAnimation);
             if (behaviour != null)
             {
                 source.SetBehaviour(behaviour);
-            }
-            else
-            {
-                Debug.LogWarning($"Behaviour для {resourceType} не найден!");
             }
 
             source.OnCollected += OnResourceCollected;
@@ -158,6 +155,10 @@ public class ResourceSpawner : MonoBehaviour
             {
                 occupiedPoints.Add(spawnPoint, source);
             }
+
+            float multiplier = RespawnSettings.Multiplier;
+            float respawnTime = source.ResourceData?.respawnTime ?? 7f;
+            Debug.Log($"[ResourceSpawner] Создан {resourceType} с множителем {multiplier}x (время респавна: {respawnTime / multiplier:F2} сек)");
         }
         else
         {
@@ -206,7 +207,13 @@ public class ResourceSpawner : MonoBehaviour
         if (occupiedPoint != null)
         {
             pendingRespawnPoint = occupiedPoint;
-            float respawnDelay = source.ResourceData?.respawnTime ?? 5f;
+            // Используем актуальное время респавна с учетом множителя
+            float baseRespawnTime = source.ResourceData?.respawnTime ?? 7f;
+            float multiplier = RespawnSettings.Multiplier;
+            float respawnDelay = baseRespawnTime / multiplier;
+
+            Debug.Log($"[ResourceSpawner] Ресурс собран, респавн через {respawnDelay:F2} сек (база: {baseRespawnTime:F2} сек, множитель: {multiplier}x)");
+
             CancelInvoke(nameof(RespawnResource));
             Invoke(nameof(RespawnResource), respawnDelay);
         }
