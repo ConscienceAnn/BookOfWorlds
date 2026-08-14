@@ -16,9 +16,9 @@ MonoBehaviour:
   levelIndex: 1
   startCoins: 0
   playerStartPosition: {x: -9.3, y: 0.9, z: 0}
-  collectableObjectsPrefab: {fileID: 4363724070093141415, guid: e58aaacedbad4c04fb106b625a864e3c, type: 3}
-  buildingsPrefab: {fileID: 772237323635197643, guid: 7fcc689145dfdb04c928ac52a1ce94a1, type: 3}
-  animalsPrefab: {fileID: 0}
+  collectableObjectsPrefab: {fileID: 1667891412422229785, guid: 171b22993d0f6114cb88aac589a829f2, type: 3}
+  buildingsPrefab: {fileID: 339454429190873689, guid: 7fcc689145dfdb04c928ac52a1ce94a1, type: 3}
+  animalsPrefab: {fileID: 9101450767169857811, guid: 9b7dbcbcaf7b06d439bbd29c7f012b63, type: 3}
   sellZoneData: {fileID: 45240834138525672, guid: 895ef421d186324419b1b6f4dbc3cf10, type: 3}
   coinsToUnlockNextLevel: 100
   showCompleteUI: 1

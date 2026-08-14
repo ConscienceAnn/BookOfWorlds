@@ -15,6 +15,6 @@ public class AnimalDataSO : ScriptableObject
     public float idleTimeMin = 2f;
     public float idleTimeMax = 5f;
 
-    public enum AnimalType { Cow, Rabbit } 
+    public enum AnimalType { Cow, Rabbit, Goat } 
     public AnimalType animalType;
 }

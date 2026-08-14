@@ -26,6 +26,9 @@ public static class AnimalBehaviourFactory
             case AnimalDataSO.AnimalType.Cow:
                 return new CowBehaviour(progressBar, cooldown);
 
+            case AnimalDataSO.AnimalType.Goat: 
+                return new GoatBehaviour(progressBar, cooldown);
+
             default:
                 return new CowBehaviour(progressBar, cooldown);
         }
