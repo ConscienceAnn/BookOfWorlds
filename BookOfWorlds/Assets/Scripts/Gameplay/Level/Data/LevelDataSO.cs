@@ -25,8 +25,11 @@ public class LevelDataSO : ScriptableObject
     public GameObject sellZoneData;
 
     [Header("Условия завершения")]
-    public int coinsToUnlockNextLevel = 100;
+    //public int coinsToUnlockNextLevel = 100;
     public bool showCompleteUI = true;
+
+    [Header("Визуал завершения уровня")]
+    public GameObject levelCompleteEffectPrefab;
 }
 
 

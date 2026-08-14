@@ -20,5 +20,5 @@ MonoBehaviour:
   buildingsPrefab: {fileID: 505099604437695939, guid: 86c7443d51065be4abc59439422c2de5, type: 3}
   animalsPrefab: {fileID: 6450789314532112516, guid: 60e523a0a77d1654ba72c36b501e873e, type: 3}
   sellZoneData: {fileID: 45240834138525672, guid: 895ef421d186324419b1b6f4dbc3cf10, type: 3}
-  coinsToUnlockNextLevel: 100
   showCompleteUI: 1
+  levelCompleteEffectPrefab: {fileID: 625644966089036866, guid: 8a9c220f40181cc4d87b4096dc6594ba, type: 3}

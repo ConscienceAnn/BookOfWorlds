@@ -10,7 +10,6 @@ public class LevelProgress : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private Slider progressSlider;
     [SerializeField] private TMP_Text progressText;
-    [SerializeField] private GameObject levelCompleteVisualPrefab;
     [SerializeField] private GameObject levelCompletePanel;
 
     [Header("Camera Animation")]
@@ -32,7 +31,6 @@ public class LevelProgress : MonoBehaviour
     [Inject] private UIManager uiManager;
     [Inject] private LevelManager levelManager;
 
-    // ===== КАМЕРА ЧЕРЕЗ DI =====
     [InjectOptional] private Camera mainCamera;
     [Inject] private CinemachineBrain cinemachineBrain;
     [Inject] private CinemachineVirtualCamera[] virtualCameras;
@@ -50,12 +48,18 @@ public class LevelProgress : MonoBehaviour
     private bool isFinalCameraActive = false;
     private bool isRetry = false;
 
+    private GameObject currentLevelCompletePrefab;
+
     public void SetRetryMode(bool value)
     {
         isRetry = value;
     }
 
-    // ===== LIFECYCLE =====
+    public void SetLevelCompletePrefab(GameObject prefab)
+    {
+        currentLevelCompletePrefab = prefab;
+        Debug.Log($"[LevelProgress] Установлен префаб завершения: {prefab?.name ?? "NULL"}");
+    }
 
     private void Start()
     {
@@ -64,10 +68,8 @@ public class LevelProgress : MonoBehaviour
 
         EventBus.OnBuildingRestored += OnBuildingRestored;
         EventBus.OnBuildingProgressChanged += OnBuildingProgressChanged;
-
         LevelGenerator.OnLevelCleared += OnLevelCleared;
 
-        // Сохраняем позицию камеры
         if (mainCamera != null)
         {
             originalPosition = mainCamera.transform.position;
@@ -86,8 +88,6 @@ public class LevelProgress : MonoBehaviour
         EventBus.OnBuildingProgressChanged -= OnBuildingProgressChanged;
         LevelGenerator.OnLevelCleared -= OnLevelCleared;
     }
-
-    // ===== PROGRESS =====
 
     private void FindBuildings()
     {
@@ -140,15 +140,20 @@ public class LevelProgress : MonoBehaviour
         UpdateProgress();
     }
 
-    // ===== COMPLETE UI =====
-
     private async UniTaskVoid ShowCompleteAsync()
     {
-        if (levelCompleteVisualPrefab != null)
+        
+        if (currentLevelCompletePrefab != null)
         {
-            visualInstance = Instantiate(levelCompleteVisualPrefab, Vector3.zero, Quaternion.identity);
+            visualInstance = Instantiate(currentLevelCompletePrefab, Vector3.zero, Quaternion.identity);
+            Debug.Log($"[LevelProgress] Создан восстановленный мир: {currentLevelCompletePrefab.name}");
+        }
+        else
+        {
+            Debug.LogWarning("[LevelProgress] currentLevelCompletePrefab is NULL! Префаб не создан.");
         }
 
+        HideOriginalBuildings();
         await AnimateCameraToFinalPositionAsync();
 
         await UniTask.Delay((int)(pauseAfterCamera * 1000));
@@ -165,6 +170,28 @@ public class LevelProgress : MonoBehaviour
         }
 
         OnLevelComplete?.Invoke();
+    }
+
+
+    private void HideOriginalBuildings()
+    {
+        if (buildings == null) return;
+
+        foreach (var building in buildings)
+        {
+            if (building != null)
+            {
+                // Скрываем здание
+                building.gameObject.SetActive(false);
+
+                // Или можно просто отключить рендер
+                var renderers = building.GetComponentsInChildren<Renderer>();
+                foreach (var renderer in renderers)
+                {
+                    renderer.enabled = false;
+                }
+            }
+        }
     }
 
     public void HideComplete()
@@ -213,7 +240,6 @@ public class LevelProgress : MonoBehaviour
 
         isCameraAnimating = true;
 
-        // Отключаем Cinemachine
         if (cinemachineBrain != null)
         {
             cinemachineBrain.enabled = false;

@@ -37,6 +37,12 @@ public class LevelGenerator : MonoBehaviour
 
         currentLevelData = data;
 
+        if (levelProgress != null && data != null)
+        {
+            levelProgress.SetLevelCompletePrefab(data.levelCompleteEffectPrefab);
+            Debug.Log($"[LevelGenerator] Установлен префаб завершения для {data.levelName}: {data.levelCompleteEffectPrefab?.name ?? "NULL"}");
+        }
+
         GenerateCollectableObjects(data.collectableObjectsPrefab);
         GenerateBuildings(data.buildingsPrefab);
 
