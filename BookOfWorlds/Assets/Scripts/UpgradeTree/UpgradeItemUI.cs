@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Zenject;
 
 public class UpgradeItemUI : MonoBehaviour
 {
@@ -12,6 +13,8 @@ public class UpgradeItemUI : MonoBehaviour
     [SerializeField] private Image iconImage;
     [SerializeField] private Button upgradeButton;
     [SerializeField] private Slider progressSlider;
+
+    [Inject(Optional = true)] private AudioHelper _audioHelper;
 
     private UpgradeManager upgradeManager;
     private string upgradeId;
@@ -100,7 +103,7 @@ public class UpgradeItemUI : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(upgradeId) && upgradeManager != null)
         {
-            
+            //_audioHelper?.PlaySound("ui_click");
             upgradeManager.ApplyUpgrade(upgradeId);
         }
     }

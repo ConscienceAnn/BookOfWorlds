@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 901fbe831fd791c48aeedab900d77059, type: 3}
+  m_Name: SoundLibrary
+  m_EditorClassIdentifier: 
+  sounds:
+  - id: collect_wood
+    clip: {fileID: 8300000, guid: 82f0fbeeadbde4c40952bd42027ed5fa, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 0
+  - id: collect_wool
+    clip: {fileID: 8300000, guid: 74717734859f6044bb407df04ee199fd, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 0
+  - id: collect_stone
+    clip: {fileID: 8300000, guid: 54c02faad15e8534b9731e32562c641f, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 0
+  - id: collect_milk
+    clip: {fileID: 8300000, guid: 26a676e41211b2a44ada0a3ffe18f5ad, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 0
+  - id: building_restore
+    clip: {fileID: 8300000, guid: cf03a7990c68cb046b018ba0bb2b689a, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 0
+  - id: sell
+    clip: {fileID: 8300000, guid: d8b29a11e53d6854bb42ff38c21ce8d5, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 0
+  - id: error
+    clip: {fileID: 8300000, guid: 2e2c2f8d72f337f4a958f1c8e4637ad1, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 0
+  - id: footstep
+    clip: {fileID: 8300000, guid: 5eeb18a88e630b142aa10dcc687b692f, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 1
+  - id: whistle
+    clip: {fileID: 8300000, guid: f007c9859193803409aebfc0531f949d, type: 3}
+    volume: 0
+    isUISound: 0
+    isAmbient: 1
+  - id: ui_click
+    clip: {fileID: 8300000, guid: f7b0073ad361d954295c27780b54e966, type: 3}
+    volume: 0
+    isUISound: 1
+    isAmbient: 0
+  - id: ui_open
+    clip: {fileID: 8300000, guid: 8c0ade2b16755a74cae9e519d630c075, type: 3}
+    volume: 0
+    isUISound: 1
+    isAmbient: 0

@@ -10,6 +10,7 @@ public class UpgradeManager : MonoBehaviour
     [Header("References")]
     [Inject] private IPlayerInventory inventory;
     [Inject] private UIManager uiManager;
+    [Inject(Optional = true)] private AudioHelper _audioHelper;
 
     private Dictionary<string, int> currentLevels = new Dictionary<string, int>();
 
@@ -77,14 +78,20 @@ public class UpgradeManager : MonoBehaviour
             if (data != null && currentLevel < data.levels.Length)
             {
                 int cost = data.levels[currentLevel].cost;
+
+                EventBus.PlaySound("error");
                 OnUpgradeNotification?.Invoke($"Недостаточно монет! Нужно: {cost}", true);
             }
             else
             {
+                EventBus.PlaySound("error");
                 OnUpgradeNotification?.Invoke("Улучшение уже максимальное!", true);
             }
             return;
+
         }
+
+        EventBus.PlaySound("ui_click");
 
         var data2 = GetUpgradeData(upgradeId);
         int currentLevel2 = GetUpgradeLevel(upgradeId);

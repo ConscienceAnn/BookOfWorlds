@@ -53,6 +53,12 @@ public class GameInstaller : MonoInstaller
     [Header("Upgrades")]
     [SerializeField] private UpgradeManager upgradeManager;
 
+    [Header("Audio")]
+    [SerializeField] private AudioManager audioManager;
+    [SerializeField] private SoundLibrary soundLibrary;
+    [SerializeField] private AudioHandler audioHandler;
+
+
     public override void InstallBindings()
     {
         Debug.Log("=== GameInstaller: InstallBindings START ===");
@@ -198,7 +204,27 @@ public class GameInstaller : MonoInstaller
             .AsSingle()
             .NonLazy();
 
-       
+
+        // ===== AUDIO =====
+        Container.Bind<AudioManager>()
+            .FromInstance(audioManager)
+            .AsSingle()
+            .NonLazy();
+
+        Container.Bind<SoundLibrary>()
+            .FromInstance(soundLibrary)
+            .AsSingle();
+
+        Container.Bind<AudioHandler>()
+            .FromInstance(audioHandler)
+            .AsSingle()
+            .NonLazy();
+
+        Container.Bind<AudioHelper>()
+            .AsSingle()
+            .NonLazy();
+
+
         if (debugHotkeyHandler != null)
         {
             Container.Bind<DebugHotkeyHandler>()

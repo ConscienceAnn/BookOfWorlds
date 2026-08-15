@@ -63,6 +63,9 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
+        uiManager?.SetLoadingState(true);
+        Debug.Log("[LevelManager] SetLoadingState(true) - starting level load");
+
         currentLevelIndex = levelIndex;
         currentLevelData = levels[levelIndex];
         isLevelComplete = false;
@@ -108,6 +111,9 @@ public class LevelManager : MonoBehaviour
 
         // 5. Сохраняем текущий уровень
         SaveCurrentLevel();
+
+        uiManager?.SetLoadingState(false);
+        Debug.Log("[LevelManager] SetLoadingState(false) - level loaded");
 
         isLoadingLevel = false;
     }

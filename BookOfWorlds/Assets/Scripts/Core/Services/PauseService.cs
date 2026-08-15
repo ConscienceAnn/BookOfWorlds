@@ -18,5 +18,6 @@ public class PauseService
     {
         isPaused = !isPaused;
         Time.timeScale = isPaused ? 0f : 1f;
+        EventBus.PauseStateChanged(isPaused);
     }
 }

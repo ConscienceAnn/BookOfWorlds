@@ -14,6 +14,11 @@ public class GameSaveController : MonoBehaviour
     private List<BuildingController> buildings = new List<BuildingController>();
     private string currentLevelName => levelManager?.CurrentLevelData?.levelName ?? "Unknown";
 
+
+    private bool isLoadingGame = false;
+    public bool IsLoadingGame => isLoadingGame;
+
+
     // ===== ÑÎÕĞÀÍÅÍÈÅ =====
 
     public void SaveGame()
@@ -146,9 +151,20 @@ public class GameSaveController : MonoBehaviour
 
     public void LoadGame()
     {
+        Debug.Log($"[GameSaveController] LoadGame START, isLoadingGame={isLoadingGame}");
+
+        // ===== ÂÊËŞ×ÀÅÌ ÔËÀÃÈ =====
+        isLoadingGame = true;
+        uiManager?.SetLoadingState(true);
+        Debug.Log($"[GameSaveController] isLoadingGame=true, uiManager.SetLoadingState(true)");
+
         SaveData data = SaveSystem.Load();
         if (data == null)
         {
+            Debug.Log($"[GameSaveController] No save data");
+            isLoadingGame = false;
+            uiManager?.SetLoadingState(false);
+            Debug.Log($"[GameSaveController] isLoadingGame=false, uiManager.SetLoadingState(false)");
             return;
         }
 
@@ -164,12 +180,19 @@ public class GameSaveController : MonoBehaviour
         // 4. Çàãğóæàåì ïğîãğåññ çäàíèé
         LoadCurrentLevelProgress(data);
 
-        // ===== 5. ÇÀÃĞÓÆÀÅÌ ÓËÓ×ØÅÍÈß =====
+        // 5. Çàãğóæàåì óëó÷øåíèÿ
         LoadUpgrades(data);
 
         // 6. Îáíîâëÿåì UI
         uiManager?.ForceRefreshUI();
         levelProgress?.ForceUpdate();
+
+        Debug.Log($"[GameSaveController] LoadGame END");
+
+        // ===== ÂÛÊËŞ×ÀÅÌ ÔËÀÃÈ =====
+        isLoadingGame = false;
+        uiManager?.SetLoadingState(false);
+        Debug.Log($"[GameSaveController] isLoadingGame=false, uiManager.SetLoadingState(false)");
     }
 
     private void LoadResources(SaveData data)

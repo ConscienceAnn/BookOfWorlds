@@ -98,6 +98,7 @@ public class SellZone : MonoBehaviour, IInteractable
 
         if (coins > 0)
         {
+            EventBus.CoinsCollected();
             uiManager.AddCoins(coins);
             playerUIMediator?.ShowNotification($"Продано! Получено {coins} монет.", 2.5f);
 

@@ -120,6 +120,8 @@ public class AnimalController : MonoBehaviour, ICollectable
 
     public void Interact()
     {
+        EventBus.ResourceCollected(GetResourceName(), GetAmount());
+
         if (!isAvailable)
         {
             playerUIMediator?.ShowNotification($"{animalData.animalName} ещё не готова!", 2f);

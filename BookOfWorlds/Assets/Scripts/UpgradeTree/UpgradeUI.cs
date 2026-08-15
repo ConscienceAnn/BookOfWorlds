@@ -17,6 +17,7 @@ public class UpgradeUI : MonoBehaviour
     [Inject] private UpgradeManager upgradeManager;
     [Inject] private PlayerInputHandlerMy inputHandler;
     [Inject] private UIManager uiManager;
+    [Inject(Optional = true)] private AudioHelper _audioHelper;
 
     private List<UpgradeItemUI> upgradeItems = new List<UpgradeItemUI>();
 
@@ -109,6 +110,11 @@ public class UpgradeUI : MonoBehaviour
     {
         upgradePanel.SetActive(true);
 
+        if (_audioHelper != null && _audioHelper.IsReady)
+        {
+            _audioHelper.PlaySound("ui_open");
+        }
+
         Time.timeScale = 0f;
 
         if (inputHandler != null)
@@ -130,6 +136,12 @@ public class UpgradeUI : MonoBehaviour
         }
 
         upgradePanel.SetActive(false);
+
+        if (_audioHelper != null && _audioHelper.IsReady)
+        {
+            _audioHelper.PlaySound("ui_click");
+        }
+
 
         Time.timeScale = 1f;
 

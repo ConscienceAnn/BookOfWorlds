@@ -1,10 +1,6 @@
 using UnityEngine;
 using Zenject;
 
-/// <summary>
-/// Главный координатор UI.
-/// Связывает все UI-компоненты и предоставляет API для игровой логики.
-/// </summary>
 public class UIManager : MonoBehaviour
 {
     [Header("References")]
@@ -14,14 +10,17 @@ public class UIManager : MonoBehaviour
     [Header("Level Complete")]
     [SerializeField] private GameObject nextLevelButton;
 
-    [Inject] private LevelManager levelManager;
-    [Inject] private PlayerInputHandlerMy playerInputHandlerMy;
+    [Inject(Optional = true)] private LevelManager levelManager;
+    [Inject(Optional = true)] private PlayerInputHandlerMy playerInputHandlerMy;
+    [Inject(Optional = true)] private PauseService _pauseService;
+    [Inject(Optional = true)] private AudioHelper _audioHelper;
+    [Inject(Optional = true)] private GameSaveController gameSaveController;
 
     private int coins = 0;
+    private bool isLoadingGame = false;
 
     private void Start()
     {
-      
         if (playerInputHandlerMy != null)
         {
             playerInputHandlerMy.OnPauseInput += OnPauseButtonClick;
@@ -40,7 +39,14 @@ public class UIManager : MonoBehaviour
         }
     }
 
-  
+    // ===== ПУБЛИЧНЫЙ МЕТОД ДЛЯ УПРАВЛЕНИЯ ЗВУКАМИ ПРИ ЗАГРУЗКЕ =====
+    public void SetLoadingState(bool isLoading)
+    {
+        isLoadingGame = isLoading;
+        Debug.Log($"[UIManager] SetLoadingState: {isLoading}");
+    }
+
+    // ===== HUD API =====
 
     public void AddCoins(int amount)
     {
@@ -63,9 +69,17 @@ public class UIManager : MonoBehaviour
         hudController?.ForceRefresh();
     }
 
+    // ===== PANEL API =====
 
     public void ShowLevelComplete(bool hasNextLevel)
     {
+        // Не показываем панель при загрузке
+        if (isLoadingGame)
+        {
+            Debug.Log("[UIManager] ShowLevelComplete skipped during load");
+            return;
+        }
+
         if (panelManager == null)
         {
             Debug.LogError("UIManager: panelManager is NULL!");
@@ -93,6 +107,19 @@ public class UIManager : MonoBehaviour
 
     public void HideLevelComplete()
     {
+        // Не закрываем панель при загрузке
+        if (gameSaveController != null && gameSaveController.IsLoadingGame)
+        {
+            Debug.Log("[UIManager] HideLevelComplete skipped during load");
+            return;
+        }
+
+        if (isLoadingGame)
+        {
+            Debug.Log("[UIManager] HideLevelComplete skipped during load (local flag)");
+            return;
+        }
+
         if (panelManager == null) return;
 
         var panel = panelManager.GetLevelCompletePanel();
@@ -102,49 +129,39 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void ShowPauseMenu()
-    {
-        if (panelManager == null) return;
-
-        Debug.Log("Показано меню паузы");
-
-        var panel = panelManager.GetPauseMenuPanel();
-        if (panel != null)
-        {
-            panelManager.OpenPanel(panel);
-        }
-    }
-
-    public void HidePauseMenu()
-    {
-        if (panelManager == null) return;
-
-        Debug.Log("Скрыто меню паузы");
-
-        var panel = panelManager.GetPauseMenuPanel();
-        if (panel != null)
-        {
-            panelManager.ClosePanel(panel);
-        }
-    }
-
     public void CloseAllPanels()
     {
+        // Не закрываем панели при загрузке
+        if (isLoadingGame)
+        {
+            Debug.Log("[UIManager] CloseAllPanels skipped during load");
+            return;
+        }
+
         panelManager?.CloseAllPanels();
     }
 
     public bool IsAnyPanelOpen() => panelManager != null && panelManager.IsAnyPanelOpen;
 
+    // ===== BUTTON HANDLERS =====
 
     public void OnResumeButtonClick()
     {
+        _audioHelper?.PlaySound("ui_click");
         Debug.Log("Нажата кнопка Продолжить");
-        HidePauseMenu();
+        _pauseService.TogglePause();
     }
 
     public void OnNextLevelButtonClick()
     {
+        _audioHelper?.PlaySound("ui_click");
         Debug.Log("Нажата кнопка Следующий уровень");
+
+        if (_pauseService.IsPaused)
+        {
+            _pauseService.TogglePause();
+        }
+
         HideLevelComplete();
 
         if (levelManager != null)
@@ -155,9 +172,15 @@ public class UIManager : MonoBehaviour
 
     public void OnRetryButtonClick()
     {
+        _audioHelper?.PlaySound("ui_click");
         Debug.Log("Нажата кнопка Повторить уровень");
+
+        if (_pauseService.IsPaused)
+        {
+            _pauseService.TogglePause();
+        }
+
         HideLevelComplete();
-        HidePauseMenu();
 
         if (levelManager != null)
         {
@@ -167,8 +190,13 @@ public class UIManager : MonoBehaviour
 
     public void OnSaveAndQuitButtonClick()
     {
+        _audioHelper?.PlaySound("ui_click");
         Debug.Log("Нажата кнопка Сохранить и выйти");
-        HidePauseMenu();
+
+        if (_pauseService.IsPaused)
+        {
+            _pauseService.TogglePause();
+        }
 
         if (levelManager != null)
         {
@@ -178,8 +206,13 @@ public class UIManager : MonoBehaviour
 
     public void OnQuitWithoutSaveButtonClick()
     {
+        _audioHelper?.PlaySound("ui_click");
         Debug.Log("Нажата кнопка Выйти без сохранения");
-        HidePauseMenu();
+
+        if (_pauseService.IsPaused)
+        {
+            _pauseService.TogglePause();
+        }
 
         if (levelManager != null)
         {
@@ -189,24 +222,73 @@ public class UIManager : MonoBehaviour
 
     public void OnPauseButtonClick()
     {
-        if (IsAnyPanelOpen())
-        {
-            HidePauseMenu();
-        }
-        else
-        {
-            ShowPauseMenu();
-        }
+        _pauseService.TogglePause();
     }
 
     public void OnMainMenuFromCompleteButtonClick()
     {
+        _audioHelper?.PlaySound("ui_click");
         Debug.Log("Нажата кнопка В главное меню (с панели завершения)");
+
+        if (_pauseService.IsPaused)
+        {
+            _pauseService.TogglePause();
+        }
+
         HideLevelComplete();
 
         if (levelManager != null)
         {
             levelManager.GoToMainMenu();
+        }
+    }
+
+    // ===== ПОДПИСКА НА СОБЫТИЕ ПАУЗЫ =====
+    private void OnEnable()
+    {
+        EventBus.OnPauseStateChanged += OnPauseStateChanged;
+    }
+
+    private void OnDisable()
+    {
+        EventBus.OnPauseStateChanged -= OnPauseStateChanged;
+    }
+
+    private void OnPauseStateChanged(bool isPaused)
+    {
+        if (isPaused)
+        {
+            ShowPauseMenuPanel();
+        }
+        else
+        {
+            HidePauseMenuPanel();
+        }
+    }
+
+    private void ShowPauseMenuPanel()
+    {
+        if (panelManager == null) return;
+
+        Debug.Log("Показано меню паузы (панель)");
+
+        var panel = panelManager.GetPauseMenuPanel();
+        if (panel != null)
+        {
+            panelManager.OpenPanel(panel);
+        }
+    }
+
+    private void HidePauseMenuPanel()
+    {
+        if (panelManager == null) return;
+
+        Debug.Log("Скрыто меню паузы (панель)");
+
+        var panel = panelManager.GetPauseMenuPanel();
+        if (panel != null)
+        {
+            panelManager.ClosePanel(panel);
         }
     }
 }

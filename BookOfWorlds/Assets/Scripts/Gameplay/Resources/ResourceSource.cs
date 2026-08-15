@@ -99,6 +99,7 @@ public class ResourceSource : MonoBehaviour, ICollectable, IInteractable
             Hide();
             RespawnAsync(cts.Token).Forget();
         }
+        EventBus.ResourceCollected(data.resourceName, amountPerCollect);
 
         return true;
     }

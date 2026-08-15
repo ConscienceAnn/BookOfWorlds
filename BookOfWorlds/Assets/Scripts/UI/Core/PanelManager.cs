@@ -13,6 +13,9 @@ public class PanelManager : MonoBehaviour
 
     [Inject] private PlayerInputHandlerMy playerInputHandlerMy;
 
+    [Inject(Optional = true)] private AudioHelper _audioHelper;
+    [Inject(Optional = true)] private GameSaveController gameSaveController;
+
     public event System.Action OnPanelsOpened;
     public event System.Action OnPanelsClosed;
 
@@ -29,6 +32,16 @@ public class PanelManager : MonoBehaviour
         }
 
         Debug.Log($"Панель открыта: {panel.name}");
+
+        bool isLoading = gameSaveController != null && gameSaveController.IsLoadingGame;
+        if (!isLoading && _audioHelper != null && _audioHelper.IsReady)
+        {
+            _audioHelper.PlaySound("ui_open");
+        }
+        else
+        {
+            Debug.Log($"[PanelManager] AudioHelper not ready, skip ui_open");
+        }
 
         panel.SetActive(true);
         isAnyPanelOpen = true;
@@ -50,6 +63,12 @@ public class PanelManager : MonoBehaviour
         if (panel == null) return;
 
         Debug.Log($"Панель закрыта: {panel.name}");
+
+        bool isLoading = gameSaveController != null && gameSaveController.IsLoadingGame;
+        if (!isLoading && _audioHelper != null && _audioHelper.IsReady)
+        {
+            _audioHelper.PlaySound("ui_click");
+        }
 
         panel.SetActive(false);
 

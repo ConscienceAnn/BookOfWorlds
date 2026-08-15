@@ -31,6 +31,7 @@ public class PlayerCollector : MonoBehaviour
         AnimalController unavailableAnimal = FindUnavailableAnimal();
         if (unavailableAnimal != null)
         {
+
             string message = $"{unavailableAnimal.GetAnimalName()} ещё не готова дать {unavailableAnimal.GetResourceName()}!";
             playerUIMediator?.ShowNotification(message, 2f);
             return;
