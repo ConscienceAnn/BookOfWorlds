@@ -10,7 +10,7 @@ public class PlayerInputHandlerMy : MonoBehaviour
     public event System.Action OnResetZoomInput;
     public event System.Action OnPauseInput;
     public event System.Action OnCollectInput;
-    public event System.Action OnUpgradeInput;  
+    public event System.Action OnUpgradeInput;
 
     // ===== INPUT ACTIONS =====
     private PlayerInput playerInput;
@@ -19,7 +19,17 @@ public class PlayerInputHandlerMy : MonoBehaviour
     private InputAction resetZoomAction;
     private InputAction pauseAction;
     private InputAction collectAction;
-    private InputAction upgradeAction;  
+    private InputAction upgradeAction;
+
+    // ===== AUDIO =====
+    [Inject] private AudioHelper _audioHelper;
+    [Inject] private PauseService _pauseService;
+
+    // ===== IDLE TIMER =====
+    private float idleTimer = 0f;
+    private float idleThreshold = 5f;
+    private bool whistlePlayed = false;
+    private Vector2 lastMoveInput = Vector2.zero;
 
     private bool isInputEnabled = true;
 
@@ -28,6 +38,49 @@ public class PlayerInputHandlerMy : MonoBehaviour
     {
         playerInput = input;
         SetupInputActions();
+        EventBus.OnPauseStateChanged += OnPauseStateChanged;
+    }
+
+    private void OnDestroy()
+    {
+        EventBus.OnPauseStateChanged -= OnPauseStateChanged;
+    }
+
+    private void OnPauseStateChanged(bool isPaused)
+    {
+        if (isPaused)
+        {
+            idleTimer = 0f;
+            if (whistlePlayed)
+            {
+                whistlePlayed = false;
+                _audioHelper.StopAmbient();
+            }
+        }
+    }
+
+    private void Update()
+    {
+        bool isMoving = lastMoveInput.magnitude > 0.1f;
+
+        if (isMoving)
+        {
+            idleTimer = 0f;
+            if (whistlePlayed)
+            {
+                whistlePlayed = false;
+                _audioHelper.StopAmbient();
+            }
+        }
+        else if (!_pauseService.IsPaused && isInputEnabled)
+        {
+            idleTimer += Time.deltaTime;
+            if (idleTimer >= idleThreshold && !whistlePlayed)
+            {
+                whistlePlayed = true;
+                _audioHelper.PlaySound("whistle");
+            }
+        }
     }
 
     private void SetupInputActions()
@@ -42,7 +95,7 @@ public class PlayerInputHandlerMy : MonoBehaviour
         resetZoomAction = playerActionMap.FindAction("ResetZoom");
         pauseAction = playerActionMap.FindAction("Pause");
         collectAction = playerActionMap.FindAction("Collect");
-        upgradeAction = playerActionMap.FindAction("Upgrade");  
+        upgradeAction = playerActionMap.FindAction("Upgrade");
 
         if (moveAction != null)
         {
@@ -71,7 +124,7 @@ public class PlayerInputHandlerMy : MonoBehaviour
             collectAction.canceled += OnCollectCanceled;
         }
 
-        if (upgradeAction != null)  
+        if (upgradeAction != null)
         {
             upgradeAction.performed += OnUpgradePerformed;
         }
@@ -79,22 +132,17 @@ public class PlayerInputHandlerMy : MonoBehaviour
 
     // ===== ОБРАБОТЧИКИ =====
 
-    private void OnUpgradePerformed(InputAction.CallbackContext context)
-    {
-        if (!isInputEnabled) return;
-        OnUpgradeInput?.Invoke();
-        Debug.Log("[PlayerInputHandler] Нажата клавиша улучшений (U)");
-    }
-
     private void OnMovePerformed(InputAction.CallbackContext context)
     {
         if (!isInputEnabled) return;
-        OnMovementInput?.Invoke(context.ReadValue<Vector2>());
+        lastMoveInput = context.ReadValue<Vector2>();
+        OnMovementInput?.Invoke(lastMoveInput);
     }
 
     private void OnMoveCanceled(InputAction.CallbackContext context)
     {
         if (!isInputEnabled) return;
+        lastMoveInput = Vector2.zero;
         OnMovementInput?.Invoke(Vector2.zero);
     }
 
@@ -137,7 +185,6 @@ public class PlayerInputHandlerMy : MonoBehaviour
 
     private void OnPausePerformed(InputAction.CallbackContext context)
     {
-        // PAUSE ВСЕГДА РАБОТАЕТ
         OnPauseInput?.Invoke();
     }
 
@@ -149,7 +196,13 @@ public class PlayerInputHandlerMy : MonoBehaviour
 
     private void OnCollectCanceled(InputAction.CallbackContext context)
     {
-        // Collect только по нажатию, без отмены
+        // Collect только по нажатию
+    }
+
+    private void OnUpgradePerformed(InputAction.CallbackContext context)
+    {
+        if (!isInputEnabled) return;
+        OnUpgradeInput?.Invoke();
     }
 
     private void OnDisable()
@@ -170,7 +223,7 @@ public class PlayerInputHandlerMy : MonoBehaviour
             collectAction.performed -= OnCollectPerformed;
             collectAction.canceled -= OnCollectCanceled;
         }
-        if (upgradeAction != null)  
+        if (upgradeAction != null)
         {
             upgradeAction.performed -= OnUpgradePerformed;
         }
@@ -181,6 +234,16 @@ public class PlayerInputHandlerMy : MonoBehaviour
     public void SetInputEnabled(bool enabled)
     {
         isInputEnabled = enabled;
+
+        if (!enabled)
+        {
+            idleTimer = 0f;
+            if (whistlePlayed)
+            {
+                whistlePlayed = false;
+                _audioHelper.StopAmbient();
+            }
+        }
     }
 
     public void LockCursor(bool locked)

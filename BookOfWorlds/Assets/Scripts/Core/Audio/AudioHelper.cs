@@ -18,7 +18,6 @@ public class AudioHelper
         if (_audioManager != null && _soundLibrary != null)
         {
             _isReady = true;
-            Debug.Log("[AudioHelper] Initialized and ready!");
         }
         else
         {
@@ -30,7 +29,6 @@ public class AudioHelper
     {
         if (!_isReady)
         {
-            Debug.LogWarning($"[AudioHelper] Not ready! Sound '{id}' skipped.");
             return;
         }
 

@@ -64,7 +64,6 @@ public class LevelManager : MonoBehaviour
         }
 
         uiManager?.SetLoadingState(true);
-        Debug.Log("[LevelManager] SetLoadingState(true) - starting level load");
 
         currentLevelIndex = levelIndex;
         currentLevelData = levels[levelIndex];
@@ -113,7 +112,6 @@ public class LevelManager : MonoBehaviour
         SaveCurrentLevel();
 
         uiManager?.SetLoadingState(false);
-        Debug.Log("[LevelManager] SetLoadingState(false) - level loaded");
 
         isLoadingLevel = false;
     }
@@ -181,7 +179,6 @@ public class LevelManager : MonoBehaviour
     {
         Debug.Log("Возврат в главное меню");
 
-   
         if (uiManager != null)
         {
             uiManager.CloseAllPanels();
@@ -207,7 +204,6 @@ public class LevelManager : MonoBehaviour
             gameSaveController.SaveGame();
         }
 
-     
         if (uiManager != null)
         {
             uiManager.ShowLevelComplete(HasNextLevel());
@@ -257,7 +253,6 @@ public class LevelManager : MonoBehaviour
             uiManager.CloseAllPanels();
         }
 
-       
         UnityEngine.SceneManagement.SceneManager.LoadScene(mainMenuSceneName);
     }
 

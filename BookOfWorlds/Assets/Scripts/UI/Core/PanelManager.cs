@@ -38,10 +38,6 @@ public class PanelManager : MonoBehaviour
         {
             _audioHelper.PlaySound("ui_open");
         }
-        else
-        {
-            Debug.Log($"[PanelManager] AudioHelper not ready, skip ui_open");
-        }
 
         panel.SetActive(true);
         isAnyPanelOpen = true;

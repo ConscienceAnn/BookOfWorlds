@@ -22,7 +22,6 @@ public class AudioManager : MonoBehaviour
         // Важно: НЕ используем DontDestroyOnLoad здесь
         // AudioManager будет управляться через Zenject
         SetupAudioSources();
-        Debug.Log("[AudioManager] Initialized!");
     }
 
     private void SetupAudioSources()

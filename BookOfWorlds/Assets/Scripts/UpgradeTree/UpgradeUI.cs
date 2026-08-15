@@ -35,7 +35,10 @@ public class UpgradeUI : MonoBehaviour
         EventBus.OnCoinsChanged += OnCoinsChanged;
 
         if (closeButton != null)
-            closeButton.onClick.AddListener(Hide);
+            closeButton.onClick.AddListener(() => {
+                _audioHelper?.PlaySound("ui_click");
+                Hide();
+            });
 
         CreateUpgradeItems();
         RefreshUI();
@@ -44,7 +47,9 @@ public class UpgradeUI : MonoBehaviour
     private void OnDestroy()
     {
         if (inputHandler != null)
+        {
             inputHandler.OnUpgradeInput -= Toggle;
+        }
 
         if (upgradeManager != null)
         {
@@ -100,6 +105,11 @@ public class UpgradeUI : MonoBehaviour
 
     private void ShowNotification(string message, bool isError)
     {
+        if (isError)
+        {
+            _audioHelper?.PlaySound("error");
+        }
+
         if (upgradeNotification != null)
         {
             upgradeNotification.ShowNotification(message, isError);
@@ -110,10 +120,7 @@ public class UpgradeUI : MonoBehaviour
     {
         upgradePanel.SetActive(true);
 
-        if (_audioHelper != null && _audioHelper.IsReady)
-        {
-            _audioHelper.PlaySound("ui_open");
-        }
+        _audioHelper?.PlaySound("ui_open");
 
         Time.timeScale = 0f;
 
@@ -137,11 +144,7 @@ public class UpgradeUI : MonoBehaviour
 
         upgradePanel.SetActive(false);
 
-        if (_audioHelper != null && _audioHelper.IsReady)
-        {
-            _audioHelper.PlaySound("ui_click");
-        }
-
+        _audioHelper?.PlaySound("ui_click");
 
         Time.timeScale = 1f;
 

@@ -19,6 +19,7 @@ public class AnimalController : MonoBehaviour, ICollectable
     [Inject] private IPlayerInventory inventory;
     [Inject] private PlayerUIMediator playerUIMediator;
     [Inject] private ProgressBarFactory progressBarFactory;
+    [Inject] private ResourceFlyAnimation flyAnimation;
 
     private bool isAvailable = true;
     private float cooldownTimer = 0f;
@@ -44,7 +45,6 @@ public class AnimalController : MonoBehaviour, ICollectable
 
     private void Start()
     {
-        
         if (progressBar == null && progressBarFactory != null)
         {
             progressBar = progressBarFactory.CreateProgressBar(transform, GetProgressBarOffset());
@@ -153,7 +153,23 @@ public class AnimalController : MonoBehaviour, ICollectable
             behaviour.OnCollect(transform);
         }
 
+        PlayFlyAnimation();
+
         PlayCollectAnimation();
+    }
+
+    private async void PlayFlyAnimation()
+    {
+        if (flyAnimation == null)
+        {
+            Debug.LogWarning($"[AnimalController] flyAnimation is null for {gameObject.name}");
+            return;
+        }
+
+        Vector3 worldPosition = transform.position + Vector3.up * 1.5f;
+        string resourceName = GetResourceName();
+
+        await flyAnimation.Play(worldPosition, resourceName);
     }
 
     private void OnRespawned()

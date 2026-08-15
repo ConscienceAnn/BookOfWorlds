@@ -10,16 +10,22 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float runThreshold = 0.5f;
     [SerializeField] private float minMoveThreshold = 0.1f;
 
+    [Header("Footstep Settings")]
+    [SerializeField] private float stepInterval = 0.5f;
+
     [Inject] private Camera mainCamera;
+    [Inject] private AudioHelper _audioHelper;
+    [Inject] private PauseService _pauseService;
 
     private Rigidbody rb;
     private PlayerController playerController;
     private Vector2 moveInput;
     private Vector3 moveDirection;
     private float currentSpeed;
+    private float stepTimer = 0f;
 
     public Vector3 MoveDirection => moveDirection;
-    public bool IsMoving => moveInput.magnitude > 0.1f;
+    public bool IsMoving => moveInput.magnitude > minMoveThreshold;
 
     private void Awake()
     {
@@ -55,6 +61,9 @@ public class PlayerMovement : MonoBehaviour
 
         // Обновляем состояние в зависимости от движения
         UpdateMovementState();
+
+        // ===== ШАГИ =====
+        UpdateFootsteps();
     }
 
     private void UpdateMovementState()
@@ -66,7 +75,6 @@ public class PlayerMovement : MonoBehaviour
         if (inputMagnitude < minMoveThreshold)
         {
             currentSpeed = 0f;
-            // Состояние Idle установит сам PlayerStateMachine через IsMoving
         }
         else if (inputMagnitude > runThreshold)
         {
@@ -118,6 +126,28 @@ public class PlayerMovement : MonoBehaviour
                 targetRotation,
                 rotationSpeed * Time.fixedDeltaTime
             );
+        }
+    }
+
+    // ===== НОВЫЙ МЕТОД: ШАГИ =====
+    private void UpdateFootsteps()
+    {
+        // Проверяем, движется ли игрок и не на паузе
+        bool isMoving = moveInput.magnitude > minMoveThreshold;
+        bool isPaused = _pauseService != null && _pauseService.IsPaused;
+
+        if (isMoving && !isPaused && playerController != null && !playerController.IsCollecting)
+        {
+            stepTimer += Time.fixedDeltaTime;
+            if (stepTimer >= stepInterval)
+            {
+                stepTimer = 0f;
+                _audioHelper?.PlaySound("footstep");
+            }
+        }
+        else
+        {
+            stepTimer = stepInterval; // Сброс таймера при остановке
         }
     }
 }

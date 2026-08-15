@@ -2,10 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
 
-/// <summary>
-/// Контроллер меню паузы.
-/// Отвечает только за логику кнопок в меню паузы.
-/// </summary>
 public class PauseMenuController : MonoBehaviour
 {
     [Header("Buttons")]
@@ -14,6 +10,8 @@ public class PauseMenuController : MonoBehaviour
     [SerializeField] private Button quitWithoutSaveButton;
 
     [Inject] private UIManager uiManager;
+    [Inject] private PauseService _pauseService;
+    [Inject] private AudioHelper _audioHelper;
 
     private void Start()
     {
@@ -29,7 +27,13 @@ public class PauseMenuController : MonoBehaviour
 
     private void OnContinueClicked()
     {
-        uiManager?.OnResumeButtonClick();
+        // Проверяем, что игра действительно на паузе
+        if (_pauseService == null || !_pauseService.IsPaused) return;
+
+        _audioHelper?.PlaySound("ui_click");
+        _pauseService.TogglePause();
+
+        // Не вызываем uiManager.OnResumeButtonClick() — это вызывает дублирование
     }
 
     private void OnSaveAndQuitClicked()

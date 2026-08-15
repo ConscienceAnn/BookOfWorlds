@@ -15,6 +15,7 @@ public class UIManager : MonoBehaviour
     [Inject(Optional = true)] private PauseService _pauseService;
     [Inject(Optional = true)] private AudioHelper _audioHelper;
     [Inject(Optional = true)] private GameSaveController gameSaveController;
+    [Inject(Optional = true)] private UpgradeUI upgradeUI;
 
     private int coins = 0;
     private bool isLoadingGame = false;
@@ -43,7 +44,6 @@ public class UIManager : MonoBehaviour
     public void SetLoadingState(bool isLoading)
     {
         isLoadingGame = isLoading;
-        Debug.Log($"[UIManager] SetLoadingState: {isLoading}");
     }
 
     // ===== HUD API =====
@@ -73,10 +73,8 @@ public class UIManager : MonoBehaviour
 
     public void ShowLevelComplete(bool hasNextLevel)
     {
-        // Не показываем панель при загрузке
         if (isLoadingGame)
         {
-            Debug.Log("[UIManager] ShowLevelComplete skipped during load");
             return;
         }
 
@@ -107,16 +105,13 @@ public class UIManager : MonoBehaviour
 
     public void HideLevelComplete()
     {
-        // Не закрываем панель при загрузке
         if (gameSaveController != null && gameSaveController.IsLoadingGame)
         {
-            Debug.Log("[UIManager] HideLevelComplete skipped during load");
             return;
         }
 
         if (isLoadingGame)
         {
-            Debug.Log("[UIManager] HideLevelComplete skipped during load (local flag)");
             return;
         }
 
@@ -131,10 +126,8 @@ public class UIManager : MonoBehaviour
 
     public void CloseAllPanels()
     {
-        // Не закрываем панели при загрузке
         if (isLoadingGame)
         {
-            Debug.Log("[UIManager] CloseAllPanels skipped during load");
             return;
         }
 
