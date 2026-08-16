@@ -33,7 +33,6 @@ public class PauseMenuController : MonoBehaviour
         _audioHelper?.PlaySound("ui_click");
         _pauseService.TogglePause();
 
-        // Не вызываем uiManager.OnResumeButtonClick() — это вызывает дублирование
     }
 
     private void OnSaveAndQuitClicked()

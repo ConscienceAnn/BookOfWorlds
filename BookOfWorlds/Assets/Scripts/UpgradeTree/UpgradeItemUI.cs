@@ -76,7 +76,6 @@ public class UpgradeItemUI : MonoBehaviour
 
         if (upgradeButton != null)
         {
-            //  нопка Ќ≈ј “»¬Ќј только если MAX уровень
             upgradeButton.interactable = !isMaxLevel;
 
             TMP_Text buttonText = upgradeButton.GetComponentInChildren<TMP_Text>();
@@ -103,7 +102,6 @@ public class UpgradeItemUI : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(upgradeId) && upgradeManager != null)
         {
-            //_audioHelper?.PlaySound("ui_click");
             upgradeManager.ApplyUpgrade(upgradeId);
         }
     }

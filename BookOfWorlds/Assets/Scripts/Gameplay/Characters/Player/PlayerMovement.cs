@@ -129,7 +129,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ===== НОВЫЙ МЕТОД: ШАГИ =====
+    // ===== ШАГИ =====
     private void UpdateFootsteps()
     {
         // Проверяем, движется ли игрок и не на паузе

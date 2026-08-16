@@ -18,7 +18,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   costs:
   - resourceName: "\u041A\u0430\u043C\u0435\u043D\u044C"
-    amount: 14
+    amount: 28
   ruinedPrefab: {fileID: 919132149155446097, guid: 6561be29c857fc4499f218cd7de6e1a0, type: 3}
   restoredPrefab: {fileID: 919132149155446097, guid: 437e0c580b996e04eb98e6f4d3cf261f, type: 3}
   restoreTime: 2

@@ -19,8 +19,6 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
-        // Важно: НЕ используем DontDestroyOnLoad здесь
-        // AudioManager будет управляться через Zenject
         SetupAudioSources();
     }
 

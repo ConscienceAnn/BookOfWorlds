@@ -9,14 +9,13 @@ public class PlayerController : MonoBehaviour
     private PlayerCollector collector;
     private Animator animator;
 
-    // ===== ÍÎÂÀß STATE MACHINE =====
+    
     public PlayerStateMachine StateMachine { get; private set; }
 
-    // ===== ÑÂÎÉÑÒÂÀ ÄËß ÑÎÑÒÎßÍÈÉ =====
     public bool IsMoving => movement != null && movement.IsMoving;
     public bool IsCollecting => collector != null && collector.IsCollecting;
 
-    // ===== ÑÎÁÛÒÈß =====
+
     public event System.Action<ICollectable> OnCollectStart;
     public event System.Action<ICollectable> OnCollectComplete;
 
@@ -26,14 +25,14 @@ public class PlayerController : MonoBehaviour
         collector = GetComponent<PlayerCollector>();
         animator = GetComponent<Animator>();
 
-        // Äîáàâëÿåì íîâóş State Machine
+
         StateMachine = GetComponent<PlayerStateMachine>();
         if (StateMachine == null)
         {
             StateMachine = gameObject.AddComponent<PlayerStateMachine>();
         }
 
-        // Ïîäïèñêè íà ñîáûòèÿ ñáîğà
+
         if (collector != null)
         {
             collector.OnCollectStart += HandleCollectStart;
@@ -50,7 +49,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ===== ÌÅÒÎÄ ÄËß ÀÍÈÌÀÖÈÉ =====
     public void SetAnimation(string parameter, bool value)
     {
         if (animator != null)
@@ -59,7 +57,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ===== ÎÁĞÀÁÎÒ×ÈÊÈ ÑÎÁÛÒÈÉ =====
+
     private void HandleCollectStart(ICollectable target)
     {
         OnCollectStart?.Invoke(target);

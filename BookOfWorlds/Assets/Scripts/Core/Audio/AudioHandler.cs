@@ -29,7 +29,7 @@ public class AudioHandler : MonoBehaviour
 
     private void OnResourceCollected(string resourceName, int amount)
     {
-        // ===== œ–Œ¬≈– ¿: Õ≈ »√–¿≈Ã «¬”  œ–» «¿√–”« ≈ =====
+       
         if (gameSaveController != null && gameSaveController.IsLoadingGame)
         {
             return;
@@ -41,7 +41,7 @@ public class AudioHandler : MonoBehaviour
 
     private void OnBuildingRestored(BuildingController building)
     {
-        // ===== œ–Œ¬≈– ¿: Õ≈ »√–¿≈Ã «¬”  œ–» «¿√–”« ≈ =====
+       
         if (gameSaveController != null && gameSaveController.IsLoadingGame)
         {
             return;
@@ -52,7 +52,7 @@ public class AudioHandler : MonoBehaviour
 
     private void OnCoinsCollected()
     {
-        // ===== œ–Œ¬≈– ¿: Õ≈ »√–¿≈Ã «¬”  œ–» «¿√–”« ≈ =====
+       
         if (gameSaveController != null && gameSaveController.IsLoadingGame)
         {
             return;
@@ -63,7 +63,7 @@ public class AudioHandler : MonoBehaviour
 
     private void OnError(string message)
     {
-        // ===== œ–Œ¬≈– ¿: Õ≈ »√–¿≈Ã «¬”  œ–» «¿√–”« ≈ =====
+      
         if (gameSaveController != null && gameSaveController.IsLoadingGame)
         {
             return;
@@ -74,7 +74,7 @@ public class AudioHandler : MonoBehaviour
 
     private void OnSoundRequest(string soundId)
     {
-        // ===== œ–Œ¬≈– ¿: Õ≈ »√–¿≈Ã «¬”  œ–» «¿√–”« ≈ =====
+        
         if (gameSaveController != null && gameSaveController.IsLoadingGame)
         {
             return;
@@ -83,7 +83,6 @@ public class AudioHandler : MonoBehaviour
         _audioHelper.PlaySound(soundId);
     }
 
-    // ===== ÀŒ√» ¿ ¬€¡Œ–¿ «¬” ¿ =====
 
     private string GetCollectSound(string resourceName)
     {

@@ -17,7 +17,6 @@ public abstract class AnimalBehaviourBase : IResourceBehaviour
         this.progressBar = progressBar;
         this.cooldownTime = cooldownTime;
 
-        // Защита от нулевого множителя
         float multiplier = Mathf.Max(0.1f, RespawnSettings.Multiplier);
         this.currentCooldownTime = cooldownTime / multiplier;
 
@@ -38,7 +37,6 @@ public abstract class AnimalBehaviourBase : IResourceBehaviour
         cts?.Dispose();
         cts = new CancellationTokenSource();
 
-        // Защита от нулевого множителя
         float multiplier = Mathf.Max(0.1f, RespawnSettings.Multiplier);
         currentCooldownTime = cooldownTime / multiplier;
 
@@ -61,7 +59,6 @@ public abstract class AnimalBehaviourBase : IResourceBehaviour
         float elapsed = 0f;
         float currentTime = currentCooldownTime;
 
-        // Защита от нулевого времени
         if (currentTime <= 0)
             currentTime = 0.1f;
 
@@ -82,7 +79,6 @@ public abstract class AnimalBehaviourBase : IResourceBehaviour
 
     private void OnRespawnMultiplierChanged()
     {
-        // Защита от нулевого множителя
         float multiplier = Mathf.Max(0.1f, RespawnSettings.Multiplier);
         float newCooldown = cooldownTime / multiplier;
 

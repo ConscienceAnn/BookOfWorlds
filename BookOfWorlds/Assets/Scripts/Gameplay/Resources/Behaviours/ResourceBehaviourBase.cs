@@ -31,7 +31,7 @@ public abstract class ResourceBehaviourBase : IResourceBehaviour
 
         if (resource == null || resource.gameObject == null) return;
 
-        // 3. Тряска (специфичная для каждого ресурса)
+        // 3. Тряска 
         await Shake(resource.transform);
 
         if (resource == null || resource.gameObject == null) return;

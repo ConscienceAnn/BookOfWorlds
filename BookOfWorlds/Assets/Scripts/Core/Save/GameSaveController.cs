@@ -320,7 +320,6 @@ public class GameSaveController : MonoBehaviour
         SaveSystem.Save(data);
     }
 
-    // ===== ÓÏĞÀÂËÅÍÈÅ ÇÄÀÍÈßÌÈ =====
 
     public void RefreshBuildingsList()
     {
