@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   resourceName: "\u0428\u0435\u0440\u0441\u0442\u044C"
   icon: {fileID: 0}
-  basePrice: 4
+  basePrice: 7
   respawnTime: 10
   prefab: {fileID: 0}
   gizmoColor: {r: 0, g: 1, b: 0, a: 1}
